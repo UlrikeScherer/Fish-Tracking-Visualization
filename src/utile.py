@@ -11,21 +11,22 @@ def get_camera_names():
 
 def get_days_in_order():
     cameras = get_camera_names()
-    days = [name[:8] for name in os.listdir(dir_front+"/"+cameras[0]) if name[:8].isnumeric()]
-    m_days = map(lambda d: read_batch_csv(glob.glob("{}/{}/{}*/*.csv".format(dir_front, cameras[0], d), recursive=True)[0]).time[0],days)
-    days_map = list(zip(days, m_days))
-    days_map.sort(key=lambda x: x[1])
-    return days_map
+    days = [name[:13] for name in os.listdir(dir_front+"/"+cameras[0]) if name[:8].isnumeric()]
+    days.sort()
+    return days
 
-def get_time_for_day(t_stamp):
-    return datetime.fromtimestamp(t_stamp/1000.0).strftime("%H:%M:%S")
+def get_time_for_day(day, nrF):
+    dateiso = "{}-{}-{}T{}:{}:{}+00:00".format(day[:4],day[4:6],day[6:8],day[9:11],day[11:13],day[13:15])
+    ts = datetime.fromisoformat(dateiso).timestamp() + nrF/5
+    return datetime.fromtimestamp(ts).strftime("%H:%M:%S")
 
-def get_date_from_time(t_stamp):
-    return datetime.fromtimestamp(t_stamp/1000.0).strftime("%Y%m%d")
+def get_date(day):
+    return day[:8]
 
-def get_full_date(t_stamp):
-    return datetime.fromtimestamp(t_stamp/1000.0).strftime("%A, %B %d, %Y %H:%M")
-
+def get_full_date(day):
+    dateiso = "{}-{}-{}T{}:{}:{}+00:00".format(day[:4],day[4:6],day[6:8],day[9:11],day[11:13], day[13:15])
+    return datetime.fromisoformat(dateiso).strftime("%A, %B %d, %Y %H:%M")
+    
 def get_position_string(is_back):
     if is_back:
         return "back"
@@ -33,7 +34,7 @@ def get_position_string(is_back):
         return "front"
     
 def read_batch_csv(filename):
-    df = pd.read_csv(filename,skiprows=3, delimiter=';', error_bad_lines=False, usecols=["x", "y", "time"])
+    df = pd.read_csv(filename,skiprows=3, delimiter=';', error_bad_lines=False, usecols=["x", "y", "FRAME", "time"])
     df.dropna(axis=0, how="any", inplace=True)
     df.reset_index(drop=True, inplace=True)
     return df

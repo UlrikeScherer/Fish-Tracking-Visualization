@@ -1,0 +1,104 @@
+\let\mypdfximage\pdfximage
+\def\pdfximage{\immediate\mypdfximage}
+\documentclass[landscape]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage[a4paper, inner=1em, outer=1em, top=1em]{geometry}
+\usepackage{pgffor}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{hyperref}
+\usepackage{ifthen}
+\usepackage[nomessages]{fp}% http://ctan.org/pkg/fp
+\usepackage{adjustbox}
+\usepackage{tcolorbox}
+\usepackage{xstring}
+\usepackage{xurl}
+
+\providecommand{\camera}{default-error}
+\providecommand{\position}{front}
+\providecommand{\secfirstplot}{42}
+\providecommand{\posstr}{FE_block1_autotracks_front/}
+\graphicspath{{../plots/\position/}} 
+\ifx \position back
+    \renewcommand{\posstr}{FE_block1_autotracks_back/}
+\else
+    \renewcommand{\posstr}{FE_block1_autotracks_front/}
+\fi
+
+\newcommand{\rootdir}{run:/Users/lukastaerk/fish/\posstr}
+\newcommand{\rootserver}{smb://141.20.65.49/data/loopbio_data/1_FE_(fingerprint_experiment)_SepDec2021/FE_block1/}
+\newcommand{\rootrecord}{smb://141.20.65.49/data/loopbio_data/1_FE_(fingerprint_experiment)_SepDec2021/FE_block1/FE_block1_recordings/FE_block1_recordings_week1/}
+\def \RawURL{\rootdir\camera/}
+
+\title{Developing exploration behavior\\
+Trajectory over time of the molly at camera: \href{\rootdir\camera/}{\camera}{} and position: \position\\
+    %\rootdir \posstr
+}
+\author{Research Unit 1, SCIoI Project 21}
+\date{December 2021}
+
+\newcommand{\subf}[2]{%
+\begin{subfigure}[h]{0.22\textwidth}
+    \includegraphics[width=\textwidth, height=4.2cm]{\camera/#1/#2.jpeg}
+    %\caption*{\href{\RawURL}{video},
+    %\href{run:/Users/lukastaerk/fish/FE_block1_autotracks_back/23484201/20210912_060000.23484201_front/23484201_20210912_060000.23484201_000000_2021-10-10T15_37_57_37708.csv}{csv}
+    %}
+    \vspace{-1em}
+\end{subfigure}
+}
+
+\newcommand{\firstbox}[1]{
+    \fbox{\parbox[c][3cm]{0.22\textwidth}{\StrMid{#1}{0}{4}/\StrMid{#1}{5}{6}/\StrMid{#1}{7}{8}{} at \StrMid{#1}{10}{11}:\StrMid{#1}{12}{13}\\
+     Trajectory over time of the molly at camera: \camera{} position: \position\\
+     Video: \\
+     CSV: \url{\rootdir\camera/#1.\camera/}
+     }}
+}
+
+\newcommand{\plotday}[1]{%
+\foreach \x [count=\xi] in {#1} {
+\begin{figure}
+    \firstbox{\x00}
+    \foreach \i in {0,1,...,3} {
+        \foreach \j in {0,1,...,3}{
+        \FPeval{\result}{clip(\i+\j)}
+        \ifnum \result>0  {
+            \subf{\x}{\i\j}
+        }\fi
+        }\vskip\baselineskip
+    }
+    \label{fig:\xi #1}
+\end{figure}
+}%
+}
+
+\newcommand{\plotdayone}[1]{%
+%\foreach \x [count=\xi] in {#1} {
+\begin{figure}
+    \firstbox{#1\secfirstplot}
+    \foreach \i in {0} {
+        \foreach \j in {0,1,...,3}{
+        \FPeval{\result}{clip(\i+\j)}
+        \ifnum \result>0  {
+            \subf{#1}{\i\j}
+        }\fi
+        }\vskip\baselineskip
+    }
+    \subf{#1}{10}
+    \label{fig:#1}
+\end{figure}
+%}%
+}
+
+\begin{document}
+
+\maketitle   
+
+\plotdayone{20210910_1550} 
+
+\plotday{
+20210911_0600,20210912_0600,20210913_0600,20210914_0600,20210915_0600,20210916_0600,20210917_0600,20210918_0600,20210919_0600,20210920_0600,20210921_0600,20210922_0600,20210923_0600,20210924_0600,20210925_0600,20210926_0600,20210927_0600,20210928_0600,20210929_0600,20210930_0600,20211001_0600,20211002_0600,20211003_0600,20211004_0600,20211005_0600,20211006_0600,20211007_0600,20211008_0600}
+
+\end{document}
