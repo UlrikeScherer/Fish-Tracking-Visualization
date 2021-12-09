@@ -1,6 +1,6 @@
-cameras=('23520289' '23484201')
+cameras=('23520289' '23484201' '23520258')
 position=("front" "back")
-rootserver="smb://141.20.65.49/data/loopbio_data/1_FE_(fingerprint_experiment)_SepDec2021/FE_block1"
+rootserver="/Volumes/data/loopbio_data/1_FE_(fingerprint_experiment)_SepDec2021/FE_block1"
 for b in ${!position[@]}; do
     echo "pdf for ${position[$b]} \n"
     for i in ${!cameras[@]}; do

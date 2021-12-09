@@ -28,12 +28,12 @@
 \fi
 
 \newcommand{\rootdir}{run:/Users/lukastaerk/fish/\posstr}
-\newcommand{\rootserver}{smb://141.20.65.49/data/loopbio_data/1_FE_(fingerprint_experiment)_SepDec2021/FE_block1/}
-\newcommand{\rootrecord}{smb://141.20.65.49/data/loopbio_data/1_FE_(fingerprint_experiment)_SepDec2021/FE_block1/FE_block1_recordings/FE_block1_recordings_week1/}
+\newcommand{\rootserver}{/Volumes/data/loopbio_data/1_FE_(fingerprint_experiment)_SepDec2021/FE_block1}
+\newcommand{\rootrecord}{\rootserver/FE_block1_recordings/FE_block1_recordings_week1}
 \def \RawURL{\rootdir\camera/}
 
 \title{Developing exploration behavior\\
-Trajectory over time of the molly at camera: \href{\rootdir\camera/}{\camera}{} and position: \position\\
+Trajectory over time of the molly at camera: \camera{} and position: \position\\
     %\rootdir \posstr
 }
 \author{Research Unit 1, SCIoI Project 21}
@@ -53,7 +53,7 @@ Trajectory over time of the molly at camera: \href{\rootdir\camera/}{\camera}{} 
     \fbox{\parbox[c][3cm]{0.22\textwidth}{\StrMid{#1}{0}{4}/\StrMid{#1}{5}{6}/\StrMid{#1}{7}{8}{} at \StrMid{#1}{10}{11}:\StrMid{#1}{12}{13}\\
      Trajectory over time of the molly at camera: \camera{} position: \position\\
      Video: \\
-     CSV: \url{\rootdir\camera/#1.\camera/}
+     CSV: \url{\rootserver/\posstr\camera/#1.\camera/}
      }}
 }
 
