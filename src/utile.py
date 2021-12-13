@@ -16,7 +16,7 @@ def get_days_in_order():
     return days
 
 def get_time_for_day(day, nrF):
-    dateiso = "{}-{}-{}T{}:{}:{}+00:00".format(day[:4],day[4:6],day[6:8],day[9:11],day[11:13],day[13:15])
+    dateiso = "{}-{}-{}T{}:{}:{}+02:00".format(day[:4],day[4:6],day[6:8],day[9:11],day[11:13],day[13:15])
     ts = datetime.fromisoformat(dateiso).timestamp() + nrF/5
     return datetime.fromtimestamp(ts).strftime("%H:%M:%S")
 

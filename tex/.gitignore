@@ -1,3 +1,6 @@
 *.aux
 *.log
 *.out
+*.fls
+arrayoflinks.tex
+test-script.sh

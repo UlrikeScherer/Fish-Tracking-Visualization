@@ -15,7 +15,13 @@
 \usepackage{tcolorbox}
 \usepackage{xstring}
 \usepackage{xurl}
+\usepackage{etoolbox}
+\usepackage{nopageno}
 
+\input{arrayoflinks.tex}
+
+\newcounter{daycnt}
+\newcounter{subcnt}
 \providecommand{\camera}{default-error}
 \providecommand{\position}{front}
 \providecommand{\secfirstplot}{42}
@@ -42,7 +48,8 @@ Trajectory over time of the molly at camera: \camera{} and position: \position\\
 \newcommand{\subf}[2]{%
 \begin{subfigure}[h]{0.22\textwidth}
     \includegraphics[width=\textwidth, height=4.2cm]{\camera/#1/#2.jpeg}
-    %\caption*{\href{\RawURL}{video},
+    \caption*{\getsub{\thesubcnt}, \getcsv{\thesubcnt}}
+    \stepcounter{subcnt}
     %\href{run:/Users/lukastaerk/fish/FE_block1_autotracks_back/23484201/20210912_060000.23484201_front/23484201_20210912_060000.23484201_000000_2021-10-10T15_37_57_37708.csv}{csv}
     %}
     \vspace{-1em}
@@ -50,11 +57,13 @@ Trajectory over time of the molly at camera: \camera{} and position: \position\\
 }
 
 \newcommand{\firstbox}[1]{
-    \fbox{\parbox[c][3cm]{0.22\textwidth}{\StrMid{#1}{0}{4}/\StrMid{#1}{5}{6}/\StrMid{#1}{7}{8}{} at \StrMid{#1}{10}{11}:\StrMid{#1}{12}{13}\\
+    {\footnotesize
+    Video: \url{\gettext{\thedaycnt}}\\
+    \stepcounter{daycnt}
+    CSV: \url{\rootserver/\posstr\camera/#1.\camera/}\\}
+    \parbox[c][3cm]{0.22\textwidth}{\StrMid{#1}{0}{4}/\StrMid{#1}{5}{6}/\StrMid{#1}{7}{8}{} at \StrMid{#1}{10}{11}:\StrMid{#1}{12}{13}\\
      Trajectory over time of the molly at camera: \camera{} position: \position\\
-     Video: \\
-     CSV: \url{\rootserver/\posstr\camera/#1.\camera/}
-     }}
+     }
 }
 
 \newcommand{\plotday}[1]{%
