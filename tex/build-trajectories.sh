@@ -6,18 +6,17 @@ position=("front" "back")
 
 if [ "$TEST" == "test" ]; then
     cameras=('23520289') 
-    position=("front")
+    position=("back")
 fi
 
 rootserver="/Volumes/data/loopbio_data/1_FE_(fingerprint_experiment)_SepDec2021/FE_block1"
 root="/Users/lukastaerk/fish"
 for b in ${!position[@]}; do
-    echo "pdf for ${position[$b]} \n"
+    echo -e "pdf for ${position[$b]} \n"
     for i in ${!cameras[@]}; do
         secff="$(ls -d $root/FE_block1_autotracks_${position[$b]}/${cameras[$i]}/*.${cameras[$i]}/ | sort -V | head -1 | sed 's/.*1550\([^.]*\).*/\1/')"
         foldersmp4="$(ls -d $rootserver/FE_block1_recordings/FE_block1_recordings_*/${cameras[$i]}/*.${cameras[$i]}_*/ | sort -V)"
         filesmp4="$(ls $rootserver/FE_block1_recordings/FE_block1_recordings_*/${cameras[$i]}/*.${cameras[$i]}_*/*.mp4 | sort -V)"
-        filescsv="$(ls $rootserver/FE_block1_autotracks_${position[$b]}/${cameras[$i]}/*.${cameras[$i]}*/${cameras[$i]}*.csv | sort -V)"
 
         texheader="%\usepackage{etoolbox}
                     \newcounter{cnt}
@@ -57,11 +56,19 @@ for b in ${!position[@]}; do
             texheader="$texheader \addsub{\href{run:$f}{mp4}}
             "
         done
-
-        for f in $filescsv; do 
-            texheader="$texheader \addcsv{\href{run:$f}{csv}}
-            "
+        
+        
+        days="$(ls -d $rootserver/FE_block1_autotracks_${position[$b]}/${cameras[$i]}/*.${cameras[$i]}*/ | sort -V )"
+        for d in $days; do 
+            d=$(basename $d)
+            day=${d: : 24}
+            filescsv="$(ls $rootserver/FE_block1_autotracks_${position[$b]}/${cameras[$i]}/*.${cameras[$i]}*/${cameras[$i]}_$day*.csv | sort -V)"
+            for f in $filescsv; do 
+                texheader="$texheader \addcsv{\href{run:$f}{csv}}
+                "
+            done
         done
+        
 
         echo "$texheader" > arrayoflinks.tex
 

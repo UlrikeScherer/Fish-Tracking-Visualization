@@ -27,11 +27,9 @@
 \providecommand{\secfirstplot}{42}
 \providecommand{\posstr}{FE_block1_autotracks_front/}
 \graphicspath{{../plots/\position/}} 
-\ifx \position back
-    \renewcommand{\posstr}{FE_block1_autotracks_back/}
-\else
-    \renewcommand{\posstr}{FE_block1_autotracks_front/}
-\fi
+
+\renewcommand{\posstr}{FE_block1_autotracks_\position/}
+
 
 \newcommand{\rootdir}{run:/Users/lukastaerk/fish/\posstr}
 \newcommand{\rootserver}{/Volumes/data/loopbio_data/1_FE_(fingerprint_experiment)_SepDec2021/FE_block1}
