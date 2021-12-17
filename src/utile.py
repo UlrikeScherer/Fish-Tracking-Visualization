@@ -1,5 +1,6 @@
 from datetime import datetime
 import pandas as pd
+import numpy as np
 import os
 import glob
 
@@ -33,17 +34,20 @@ def get_position_string(is_back):
     else:
         return "front"
     
-def read_batch_csv(filename):
-    df = pd.read_csv(filename,skiprows=3, delimiter=';', error_bad_lines=False, usecols=["x", "y", "FRAME", "time"])
+def read_batch_csv(filename, drop_errors):
+    df = pd.read_csv(filename,skiprows=3, delimiter=';', error_bad_lines=False, usecols=["x", "y", "FRAME", "time", "xpx", "ypx"])
     df.dropna(axis=0, how="any", inplace=True)
+    if drop_errors:
+        indexNames = df[ df['x'] == -1].index
+        df.drop(index=indexNames, inplace=True)
     df.reset_index(drop=True, inplace=True)
     return df
 
-def merge_files(filenames):
+def merge_files(filenames, drop_errors):
     batches = []
     filenames.sort()
     for f in filenames:
-        df = read_batch_csv(f)
+        df = read_batch_csv(f, drop_errors)
         batches.append(df)
         #print(get_time_for_day(df.time[0]), get_time_for_day(df.time[len(df.time)-1]))
     return batches
@@ -52,10 +56,10 @@ def merge_files(filenames):
 @params: camera, day
 returns (front, back) csv of the day 
 """
-def csv_of_the_day(camera, day):
+def csv_of_the_day(camera, day, drop_out_of_scope=False):
     data_f = []
     data_b = []
     filenames_f = glob.glob("{}/{}/{}*/*.csv".format(dir_front, camera, day), recursive=True)
     filenames_b = glob.glob("{}/{}/{}*/*.csv".format(dir_back, camera, day), recursive=True)
-    return (merge_files(filenames_f), merge_files(filenames_b))
+    return (merge_files(filenames_f, drop_out_of_scope), merge_files(filenames_b, drop_out_of_scope))
             
