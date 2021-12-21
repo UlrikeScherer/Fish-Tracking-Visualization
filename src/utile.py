@@ -1,9 +1,15 @@
 from datetime import datetime
 import pandas as pd
+import dask
+import dask.dataframe as dd
 import numpy as np
 import os
+import re
 import glob
 
+MEAN_GLOBAL = 0.18767982275596345
+SD_GLOBAL = 1.078995194654064
+S_LIMIT = MEAN_GLOBAL + 3 * SD_GLOBAL
 dir_front = "../FE_block1_autotracks_front"
 dir_back = "../FE_block1_autotracks_back"
 
@@ -30,16 +36,16 @@ def get_full_date(day):
     
 def get_position_string(is_back):
     if is_back:
-        return "back"
+        return "BACK"
     else:
-        return "front"
+        return "FRONT"
     
 def read_batch_csv(filename, drop_errors):
     df = pd.read_csv(filename,skiprows=3, delimiter=';', error_bad_lines=False, usecols=["x", "y", "FRAME", "time", "xpx", "ypx"])
-    df.dropna(axis=0, how="any", inplace=True)
+    df.dropna(axis="rows", how="any", inplace=True)
     if drop_errors:
-        indexNames = df[ df['x'] == -1].index
-        df.drop(index=indexNames, inplace=True)
+        indexNames = df[:-1][ df[:-1].x.array <= -1].index # exept the last index for time recording
+        df = df.drop(index=indexNames)
     df.reset_index(drop=True, inplace=True)
     return df
 
@@ -52,14 +58,16 @@ def merge_files(filenames, drop_errors):
         #print(get_time_for_day(df.time[0]), get_time_for_day(df.time[len(df.time)-1]))
     return batches
 
-"""
-@params: camera, day
-returns (front, back) csv of the day 
-"""
-def csv_of_the_day(camera, day, drop_out_of_scope=False):
-    data_f = []
-    data_b = []
-    filenames_f = glob.glob("{}/{}/{}*/*.csv".format(dir_front, camera, day), recursive=True)
-    filenames_b = glob.glob("{}/{}/{}*/*.csv".format(dir_back, camera, day), recursive=True)
-    return (merge_files(filenames_f, drop_out_of_scope), merge_files(filenames_b, drop_out_of_scope))
+
+def csv_of_the_day(camera, day, is_back=False, drop_out_of_scope=False):
+    """
+    @params: camera, day, is_back, drop_out_of_scope
+    returns csv of the day for camera: front or back
+    """
+    dir_ = dir_front 
+    if is_back: 
+        dir_ = dir_back
+    filenames_f = [f for f in glob.glob("{}/{}/{}*/{}_{}*.csv".format(dir_, camera, day, camera, day), recursive=True) if re.search(r'[0-9].*\.csv$', f[-6:])]
+    #filenames_b = glob.glob("{}/{}/{}*/*.csv".format(dir_back, camera, day), recursive=True)
+    return merge_files(filenames_f, drop_out_of_scope)#, merge_files(filenames_b, drop_out_of_scope))
             
