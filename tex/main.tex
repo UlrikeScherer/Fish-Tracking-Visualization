@@ -17,6 +17,7 @@
 \usepackage{xurl}
 \usepackage{etoolbox}
 \usepackage{nopageno}
+\usepackage{tabularx}
 
 \input{arrayoflinks.tex}
 
@@ -38,6 +39,7 @@
 
 \title{Developing exploration behavior\\
 Trajectory over time of the molly at camera: \camera{} and position: \textsc{\position}\\
+From the 10th of September to the 8th of November.\\
     %\rootdir \posstr
 }
 \author{Research Unit 1, SCIoI Project 21}
@@ -45,7 +47,7 @@ Trajectory over time of the molly at camera: \camera{} and position: \textsc{\po
 
 \newcommand{\subf}[2]{%
 \begin{subfigure}[h]{0.22\textwidth}
-    \includegraphics[width=\textwidth, height=4.2cm]{\camera/#1/#2.jpeg}
+    \includegraphics[width=\textwidth, height=4.2cm]{\camera/#1/#2.pdf}
     \caption*{\getsub{\thesubcnt}, \getcsv{\thesubcnt}}
     \stepcounter{subcnt}
     %\href{run:/Users/lukastaerk/fish/FE_block1_autotracks_back/23484201/20210912_060000.23484201_front/23484201_20210912_060000.23484201_000000_2021-10-10T15_37_57_37708.csv}{csv}
@@ -59,7 +61,7 @@ Trajectory over time of the molly at camera: \camera{} and position: \textsc{\po
     Video: \url{\gettext{\thedaycnt}}\\
     \stepcounter{daycnt}
     CSV: \url{\rootserver/\posstr\camera/#1.\camera/}\\}
-    \parbox[c][3cm]{0.22\textwidth}{\StrMid{#1}{0}{4}/\StrMid{#1}{5}{6}/\StrMid{#1}{7}{8}{} at \StrMid{#1}{10}{11}:\StrMid{#1}{12}{13}\\
+    \parbox[c][3cm]{0.21\textwidth}{\StrMid{#1}{0}{4}/\StrMid{#1}{5}{6}/\StrMid{#1}{7}{8}{} at \StrMid{#1}{10}{11}:\StrMid{#1}{12}{13}\\
      Trajectory over time of the molly at camera: \camera{} position: \textsc{\position}\\
      }
 }
@@ -101,7 +103,18 @@ Trajectory over time of the molly at camera: \camera{} and position: \textsc{\po
 
 \begin{document}
 
-\maketitle   
+\maketitle  
+\begin{center}
+\subsection*{Legend}
+\begin{tabular}{p{1cm} p{7cm} }
+    $\mu + \sigma$ & illustrates the mean $\mu$ of step length per frame and its standard derivation $\sigma$ for a batch. \\
+    $\sum_{\alpha_i}$ & is the sum of angles $\alpha$ taken anti-clockwise and where each $\alpha_i \in [-\pi, \pi]$.  \\
+    $\alpha_{avg}$ & is the average turning angle for each batch in radians. \\
+    $\# spikes$ & the number of steps per frame that exceed the limit of the overall $\mu$ and $\sigma$ by the following formula $\mu + 3 \cdot \sigma = 0.2274 + 3 \cdot 1.004 = 3.4246$. \\
+    $N$ & number of valid data point for a batch. A batch of trajectory data points for a time of 30 min contains originally 9999 data points. \\
+\end{tabular}
+    
+\end{center}
 
 \plotdayone{20210910_1550} 
 

@@ -7,8 +7,8 @@ import os
 import re
 import glob
 
-MEAN_GLOBAL = 0.18767982275596345
-SD_GLOBAL = 1.078995194654064
+MEAN_GLOBAL = 0.22746102241709162
+SD_GLOBAL = 1.0044248513034164
 S_LIMIT = MEAN_GLOBAL + 3 * SD_GLOBAL
 dir_front = "../FE_block1_autotracks_front"
 dir_back = "../FE_block1_autotracks_back"

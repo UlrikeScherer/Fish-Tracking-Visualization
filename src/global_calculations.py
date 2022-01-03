@@ -1,5 +1,6 @@
 import numpy as np
 from src.utile import csv_of_the_day
+from src.metrics import calc_step_per_frame
 
 def global_mean(cams, days):
     sum_means = 0
@@ -9,7 +10,7 @@ def global_mean(cams, days):
             for is_back in [True, False]:
                 batches = csv_of_the_day(c, d, is_back, drop_out_of_scope=True)
                 for b in batches:
-                    steps = calc_length_of_steps(b)
+                    steps = calc_step_per_frame(b)
                     sum_steps = steps.sum()
                     if type(sum_steps)!=np.float64:
                         print(m, b, d, c)
@@ -27,7 +28,7 @@ def global_sd(cams, days, mean):
             for is_back in [True, False]:
                 batches = csv_of_the_day(c, d, is_back, drop_out_of_scope=True)
                 for b in batches:
-                    steps = calc_length_of_steps(b)
+                    steps = calc_step_per_frame(b)
                     x = np.abs(steps - mean)**2
                     x_sum = x.sum()
                     if type(x_sum)!=np.float64:

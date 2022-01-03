@@ -1,6 +1,7 @@
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import os
+import sys
 from src.utile import csv_of_the_day, get_position_string, get_time_for_day
 from src.metrics import meta_text_for_plot
 
@@ -12,10 +13,17 @@ mpl.rcParams["figure.figsize"] = (4,2)
 ROOT_img = "plots"
 
 def plots_for_tex(camera_list, day_list, dpi=50):
+    i = 0
+    N = 2 * len(camera_list) * len(day_list)
     for is_back in [True, False]:
         fo = set_figure(is_back)
         for camera_id in camera_list:
             for day in day_list:
+                sys.stdout.write('\r')
+                # the exact output you're looking for:
+                sys.stdout.write("[%-20s] %d%%" % ('='*int(20*i/N), 100*i/N))
+                sys.stdout.flush()
+                i+=1
                 day_df = csv_of_the_day(camera_id, day, is_back=is_back, drop_out_of_scope=True)
                 plot_day_camera_fast(day_df, camera_id, day, fo, is_back=is_back, dpi=dpi)
 
@@ -70,7 +78,7 @@ def plot_day_camera_fast(data, camera_id, date, figure_obj, is_back=False, dpi=5
             data_dir = "{}/{}/{}/{}".format(ROOT_img, position, camera_id, date)
             if not os.path.isdir(data_dir):
                 os.makedirs(data_dir, exist_ok=True)
-            fig.savefig("{}/{}{}.jpeg".format(data_dir,i,j),bbox_inches='tight', dpi=dpi)
+            fig.savefig("{}/{}{}.pdf".format(data_dir,i,j),bbox_inches='tight', dpi=dpi)
             remove_text()
                 
     return None
