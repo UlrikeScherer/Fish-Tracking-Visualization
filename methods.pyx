@@ -34,41 +34,42 @@ cdef double arccos(double v):
 cdef double clip(double a, int min_value, int max_value):
     return min(max(a, min_value), max_value)
 
-cdef double dot(np.ndarray[double, ndim=1] v, np.ndarray[double, ndim=1] w):
-    return v[0]*w[0]+v[1]*w[1]
+cdef double dot(double v0, double v1, double w0, double w1):
+    return v0*w0+v1*w1
 
-cdef float norm(np.ndarray[double, ndim=1] vec):
-    return sqrt(vec[0]**2 + vec[1]**2)
+cdef double norm(double v0, double v1):
+    return sqrt(v0**2 + v1**2)
 
-cdef np.ndarray[double, ndim=1] unit_vector(np.ndarray[double, ndim=1] vector):
+cdef (double, double) unit_vector(v0, v1):
     """ Returns the unit vector of the vector.  """
-    cdef float n = norm(vector)
+    cdef double n
+    n = norm(v0, v1)
     if n == 0:
-        return vector
-    return vector / n
+        return (v0, v1)
+    return (v0/n, v1/n)
     
-cdef double determinant(np.ndarray[double, ndim=1] v, np.ndarray[double, ndim=1] w):
+cdef double determinant(double v0, double v1, double w0, double w1):
     """ Determinant of two vectors. """
-    return v[0]*w[1]-v[1]*w[0]
+    return v0*w1-v1*w0
 
-cdef double direction_angle(np.ndarray[double, ndim=1] v,np.ndarray[double, ndim=1] w):
-    """ Return the angle between v,w anti clockwise from direction v to m. """
+cdef double direction_angle(double v0, double v1, double w0, double w1):
+    """ Returns the angle between v,w anti clockwise from direction v to m. """
     cdef double cos, r, det
-    cos = dot(v,w)
+    cos = dot(v0,v1,w0,w1)
     r = arccos(clip(cos, -1, 1))
-    det = determinant(v,w)
+    det = determinant(v0,v1,w0,w1)
     if det < 0: 
         return r
     else:
         return -r
     
-cdef double angle(np.ndarray[double, ndim=1] v, np.ndarray[double, ndim=1] w):
-    cos = dot(v,w)
+cdef double angle(double v0, double v1, double w0, double w1):
+    cos = dot(v0,v1,w0,w1)
     return arccos(clip(cos, -1, 1))
 
-cpdef tuple avg_and_sum_angles(df):
+cpdef (double, double) avg_and_sum_angles(df):
     cdef np.ndarray[double, ndim=2] npdf, vecs
-    cdef np.ndarray[double, ndim=1] u, v
+    cdef double v0, v1, u0, u1
     npdf = df[["xpx", "ypx"]].to_numpy()
     vecs = npdf[1:]-npdf[:-1]
     vecs = vecs[np.all(vecs!=0, axis=1)]
@@ -77,13 +78,13 @@ cpdef tuple avg_and_sum_angles(df):
     sum_avg, sum_ang, N_alpha = 0.,0.,(len(vecs)-1)
 
     if N_alpha <= 0: 
-        return sum_avg, sum_ang
+        return (sum_avg, sum_ang)
     
-    u = unit_vector(vecs[0])
+    (u0, u1) = unit_vector(vecs[0,0], vecs[0,1])
     cdef int i
     for i in range(1,N_alpha):
-        v = unit_vector(vecs[i])
-        sum_avg += angle(u,v)
-        sum_ang += direction_angle(u,v)
-        u = v
+        (v0, v1) = unit_vector(vecs[i,0], vecs[i,1])
+        sum_avg += angle(u0,u1,v0,v1)
+        sum_ang += direction_angle(u0,u1,v0,v1)
+        u0, u1 = v0, v1
     return (sum_avg/N_alpha, sum_ang)
