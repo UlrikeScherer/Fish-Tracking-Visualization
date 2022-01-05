@@ -11,13 +11,14 @@ if [ "$TEST" == "test" ]; then
 fi
 
 rootserver="/Volumes/data/loopbio_data/1_FE_(fingerprint_experiment)_SepDec2021"
-root="/Users/lukastaerk/fish"
+path_recordings="$rootserver/FE_recordings/FE_block1_recordings"
+
 for b in ${!position[@]}; do
     echo -e "pdf for ${position[$b]} \n"
     for i in ${!cameras[@]}; do
-        secff="$(ls -d $root/FE_block1_autotracks_${position[$b]}/${cameras[$i]}/*.${cameras[$i]}/ | sort -V | head -1 | sed 's/.*1550\([^.]*\).*/\1/')"
-        foldersmp4="$(ls -d $rootserver/FE_recordings/FE_block1_recordings/FE_block1_recordings_*/${cameras[$i]}/*.${cameras[$i]}_*/ | sort -V)"
-        filesmp4="$(ls $rootserver/FE_recordings/FE_block1_recordings/FE_block1_recordings_*/${cameras[$i]}/*.${cameras[$i]}_*/*.mp4 | sort -V)"
+        secff="$(ls -d $rootserver/FE_tracks/FE_block1_autotracks_${position[$b]}/${cameras[$i]}/*.${cameras[$i]}/ | sort -V | head -1 | sed 's/.*1550\([^.]*\).*/\1/')"
+        foldersmp4="$(ls -d $path_recordings/FE_block1_recordings_*/${cameras[$i]}/*.${cameras[$i]}_*/ | sort -V)"
+        filesmp4="$(ls $path_recordings/FE_block1_recordings_*/${cameras[$i]}/*.${cameras[$i]}_*/*.mp4 | sort -V)"
 
         texheader="%\usepackage{etoolbox}
                     \newcounter{cnt}

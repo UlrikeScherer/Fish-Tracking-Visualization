@@ -55,7 +55,6 @@ def merge_files(filenames, drop_errors):
     for f in filenames:
         df = read_batch_csv(f, drop_errors)
         batches.append(df)
-        #print(get_time_for_day(df.time[0]), get_time_for_day(df.time[len(df.time)-1]))
     return batches
 
 
@@ -68,6 +67,5 @@ def csv_of_the_day(camera, day, is_back=False, drop_out_of_scope=False):
     if is_back: 
         dir_ = dir_back
     filenames_f = [f for f in glob.glob("{}/{}/{}*/{}_{}*.csv".format(dir_, camera, day, camera, day), recursive=True) if re.search(r'[0-9].*\.csv$', f[-6:])]
-    #filenames_b = glob.glob("{}/{}/{}*/*.csv".format(dir_back, camera, day), recursive=True)
-    return merge_files(filenames_f, drop_out_of_scope)#, merge_files(filenames_b, drop_out_of_scope))
+    return merge_files(filenames_f, drop_out_of_scope)
             

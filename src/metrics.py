@@ -1,6 +1,6 @@
 import numpy as np
 from src.utile import S_LIMIT
-from methods import avg_and_sum_angles
+from methods import avg_and_sum_angles # import cython functions for faster for-loops. 
 
 def mean_sd(steps):
     mean = np.mean(steps)
@@ -17,7 +17,7 @@ def calc_length_of_steps(df):
     return c
 
 def calc_step_per_frame(df):
-    """ This function calculates the eucleadian step length in cemtimerters per FRAME, this is useful as a speed measument after the removal of error data points."""
+    """ This function calculates the eucleadian step length in centimerters per FRAME, this is useful as a speed measument after the removal of erroneous data points."""
     ysq = (df.y.array[1:] - df.y.array[:-1])**2
     xsq = (df.x.array[1:] - df.x.array[:-1])**2
     frame_dist = df.FRAME.array[1:] - df.FRAME.array[:-1]
@@ -48,23 +48,6 @@ def direction_angle(v,w):
 def angle(v,w):
     cos = np.dot(v,w)
     return np.arccos(np.clip(cos, -1, 1))
-
-def avg_and_sum_angle(df):
-    npdf = df[["xpx", "ypx"]].to_numpy()
-    vecs = npdf[1:]-npdf[:-1]
-    vecs = vecs[np.all(vecs!=0, axis=1)]
-    sum_avg = 0
-    sum_ang = 0
-    N_alpha = (len(vecs)-1)
-    if N_alpha <= 0: 
-        return 0,0
-    u = unit_vector(vecs[0])
-    for i in range(1,N_alpha):
-        v = unit_vector(vecs[i])
-        sum_avg += angle(u,v)
-        sum_ang += direction_angle(u,v)
-        u = v
-    return sum_avg/N_alpha, sum_ang
 
 def sum_of_angles(df):
     y = (df.ypx.array[1:] - df.ypx.array[:-1])
