@@ -24,3 +24,6 @@ To generate the trajectory visualizations
 + For the average angle each angle $`\alpha > 0`$
 
 Further documentation will follow here... 
+
+### How to start the BioTracker
+`.\BioTracker.lnk --video="X:\1_FE_(fingerprint_experiment)_SepDec2021\FE_recordings\FE_block1_recordings\FE_block1_recordings_week4\23442333\20211006_060000.23442333_front\23442333_20211006_060000.23442333_000000.mp4"`
