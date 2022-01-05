@@ -19,8 +19,8 @@ To generate the trajectory visualizations
 #### Metrics: 
 + step length is the length of the vector drawn between to consecutive data frames. 
 + the mean and standard derivation illustrated in the visualization is computed from filtered data frames, removing obvious error point and normed by the distance between data frame when erroneous data point where removed. 
-+ The number of spikes is defined by the threshold of `$ > \mu + 3 \sigma$`
-+ For the sum of angles we take each angle between consecutive steps anti-clockwise `$\alpha \in [-\pi, \pi]$`. 
-+ For the average angle each angle $$`\alpha > 0`$$
++ The number of spikes is defined by the threshold of $` > \mu + 3 \sigma`$
++ For the sum of angles we take each angle between consecutive steps anti-clockwise $`\alpha \in [-\pi, \pi]`$. 
++ For the average angle each angle $`\alpha > 0`$
 
 Further documentation will follow here... 
