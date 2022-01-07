@@ -3,6 +3,9 @@
 TEST=$1
 cameras=('23520289' '23484201' '23520258' '23442333' '23520268' '23520257' '23520266' '23484204' '23520278' '23520276' '23520270' '23520264')
 position=("front" "back")
+PREFIX="file://" #run:
+
+
 mkdir trajectory
 
 if [ "$TEST" == "test" ]; then
@@ -12,11 +15,12 @@ fi
 
 rootserver="/Volumes/data/loopbio_data/1_FE_(fingerprint_experiment)_SepDec2021"
 path_recordings="$rootserver/FE_recordings/FE_block1_recordings"
+path_csv="$rootserver/FE_tracks"
 
 for b in ${!position[@]}; do
     echo -e "pdf for ${position[$b]} \n"
     for i in ${!cameras[@]}; do
-        secff="$(ls -d $rootserver/FE_tracks/FE_block1_autotracks_${position[$b]}/${cameras[$i]}/*.${cameras[$i]}/ | sort -V | head -1 | sed 's/.*1550\([^.]*\).*/\1/')"
+        secff="$(ls -d $path_csv/FE_block1_autotracks_${position[$b]}/${cameras[$i]}/*.${cameras[$i]}/ | sort -V | head -1 | sed 's/.*1550\([^.]*\).*/\1/')"
         foldersmp4="$(ls -d $path_recordings/FE_block1_recordings_*/${cameras[$i]}/*.${cameras[$i]}_*/ | sort -V)"
         filesmp4="$(ls $path_recordings/FE_block1_recordings_*/${cameras[$i]}/*.${cameras[$i]}_*/*.mp4 | sort -V)"
 
@@ -49,28 +53,26 @@ for b in ${!position[@]}; do
                         "
 
         for f in $foldersmp4; do
-            texheader="$texheader \addtext{$f}
+            texheader="$texheader \addtext{$PREFIX$f}
             "
         done
 
         #ffiles=$"(${f}*.mp4 | sort -V)"
         for f in $filesmp4; do 
-            texheader="$texheader \addsub{\href{run:$f}{mp4}}
+            texheader="$texheader \addsub{\href{$PREFIX$f}{mp4}}
             "
         done
         
-        
-        days="$(ls -d $rootserver/FE_tracks/FE_block1_autotracks_${position[$b]}/${cameras[$i]}/*.${cameras[$i]}*/ | sort -V )"
+        days="$(ls -d $path_csv/FE_block1_autotracks_${position[$b]}/${cameras[$i]}/*.${cameras[$i]}*/ | sort -V )"
         for d in $days; do 
             d=$(basename $d)
             day=${d: : 24}
-            filescsv="$(ls $rootserver/FE_tracks/FE_block1_autotracks_${position[$b]}/${cameras[$i]}/*.${cameras[$i]}*/${cameras[$i]}_$day*.csv | sort -V)"
+            filescsv="$(ls $path_csv/FE_block1_autotracks_${position[$b]}/${cameras[$i]}/*.${cameras[$i]}*/${cameras[$i]}_$day*.csv | sort -V)"
             for f in $filescsv; do 
-                texheader="$texheader \addcsv{\href{run:$f}{csv}}
+                texheader="$texheader \addcsv{\href{$PREFIX$f}{csv}}
                 "
             done
         done
-        
 
         echo "$texheader" > arrayoflinks.tex
 

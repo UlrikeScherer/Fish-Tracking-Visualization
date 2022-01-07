@@ -24,10 +24,22 @@ To generate the trajectory visualizations
 + For the average angle each angle $`\alpha > 0`$
 
 #### Next Steps
-+ pdfs for windows -- adapted the root to `C:\data\...`. 
+For the metrics 
+* average activity
+* space used: Entropy heat map
+* direction turning angle
+
+Compute: `function(fish_id, time_interval in sec)`
++ compute SD/SE
++ store output of the function for some *time_interval* as **csv**.
+
++ Example of entropy heat map. 
++ activity over time plot
+
+#### Open TODOs
++ pdfs for windows -- adapted the root to `C:\data\...`. (Not needed for now)
 + `\href` in windows not working. 
 + start BioTracker from link. Install BioTracker on Mac? 
 Further documentation will follow here... 
-
 ### How to start the BioTracker
 `.\BioTracker.lnk --video="X:\1_FE_(fingerprint_experiment)_SepDec2021\FE_recordings\FE_block1_recordings\FE_block1_recordings_week4\23442333\20211006_060000.23442333_front\23442333_20211006_060000.23442333_000000.mp4"`
