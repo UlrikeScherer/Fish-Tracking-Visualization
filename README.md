@@ -3,7 +3,7 @@ Project: Developing Exploration Behavior
 
 Holds the scripts to visualize the molly's trajectory. 
 The resulting pdfs are contained in the folder [tex/trajectory](tex/trajectory).
-
+The make use of the links to the mp4 and csv files connect to the server `loopbio_data`. Currently the links work for MacOX systems and best with [Adobe Reader](https://get.adobe.com/de/reader/). The Preview.app somehow has permission problems to open files, at least on my system. 
 
 #### Build 
 To compile the *Cython* code run 
