@@ -3,7 +3,7 @@ from Cython.Build import cythonize
 import numpy
 
 extensions=[
-        Extension("methods", ["methods.pyx"],
+        Extension("methods", ["src/methods.pyx"],
                   include_dirs=[numpy.get_include()]),
     ]
 setup(

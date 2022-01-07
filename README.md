@@ -6,7 +6,7 @@ The resulting pdfs are contained in the folder [tex/trajectory](tex/trajectory).
 
 
 #### Build 
-To compile the cython code run 
+To compile the *Cython* code run 
 + Mac: `CC='gcc-11' python3 setup.py build_ext --inplace`
 + Unix: `python3 setup.py build_ext --inplace`
 
@@ -23,4 +23,7 @@ To generate the trajectory visualizations
 + For the sum of angles we take each angle between consecutive steps anti-clockwise `$\alpha \in [-\pi, \pi]$`. 
 + For the average angle each angle `$\alpha > 0$`
 
-Further documentation will follow here... 
+#### Next Steps
++ pdfs for windows -- adapted the root to `C:\data\...`. 
++ \href in windows not working. 
++ start BioTracker from link. Install BioTracker on Mac? 

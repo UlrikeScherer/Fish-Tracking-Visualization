@@ -7,6 +7,7 @@ import os
 import re
 import glob
 
+# Calculated MEAN and SD for the data set filtered for erroneous frames 
 MEAN_GLOBAL = 0.22746102241709162
 SD_GLOBAL = 1.0044248513034164
 S_LIMIT = MEAN_GLOBAL + 3 * SD_GLOBAL

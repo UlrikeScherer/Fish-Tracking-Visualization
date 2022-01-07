@@ -15,7 +15,7 @@
         ],
         "name": "methods",
         "sources": [
-            "methods.pyx"
+            "src/methods.pyx"
         ]
     },
     "module_name": "methods"
@@ -868,7 +868,7 @@ static const char *__pyx_filename;
 
 
 static const char *__pyx_f[] = {
-  "methods.pyx",
+  "src/methods.pyx",
   "__init__.pxd",
   "type.pxd",
 };

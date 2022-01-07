@@ -20,7 +20,7 @@ def plots_for_tex(camera_list, day_list, dpi=50):
         for camera_id in camera_list:
             for day in day_list:
                 sys.stdout.write('\r')
-                # the exact output you're looking for:
+                # write the progress to stdout 
                 sys.stdout.write("[%-20s] %d%%" % ('='*int(20*i/N), 100*i/N))
                 sys.stdout.flush()
                 i+=1
