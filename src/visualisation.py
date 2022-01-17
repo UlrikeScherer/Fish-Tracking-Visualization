@@ -2,8 +2,9 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import os
 import sys
-from src.utile import csv_of_the_day, get_position_string, get_time_for_day
-from src.metrics import meta_text_for_plot
+from src.utile import csv_of_the_day, get_position_string, get_time_for_day, BLOCK
+from src.metrics import num_of_spikes, calc_step_per_frame, mean_sd
+from methods import avg_and_sum_angles # import cython functions for faster for-loops. 
 
 mpl.rcParams['lines.linewidth'] = 0.5
 mpl.rcParams['lines.linestyle'] = '-'
@@ -75,10 +76,30 @@ def plot_day_camera_fast(data, camera_id, date, figure_obj, is_back=False, dpi=5
             #ax.draw_artist(line)
             remove_text = meta_text_for_plot(ax, data[idx], is_back=is_back)
             
-            data_dir = "{}/{}/{}/{}".format(ROOT_img, position, camera_id, date)
+            data_dir = "{}/{}/{}/{}/{}".format(ROOT_img, BLOCK, position, camera_id, date)
             if not os.path.isdir(data_dir):
                 os.makedirs(data_dir, exist_ok=True)
             fig.savefig("{}/{}{}.pdf".format(data_dir,i,j),bbox_inches='tight', dpi=dpi)
             remove_text()
-                
     return None
+
+def meta_text_for_plot(ax, batch, is_back=False):
+    x_lim, y_lim = ax.get_xlim(), ax.get_ylim()
+    pos_y = y_lim[0] + (y_lim[1] - y_lim[0]) * 0.05 
+    pos_x1 = x_lim[0] + (x_lim[1] - x_lim[0]) * 0.01
+    pos_x2 = x_lim[0] + (x_lim[1] - x_lim[0]) * 0.7
+    if is_back: 
+        pos_y = y_lim[1] - ((y_lim[1] - y_lim[0]) * 0.35)
+    steps = calc_step_per_frame(batch)
+    mean, sd = mean_sd(steps)
+    spiks = num_of_spikes(steps)
+    avg_alpha, sum_alpha = avg_and_sum_angles(batch)
+    N = len(steps)
+    meta_l = [r"$\alpha_{avg}: %.3f$"%avg_alpha,r"$\sum \alpha_i : %.f$"%sum_alpha, r"$\mu + \sigma: %.2f + %.2f$"%(mean, sd)]
+    meta_r = [" ",r"$N: %.f$"%N, r"$ \# spikes: %.f$"%(spiks)]
+    if is_back:
+        meta_l.reverse()
+        meta_r.reverse()
+    text1 = ax.text(pos_x1,pos_y, "\n".join(meta_l))
+    text2 = ax.text(pos_x2,pos_y, "\n".join(meta_r))
+    return lambda: (text1.remove(), text2.remove())

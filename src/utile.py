@@ -6,16 +6,25 @@ import numpy as np
 import os
 import re
 import glob
+from itertools import product
+from envbash import load_envbash
+load_envbash('tex/env.sh')
 
 # Calculated MEAN and SD for the data set filtered for erroneous frames 
 MEAN_GLOBAL = 0.22746102241709162
 SD_GLOBAL = 1.0044248513034164
 S_LIMIT = MEAN_GLOBAL + 3 * SD_GLOBAL
-dir_front = "../FE_block1_autotracks_front"
-dir_back = "../FE_block1_autotracks_back"
+
+#ROOT="/Volumes/data/loopbio_data/1_FE_(fingerprint_experiment)_SepDec2021"
+BLOCK = os.environ["BLOCK"]
+dir_front = "../%s/FE_%s_autotracks_front"%(BLOCK, BLOCK)
+dir_back  = "../%s/FE_%s_autotracks_back"%(BLOCK, BLOCK)
+FRONT, BACK = "front", "back"
 
 def get_camera_names():
     return [name for name in os.listdir(dir_front) if len(name)==8 and name.isnumeric()]
+
+fish2camera=np.array(list(product(get_camera_names(), [FRONT, BACK])))
 
 def get_days_in_order():
     cameras = get_camera_names()

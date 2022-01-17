@@ -5,6 +5,9 @@ cameras=('23520289' '23484201' '23520258' '23442333' '23520268' '23520257' '2352
 position=("front" "back")
 PREFIX="file://" #run:
 
+source env.sh
+
+echo "$BLOCK, $rootserver, $path_recordings, $path_csv"
 
 mkdir trajectory
 
@@ -13,18 +16,21 @@ if [ "$TEST" == "test" ]; then
     position=("back")
 fi
 
-rootserver="/Volumes/data/loopbio_data/1_FE_(fingerprint_experiment)_SepDec2021"
-path_recordings="$rootserver/FE_recordings/FE_block1_recordings"
-path_csv="$rootserver/FE_tracks"
 
 for b in ${!position[@]}; do
     echo -e "pdf for ${position[$b]} \n"
     for i in ${!cameras[@]}; do
-        secff="$(ls -d $path_csv/FE_block1_autotracks_${position[$b]}/${cameras[$i]}/*.${cameras[$i]}/ | sort -V | head -1 | sed 's/.*1550\([^.]*\).*/\1/')"
-        foldersmp4="$(ls -d $path_recordings/FE_block1_recordings_*/${cameras[$i]}/*.${cameras[$i]}_*/ | sort -V)"
-        filesmp4="$(ls $path_recordings/FE_block1_recordings_*/${cameras[$i]}/*.${cameras[$i]}_*/*.mp4 | sort -V)"
+        secff="$(ls -d $path_csv/FE_${BLOCK}_autotracks_${position[$b]}/${cameras[$i]}/*.${cameras[$i]}/ | sort -V | head -1 | sed 's/.*1550\([^.]*\).*/\1/')"
+        foldersmp4="$(ls -d $path_recordings/FE_${BLOCK}_recordings_*/${cameras[$i]}/*.${cameras[$i]}*/ | sort -V)"
+        filesmp4="$(ls $path_recordings/FE_${BLOCK}_recordings_*/${cameras[$i]}/*.${cameras[$i]}*/*.mp4 | sort -V)"
 
         texheader="%\usepackage{etoolbox}
+                    %% root folders: ---------------------
+                    \newcommand\rootserver{$rootserver}
+                    \newcommand\rootcsv{$path_csv}
+                    \newcommand\rootrecord{$path_recordings}
+                    \newcommand\block{$BLOCK}
+                    % ---------------------------------------
                     \newcounter{cnt}
                     \newcommand\textlist{}
                     \newcommand\settext[2]{%

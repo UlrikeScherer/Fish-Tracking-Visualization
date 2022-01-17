@@ -2,7 +2,7 @@ import cython
 # tag: numpy
 # You can ignore the previous line.
 # It's for internal testing of the cython documentation.
-from libc.math cimport acos, sqrt
+from libc.math cimport acos, sqrt, ceil
 
 import numpy as np
 
@@ -88,3 +88,57 @@ cpdef (double, double) avg_and_sum_angles(df):
         sum_ang += direction_angle(u0,u1,v0,v1)
         u0, u1 = v0, v1
     return (sum_avg/N_alpha, sum_ang)
+
+cpdef np.ndarray[double, ndim=1] calc_steps(np.ndarray[double, ndim=2] data):
+    sq = (data[1:] - data[:-1])**2
+    c=np.sqrt(sq[:,0] + sq[:,1])
+    return c
+
+cpdef np.ndarray[float, ndim=1] avg_turning_direction(np.ndarray[double, ndim=2] data):
+    cdef np.ndarray[double, ndim=2] vecs
+    cdef double v0, v1, u0, u1
+    vecs = data[1:]-data[:-1]
+    vecs = vecs[np.all(vecs!=0, axis=1)]
+    cdef int N_alpha
+    N_alpha = len(vecs)
+    cdef np.ndarray sum_ang = np.zeros([N_alpha], dtype=float)
+    if N_alpha == 0: 
+        return sum_ang
+    (u0, u1) = unit_vector(vecs[0,0], vecs[0,1])
+    cdef int i
+    for i in range(1,N_alpha):
+        (v0, v1) = unit_vector(vecs[i,0], vecs[i,1])
+        sum_ang[i-1] = direction_angle(u0,u1,v0,v1)
+        u0, u1 = v0, v1
+    return sum_ang
+
+cpdef np.ndarray[double, ndim=2] activity(np.ndarray[double, ndim=2] data, int frame_interval):
+    cdef int len_out, i, s
+    cdef np.ndarray[double, ndim=2] chunk
+    cdef np.ndarray[double, ndim=1] steps
+    cdef double SIZE = data.shape[0]
+    len_out = int(ceil(SIZE/frame_interval))
+    cdef np.ndarray mu_sd = np.zeros([len_out,2], dtype=float)
+    for i,s in enumerate(range(0, data.shape[0], frame_interval)):
+        chunk = data[s:s+frame_interval]
+        chunk = chunk[chunk[:,0] > -1]
+        steps = calc_steps(chunk)
+        mu_sd[i, 0] = sum(steps)/frame_interval
+        mu_sd[i, 1] = sqrt(sum((steps-mu_sd[i, 0])**2)/frame_interval)
+    return mu_sd
+
+cpdef np.ndarray[double, ndim=2] turning_angle(np.ndarray[double, ndim=2] data, int frame_interval):
+    cdef int len_out, i, s
+    cdef np.ndarray[double, ndim=2] chunk
+    cdef np.ndarray[double, ndim=1] avg_turning
+    cdef double SIZE = data.shape[0]
+    len_out = int(ceil(SIZE/frame_interval))
+    cdef np.ndarray mu_sd = np.zeros([len_out,2], dtype=float)
+    for i,s in enumerate(range(0, data.shape[0], frame_interval)):
+        chunk = data[s:s+frame_interval+1]
+        chunk = chunk[chunk[:,0] > -1]
+        avg_turning = avg_turning_direction(chunk)
+        mu_sd[i, 0] = sum(avg_turning)/frame_interval
+        mu_sd[i, 1] = sqrt(sum((avg_turning-mu_sd[i, 0])**2)/frame_interval)
+    return mu_sd
+

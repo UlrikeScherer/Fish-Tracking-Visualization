@@ -24,17 +24,17 @@
 \newcounter{daycnt}
 \newcounter{subcnt}
 \providecommand{\camera}{default-error}
-\providecommand{\position}{front}
+\providecommand{\position}{position}
+\providecommand{\block}{blockX}
 \providecommand{\secfirstplot}{42}
-\providecommand{\posstr}{FE_block1_autotracks_front/}
-\graphicspath{{../plots/\position/}} 
+\providecommand{\posstr}{POSITION_STRING/}
+\graphicspath{{../plots/\block/\position/}} 
 
-\renewcommand{\posstr}{FE_block1_autotracks_\position/}
+\renewcommand{\posstr}{FE_\block_autotracks_\position/}
 
-%\newcommand{\rootdir}{file:///Users/lukastaerk/fish/\posstr}
-\providecommand{\rootserver}{/Volumes/data/loopbio_data/1_FE_(fingerprint_experiment)_SepDec2021}
-\providecommand{\rootrecord}{\rootserver/FE_recordings/FE_block1_recordings}
-\providecommand{\rootcsv}{\rootserver/FE_tracks}
+\providecommand{\rootserver}{/ROOT_DIRECTORY}
+\providecommand{\rootrecord}{/RECORING_DIRECTORY}
+\providecommand{\rootcsv}{/CSV_DIRECTORY}
 
 \title{Developing exploration behavior\\
 Trajectory over time of the molly at camera: \camera{} and position: \textsc{\position}\\

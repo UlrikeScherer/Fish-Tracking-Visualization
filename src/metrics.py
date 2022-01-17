@@ -1,6 +1,7 @@
 import numpy as np
-from src.utile import S_LIMIT
-from methods import avg_and_sum_angles # import cython functions for faster for-loops. 
+from src.utile import S_LIMIT, BACK, fish2camera, get_days_in_order, csv_of_the_day
+from methods import activity, calc_steps, turning_angle
+import pandas as pd
 
 def mean_sd(steps):
     mean = np.mean(steps)
@@ -68,23 +69,23 @@ def sum_of_angles(df):
         u = v
     return sum_alpha
 
-def meta_text_for_plot(ax, batch, is_back=False):
-    x_lim, y_lim = ax.get_xlim(), ax.get_ylim()
-    pos_y = y_lim[0] + (y_lim[1] - y_lim[0]) * 0.05 
-    pos_x1 = x_lim[0] + (x_lim[1] - x_lim[0]) * 0.01
-    pos_x2 = x_lim[0] + (x_lim[1] - x_lim[0]) * 0.7
-    if is_back: 
-        pos_y = y_lim[1] - ((y_lim[1] - y_lim[0]) * 0.35)
-    steps = calc_step_per_frame(batch)
-    mean, sd = mean_sd(steps)
-    spiks = num_of_spikes(steps)
-    avg_alpha, sum_alpha = avg_and_sum_angles(batch)
-    N = len(steps)
-    meta_l = [r"$\alpha_{avg}: %.3f$"%avg_alpha,r"$\sum \alpha_i : %.f$"%sum_alpha, r"$\mu + \sigma: %.2f + %.2f$"%(mean, sd)]
-    meta_r = [" ",r"$N: %.f$"%N, r"$ \# spikes: %.f$"%(spiks)]
-    if is_back:
-        meta_l.reverse()
-        meta_r.reverse()
-    text1 = ax.text(pos_x1,pos_y, "\n".join(meta_l))
-    text2 = ax.text(pos_x2,pos_y, "\n".join(meta_r))
-    return lambda: (text1.remove(), text2.remove())
+def metric_per_interval(fish_ids, time_interval, time_line = [0, 29], metric=activity):
+    if isinstance(fish_ids, int):
+        fish_ids = [fish_ids]
+    days = get_days_in_order()[time_line[0]: time_line[1]]
+    mu_sd = np.zeros((len(fish_ids), len(days)))
+    for i,fish in enumerate(fish_ids):
+        camera_id, is_back = fish2camera[fish_id,0], fish2camera[fish_id,1]==BACK
+        for j,day in enumerate(days):
+            df_day = csv_of_the_day(camera_id, day, is_back=is_back)
+            if len(df_day)>0:
+                df = pd.concat(df_day)
+                mu_sd[i,j] = metric(df[["x", "y"]].to_numpy(),time_interval*5)
+    return mu_sd
+
+def activity_per_interval(*args):
+    return metric_per_interval(*args, metric=activity)
+
+def turning_angle_per_interval(*args):
+    return metric_per_interval(*args, metric=turning_angle)
+
