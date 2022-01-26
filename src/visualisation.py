@@ -30,8 +30,8 @@ def plots_for_tex(camera_list, day_list, dpi=50):
 
 def set_figure(is_back=False):
     xlim=[-5, 90]
-    ylim=[-40, 2]
-    if is_back: ylim=[-2, 40] 
+    ylim=[-42, 2]
+    if is_back: ylim=[-2, 42] 
     fig, ax = plt.subplots(figsize=(5,2.5))
     plt.tight_layout()
     #ax.set_ylabel('y coordinate')

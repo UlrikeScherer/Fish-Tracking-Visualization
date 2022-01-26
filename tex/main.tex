@@ -30,7 +30,7 @@
 \providecommand{\posstr}{POSITION_STRING/}
 \graphicspath{{../plots/\block/\position/}} 
 
-\renewcommand{\posstr}{FE_\block_autotracks_\position/}
+%\renewcommand{\posstr}{FE_\block_autotracks_\position/}
 
 \providecommand{\rootserver}{/ROOT_DIRECTORY}
 \providecommand{\rootrecord}{/RECORING_DIRECTORY}
@@ -39,6 +39,7 @@
 \title{Developing exploration behavior\\
 Trajectory over time of the molly at camera: \camera{} and position: \textsc{\position}\\
 From the 10th of September to the 8th of November.\\
+\block \\
 }
 \author{Research Unit 1, SCIoI Project 21}
 \date{December 2021}
@@ -112,9 +113,12 @@ From the 10th of September to the 8th of November.\\
     
 \end{center}
 
-\plotdayone{20210910_1550} 
+\input{days_array.tex}
+%\plotdayone{\day0} 
+%\plotdayone{20210910_1550} 
 
-\plotday{
-20210911_0600,20210912_0600,20210913_0600,20210914_0600,20210915_0600,20210916_0600,20210917_0600,20210918_0600,20210919_0600,20210920_0600,20210921_0600,20210922_0600,20210923_0600,20210924_0600,20210925_0600,20210926_0600,20210927_0600,20210928_0600,20210929_0600,20210930_0600,20211001_0600,20211002_0600,20211003_0600,20211004_0600,20211005_0600,20211006_0600,20211007_0600,20211008_0600}
+%\plotday{
+%20210911_0600,20210912_0600,20210913_0600,20210914_0600,20210915_0600,20210916_0600,20210917_0600,20210918_0600,20210919_0600,20210920_0600,20210921_0600,20210922_0600,20210923_0600,20210924_0600,20210925_0600,20210926_0600,20210927_0600,20210928_0600,20210929_0600,20210930_0600,20211001_0600,20211002_0600,20211003_0600,20211004_0600,20211005_0600,20211006_0600,20211007_0600,20211008_0600
+%}
 
 \end{document}

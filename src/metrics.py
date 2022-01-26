@@ -1,7 +1,10 @@
 import numpy as np
-from src.utile import S_LIMIT, BACK, fish2camera, get_days_in_order, csv_of_the_day
+from src.utile import S_LIMIT, BACK, fish2camera, get_days_in_order, csv_of_the_day, BLOCK, N_SECONDS_OF_DAY, get_seconds_from_day, N_FISHES
 from methods import activity, calc_steps, turning_angle
 import pandas as pd
+import os
+
+DATA_results = "results"
 
 def mean_sd(steps):
     mean = np.mean(steps)
@@ -69,23 +72,46 @@ def sum_of_angles(df):
         u = v
     return sum_alpha
 
-def metric_per_interval(fish_ids, time_interval, time_line = [0, 29], metric=activity):
+def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100, day_interval = [0, 29], metric=activity, write_to_csv=False):
+    """Aplies a given function to all fishes in fish_ids with the time_interval, for all days in the day_interval interval"""
     if isinstance(fish_ids, int):
         fish_ids = [fish_ids]
-    days = get_days_in_order()[time_line[0]: time_line[1]]
-    mu_sd = np.zeros((len(fish_ids), len(days)))
+    days = get_days_in_order(interval=day_interval)
+    results = list()
     for i,fish in enumerate(fish_ids):
-        camera_id, is_back = fish2camera[fish_id,0], fish2camera[fish_id,1]==BACK
+        camera_id, is_back = fish2camera[fish,0], fish2camera[fish,1]==BACK
+        day_list = list()
         for j,day in enumerate(days):
-            df_day = csv_of_the_day(camera_id, day, is_back=is_back)
+            df_day = csv_of_the_day(camera_id, day, is_back=is_back, drop_out_of_scope=True) ## True or False testing needed
             if len(df_day)>0:
                 df = pd.concat(df_day)
-                mu_sd[i,j] = metric(df[["x", "y"]].to_numpy(),time_interval*5)
-    return mu_sd
+                result = metric(df[["x", "y"]].to_numpy(),time_interval*5)
+                day_list.append(result)
+            else: day_list.append(np.empty([0, 2]))
+        results.append(day_list)
+    if write_to_csv:
+        metric_data_to_csv(results, time_interval=time_interval, fish_ids=fish_ids, day_interval=day_interval, metric=metric)
+    return results
 
-def activity_per_interval(*args):
-    return metric_per_interval(*args, metric=activity)
+def metric_data_to_csv(results, time_interval=100, fish_ids=[0], day_interval=[0,1], metric=activity):
+    days = get_days_in_order(interval=day_interval)
+    for i,fish in enumerate(fish_ids):
+        time = list()
+        for j,day in enumerate(days):
+            time.extend([(day,t*time_interval+j*N_SECONDS_OF_DAY+get_seconds_from_day(day)) for t in range(1,results[i][j].shape[0]+1)])
+        time_np = np.array(time)
+        concat_r = np.concatenate(results[i])
+        print(time_np.shape, concat_r.shape)
+        data = np.concatenate((time_np, concat_r), axis=1)
+        
+        df = pd.DataFrame(data, columns=["day", "time", "mean", "std"])
+        directory="%s/%s/%s/"%(DATA_results, BLOCK,metric.__name__,)
+        os.makedirs(directory, exist_ok=True)
+        df.to_csv("%s/%s_%s.csv"%(directory,time_interval,"_".join(fish2camera[fish])))
 
-def turning_angle_per_interval(*args):
-    return metric_per_interval(*args, metric=turning_angle)
+def activity_per_interval(*args, **kwargs):
+    return metric_per_interval(*args, **kwargs, metric=activity)
+
+def turning_angle_per_interval(*args, **kwargs):
+    return metric_per_interval(*args, **kwargs, metric=turning_angle)
 

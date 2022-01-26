@@ -2,19 +2,26 @@
 Project: Developing Exploration Behavior
 
 Holds the scripts to visualize the molly's trajectory. 
-The resulting pdfs are contained in the folder [tex/trajectory](tex/trajectory).
-The make use of the links to the mp4 and csv files connect to the server `loopbio_data`. Currently the links work for MacOX systems and best with [Adobe Reader](https://get.adobe.com/de/reader/). The Preview.app somehow has permission problems to open files, at least on my system. 
+The folder [tex/trajectory](tex/trajectory) contains the resulting pdfs.
+To make use of the links to the mp4 and csv-files -- connect to the server `loopbio_data`. Currently the links work for MacOX systems and best with [Adobe Reader](https://get.adobe.com/de/reader/). The Preview.app somehow has permission problems to open files, at least on my system. 
+
+
 
 #### Build 
 To compile the *Cython* code run 
 + Mac: `CC='gcc-11' python3 setup.py build_ext --inplace`
 + Unix: `python3 setup.py build_ext --inplace`
 
-#### Run 
-It requires to have the Folders `FE_block1_autotracks_front` and `FE_block1_autotracks_back` in the parent directory containing the trajectory data. Accessing the data from the serve is clearly possible but very slow.  
-To generate the trajectory visualizations 
-`python3 main.py` and then `cd tex` to run the latex script:
+#### Trajectory Visualization PDFs
+[tex/env.sh](tex/env.sh) contains the paths to the trajectory data. One can configure these to point to the correct location of the data. Reading the data directly from the server `loopbio_data` results in long running times. It is recommended use a external hard drive holding the data.  
+Accessing the data from the server is very slow.  
+To generate the trajectory visualizations, run 
+`python3 main.py` and then `cd tex` to run the `latex` script:
 `bash build-trajectories.sh`
+
+#### Activity metrics
+* run: `python3 main.py metric={metric}`
+For the metric argument use one out of `metric={activity, angle, tortuosity, entropy}` 
 
 #### Metrics: 
 + step length is the length of the vector drawn between to consecutive data frames. 
@@ -28,6 +35,7 @@ For the metrics
 * average activity
 * space used: Entropy heat map
 * direction turning angle
+* Tortuosity in 2-D
 
 Compute: `function(fish_id, time_interval in sec)`
 + compute SD/SE
