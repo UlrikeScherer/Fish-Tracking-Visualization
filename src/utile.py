@@ -21,6 +21,7 @@ DIR_CSV_LOCAL = os.environ["path_csv_local"] #
 dir_front = "%s/FE_%s_autotracks_front"%(DIR_CSV_LOCAL, BLOCK)
 dir_back  = "%s/FE_%s_autotracks_back"%(DIR_CSV_LOCAL, BLOCK)
 FRONT, BACK = "front", "back"
+ROOT_img = "plots"
 
 N_FISHES = 24
 N_SECONDS_OF_DAY = 24*3600
@@ -52,6 +53,9 @@ def get_seconds_from_day(day):
 def get_date(day):
     return day[:8]
 
+def get_date_string(day):
+    return "%s/%s/%s"%(day[:4], day[4:6], day[6:8])
+
 def get_full_date(day):
     dateiso = "{}-{}-{}T{}:{}:{}+00:00".format(day[:4],day[4:6],day[6:8],day[9:11],day[11:13], day[13:15])
     return datetime.fromisoformat(dateiso).strftime("%A, %B %d, %Y %H:%M")
@@ -73,7 +77,6 @@ def read_batch_csv(filename, drop_errors):
 
 def merge_files(filenames, drop_errors):
     batches = []
-    filenames.sort()
     for f in filenames:
         df = read_batch_csv(f, drop_errors)
         batches.append(df)
@@ -89,5 +92,34 @@ def csv_of_the_day(camera, day, is_back=False, drop_out_of_scope=False):
     if is_back: 
         dir_ = dir_back
     filenames_f = [f for f in glob.glob("{}/{}/{}*/{}_{}*.csv".format(dir_, camera, day, camera, day), recursive=True) if re.search(r'[0-9].*\.csv$', f[-6:])]
-    return merge_files(filenames_f, drop_out_of_scope)
-            
+    
+    filtered_files = filter_filenames(filenames_f) # filters for dublicates in the batches for a day. It takes the FIRST one!!!
+
+    return merge_files(filtered_files, drop_out_of_scope)
+
+def filter_filenames(filenames_f):
+    filenames_f.sort()
+    i = 0 #"{:02d}".format(number)
+    filtered_files = list()
+    while len(filenames_f)!=0:
+        f = filenames_f.pop(0)
+        if "{:06d}".format(i) in f:
+            filtered_files.append(f)
+            i=i+1
+    return filtered_files      
+    
+def activity_for_day_hist(fish_id, day_idx=1):
+    camera_id, is_back = fish2camera[fish_id,0], fish2camera[fish_id,1]=="back"
+    mu_sd = list()
+    all_days = get_days_in_order()
+    day = all_days[day_idx]
+    df = pd.concat(csv_of_the_day(camera_id, day, is_back=is_back, drop_out_of_scope=True))
+    c = calc_steps(df[["x", "y"]].to_numpy())
+    p = plt.hist(c, bins=50,range=[0, 5], density=True, alpha=0.75)
+    plt.ylim(0, 3)
+    plt.xlabel('cm')
+    plt.ylabel('Probability')
+    plt.title('Histogram of step lengh per Frame')
+    mu, om = np.mean(c), np.std(c)
+    plt.text(mu, om, r'$\mu=\ $'+ "%.2f, "%mu + r'$\sigma=$'+"%.2f"%om)
+    plt.show()

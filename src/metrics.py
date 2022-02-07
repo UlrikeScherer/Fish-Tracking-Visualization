@@ -1,6 +1,7 @@
 import numpy as np
+
 from src.utile import S_LIMIT, BACK, fish2camera, get_days_in_order, csv_of_the_day, BLOCK, N_SECONDS_OF_DAY, get_seconds_from_day, N_FISHES
-from methods import activity, calc_steps, turning_angle
+from methods import activity, calc_steps, turning_angle, tortuosity_of_chunk #cython
 import pandas as pd
 import os
 
@@ -72,8 +73,34 @@ def sum_of_angles(df):
         u = v
     return sum_alpha
 
-def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100, day_interval = [0, 29], metric=activity, write_to_csv=False):
-    """Aplies a given function to all fishes in fish_ids with the time_interval, for all days in the day_interval interval"""
+def average_by_metric(data, frame_interval, metric_f):
+    SIZE = data.shape[0]
+    len_out = int(np.ceil(SIZE/frame_interval))
+    mu_sd = np.zeros([len_out,2], dtype=float)
+    for i,s in enumerate(range(frame_interval, data.shape[0], frame_interval)):
+        chunk = data[s-frame_interval:s]
+        chunk = chunk[chunk[:,0] > -1] # only consider valid points. 
+        avg_metric = metric_f(chunk)
+        result_size = avg_metric.size
+        mu_sd[i, 0] = sum(avg_metric)/result_size
+        mu_sd[i, 1] = np.sqrt(sum((avg_metric-mu_sd[i, 0])**2)/result_size)
+    return mu_sd
+
+def tortuosity(data, frame_interval):
+    return average_by_metric(data, frame_interval, tortuosity_of_chunk)
+
+def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100, day_interval = (0, 29), metric=activity, write_to_csv=False):
+    """
+    Applies a given function to all fishes in fish_ids with the time_interval, for all days in the day_interval interval
+    Args:
+        fish_ids(list, int):    List of fish ids
+        time_interval(int):     Time Interval to apply the metric to
+        day_interval(Tuple):    Tuple of the first day to the last day, out of 0 to 29. 
+        metric(function):       A function to apply to the data, {activity, tortuosity, turning_angle,...}
+        write_to_csv(bool):     Indicate weather the results should be written to a csv
+    Returns: 
+        results(list):          List of computed results
+    """
     if isinstance(fish_ids, int):
         fish_ids = [fish_ids]
     days = get_days_in_order(interval=day_interval)
@@ -101,11 +128,10 @@ def metric_data_to_csv(results, time_interval=100, fish_ids=[0], day_interval=[0
             time.extend([(day,t*time_interval+j*N_SECONDS_OF_DAY+get_seconds_from_day(day)) for t in range(1,results[i][j].shape[0]+1)])
         time_np = np.array(time)
         concat_r = np.concatenate(results[i])
-        print(time_np.shape, concat_r.shape)
         data = np.concatenate((time_np, concat_r), axis=1)
         
         df = pd.DataFrame(data, columns=["day", "time", "mean", "std"])
-        directory="%s/%s/%s/"%(DATA_results, BLOCK,metric.__name__,)
+        directory="%s/%s/%s/"%(DATA_results, BLOCK,metric.__name__)
         os.makedirs(directory, exist_ok=True)
         df.to_csv("%s/%s_%s.csv"%(directory,time_interval,"_".join(fish2camera[fish])))
 
@@ -114,4 +140,7 @@ def activity_per_interval(*args, **kwargs):
 
 def turning_angle_per_interval(*args, **kwargs):
     return metric_per_interval(*args, **kwargs, metric=turning_angle)
+
+def tortuosity_per_interval(*args, **kwargs):
+    return metric_per_interval(*args, **kwargs, metric=tortuosity)
 

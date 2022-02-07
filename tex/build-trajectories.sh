@@ -33,7 +33,7 @@ fi
 
 for b in ${!position[@]}; do
     echo -e "pdf for ${position[$b]} \n"
-    POSITION_STR="FE_${STARTTIME}tracks_${BLOCK}_${position[$b]}"
+    POSITION_STR="FE_${STARTTIME}_tracks_${BLOCK}_${position[$b]}"
     for i in ${!cameras[@]}; do
         secff="$(ls -d $path_csv/$POSITION_STR/${cameras[$i]}/*.${cameras[$i]}/ | sort -V | head -1 | sed 's/.*1550\([^.]*\).*/\1/')"
         
@@ -57,6 +57,8 @@ for b in ${!position[@]}; do
                     % for subplots -------------- 
                     \newcounter{cntsub}
                     \newcommand\sublist{}
+                    \newcommand\setsub[2]{%
+                        \csdef{sub#1}{#2}}
                     \newcommand\addsub[1]{%
                         \csdef{sub\thecntsub}{#1}%
                         \stepcounter{cntsub}}
@@ -65,6 +67,8 @@ for b in ${!position[@]}; do
                     % for csv -----------
                     \newcounter{cntcsv}
                     \newcommand\csvlist{}
+                    \newcommand\setcsv[2]{%
+                        \csdef{csv#1}{#2}}
                     \newcommand\addcsv[1]{%
                         \csdef{csv\thecntcsv}{#1}%
                         \stepcounter{cntcsv}}
@@ -74,31 +78,43 @@ for b in ${!position[@]}; do
 
         daysarray=""
         days="$(ls -d $path_csv/$POSITION_STR/${cameras[$i]}/*.${cameras[$i]}*/ | sort -V )"
+
+        isFIRST=1;
         for d in $days; do 
             d=$(basename $d)
             day=${d: : 24}
-            daysarray="$daysarray${day: : 13},"
-
+            day_id=${day: : 13}
+            if [ "$BLOCK" = "block1" ] && [ "$isFIRST" -eq "1" ]; then
+                daysarray="$daysarray \plotdayone{${day: : 13}}
+                "
+                isFIRST=0;
+            else
+                daysarray="$daysarray\plotday{${day: : 13}}
+                "
+            fi 
 
             filescsv="$(ls $path_csv/$POSITION_STR/${cameras[$i]}/*.${cameras[$i]}*/${cameras[$i]}_$day*.csv | sort -V)"
+            C_i=1
             for f in $filescsv; do 
-                texheader="$texheader \addcsv{\href{$PREFIX$f}{csv}}
+                texheader="$texheader \setcsv{${day_id}$C_i}{\href{${PREFIX}${f}}{csv}}
                 "
-            done
-            foldersmp4="$(ls -d $path_recordings/${cameras[$i]}/${day}*/ | sort -V)"
-            filesmp4="$(ls $path_recordings/${cameras[$i]}/${day}*/*.mp4 | sort -V)"
-            for f in $foldersmp4; do
-                texheader="$texheader \addtext{$PREFIX$f}
-                "
+                let C_i++
             done
 
+            foldermp4="$(ls -d $path_recordings/${cameras[$i]}/${day}*/ | head )"
+            texheader="$texheader \addtext{$PREFIX$foldermp4}
+            "
+
+            filesmp4="$(ls $foldermp4/*.mp4 | sort -V)"
+            C_i=1
             for f in $filesmp4; do 
-                texheader="$texheader \addsub{\href{$PREFIX$f}{mp4}}
+                texheader="$texheader \setsub{${day_id}$C_i}{\href{$PREFIX$f}{mp4}}
                 "
+                let C_i++
             done
         done
-        daysarray=${daysarray%?}
-        echo "\plotday{${daysarray}}" > days_array.tex
+        # daysarray=${daysarray%?}
+        echo "${daysarray}" > days_array.tex
         echo "$texheader" > arrayoflinks.tex
 
         END=2
@@ -109,3 +125,6 @@ for b in ${!position[@]}; do
         mv main.pdf trajectory/$BLOCK/${cameras[$i]}_${position[$b]}.pdf
     done
 done
+
+
+echo "Execution time: $SECONDS "

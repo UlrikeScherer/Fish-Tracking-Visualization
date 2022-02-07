@@ -44,11 +44,10 @@ From the 10th of September to the 8th of November.\\
 \author{Research Unit 1, SCIoI Project 21}
 \date{December 2021}
 
-\newcommand{\subf}[2]{%
+\newcommand{\subf}[3]{%
 \begin{subfigure}[h]{0.22\textwidth}
     \includegraphics[width=\textwidth, height=4.2cm]{\camera/#1/#2.pdf}
-    \caption*{\getsub{\thesubcnt}, \getcsv{\thesubcnt}}
-    \stepcounter{subcnt}
+    \caption*{\getsub{#1#3}, \getcsv{#1#3}}
     \vspace{-1em}
 \end{subfigure}
 }
@@ -63,21 +62,26 @@ From the 10th of September to the 8th of November.\\
      }
 }
 
+%\newcommand{\plot_all_days}[1]{%
+%    \foreach \x [count=\xi] in {#1} {
+%        \plotday{\x}
+%    }
+%}
+
 \newcommand{\plotday}[1]{%
-\foreach \x [count=\xi] in {#1} {
 \begin{figure}
-    \firstbox{\x00}
+    \firstbox{#100}
     \foreach \i in {0,1,...,3} {
         \foreach \j in {0,1,...,3}{
         \FPeval{\result}{clip(\i+\j)}
         \ifnum \result>0  {
-            \subf{\x}{\i\j}
+            \FPeval{\idx}{clip(\i*4+\j)}
+            \subf{#1}{\i\j}{\idx}
         }\fi
         }\vskip\baselineskip
     }
-    \label{fig:\xi #1}
+    \label{fig: #1}
 \end{figure}
-}%
 }
 
 \newcommand{\plotdayone}[1]{%
@@ -86,13 +90,12 @@ From the 10th of September to the 8th of November.\\
     \firstbox{#1\secfirstplot}
     \foreach \i in {0} {
         \foreach \j in {0,1,...,3}{
-        \FPeval{\result}{clip(\i+\j)}
-        \ifnum \result>0  {
-            \subf{#1}{\i\j}
+        \ifnum \j>0  {
+            \subf{#1}{\i\j}{\j}
         }\fi
         }\vskip\baselineskip
     }
-    \subf{#1}{10}
+    \subf{#1}{10}{4}
     \label{fig:#1}
 \end{figure}
 %}%

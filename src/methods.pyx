@@ -28,6 +28,8 @@ DTYPE = int
 ctypedef np.int_t DTYPE_t
 ctypedef np.float64_t double
 
+ctypedef np.ndarray[float, ndim=1] (*f_type)(np.ndarray[double, ndim=2])
+
 cdef double arccos(double v):
     return acos(v)
 
@@ -94,6 +96,31 @@ cpdef np.ndarray[double, ndim=1] calc_steps(np.ndarray[double, ndim=2] data):
     c=np.sqrt(sq[:,0] + sq[:,1])
     return c
 
+cpdef np.ndarray[double, ndim=1] tortuosity_of_chunk(np.ndarray[double, ndim=2] data):
+    cdef int dist_length = 10 # normed by 10cm of distance traveled
+    cdef np.ndarray[double, ndim=1] steps = calc_steps(data)
+    cdef np.ndarray[double, ndim=1] c_steps = np.cumsum(steps)  # cumulative sum
+    cdef int length = int(c_steps[-1]/dist_length)
+    cdef list t_result = []
+    cdef double L, C, curr_c
+    cdef int i = 0
+    cdef int j = 0
+    cdef double min_L = 0.1
+    curr_c = 0 # start with 0
+    while i < c_steps.size-2:
+        while j < c_steps.size-1 and c_steps[j]-curr_c <dist_length:
+            j+=1
+        L = np.sqrt(sum((data[j+1]-data[i])**2))
+        C = c_steps[j] - curr_c
+        if L < min_L: L=min_L
+        if C < min_L: C=min_L
+        t_result.append(C/L)
+        curr_c = c_steps[j]
+        i=j+1
+        j=i+1
+
+    return np.array(t_result, dtype=float)
+
 cpdef np.ndarray[float, ndim=1] avg_turning_direction(np.ndarray[double, ndim=2] data):
     cdef np.ndarray[double, ndim=2] vecs
     cdef double v0, v1, u0, u1
@@ -111,6 +138,7 @@ cpdef np.ndarray[float, ndim=1] avg_turning_direction(np.ndarray[double, ndim=2]
         sum_ang[i-1] = direction_angle(u0,u1,v0,v1)
         u0, u1 = v0, v1
     return sum_ang
+
 
 cpdef np.ndarray[double, ndim=2] activity(np.ndarray[double, ndim=2] data, int frame_interval):
     cdef int len_out, i, s
@@ -141,4 +169,3 @@ cpdef np.ndarray[double, ndim=2] turning_angle(np.ndarray[double, ndim=2] data, 
         mu_sd[i, 0] = sum(avg_turning)/frame_interval
         mu_sd[i, 1] = sqrt(sum((avg_turning-mu_sd[i, 0])**2)/frame_interval)
     return mu_sd
-

@@ -4,10 +4,13 @@
 # MacOS
 .DS_Store
 **/.vscode
+
+# ignore FOLDERS
 /plots
 /results
 /tex/trajectory
 /vis
+/output
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
