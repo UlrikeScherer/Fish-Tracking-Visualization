@@ -1,5 +1,5 @@
 import numpy as np
-
+from scipy.stats import entropy
 from src.utile import S_LIMIT, BACK, fish2camera, get_days_in_order, csv_of_the_day, BLOCK, N_SECONDS_OF_DAY, get_seconds_from_day, N_FISHES
 from methods import activity, calc_steps, turning_angle, tortuosity_of_chunk #cython
 import pandas as pd
@@ -73,6 +73,30 @@ def sum_of_angles(df):
         u = v
     return sum_alpha
 
+def entropy_for_chunk(chunk):
+    hist = np.histogram2d(chunk[:,0],chunk[:,1], bins=(40, 20), density=True)[0]
+    prob = list()
+    l_x,l_y = hist.shape
+    indi_1 = np.tril_indices(l_y,k=1)
+    indi_1 = indi_1[0],  (l_y-1) - indi_1[1]
+    indi_2 = np.triu_indices(l_y, k=-2)
+    indi_2 = indi_2[0]+l_y, indi_2[1] 
+    prob.extend(hist[indi_1])
+    prob.extend(hist[indi_2])
+    return entropy(prob),np.std(prob)*100
+
+def entropy_for_data(data, frame_interval):
+    SIZE = data.shape[0]
+    len_out = int(np.ceil(SIZE/frame_interval))
+    mu_sd = np.zeros([len_out,2], dtype=float)
+    for i,s in enumerate(range(frame_interval, data.shape[0], frame_interval)):
+        chunk = data[s-frame_interval:s]
+        chunk = chunk[chunk[:,0] > -1] # only consider valid points. 
+        result = entropy_for_chunk(chunk)
+        mu_sd[i, 0] = result[0]
+        mu_sd[i, 1] = result[1]
+    return mu_sd
+
 def average_by_metric(data, frame_interval, metric_f):
     SIZE = data.shape[0]
     len_out = int(np.ceil(SIZE/frame_interval))
@@ -144,3 +168,5 @@ def turning_angle_per_interval(*args, **kwargs):
 def tortuosity_per_interval(*args, **kwargs):
     return metric_per_interval(*args, **kwargs, metric=tortuosity)
 
+def entropy_per_interval(*args, **kwargs): 
+    return metric_per_interval(*args, **kwargs, metric=entropy_for_data)

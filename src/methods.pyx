@@ -108,7 +108,7 @@ cpdef np.ndarray[double, ndim=1] tortuosity_of_chunk(np.ndarray[double, ndim=2] 
     cdef double min_L = 0.1
     curr_c = 0 # start with 0
     while i < c_steps.size-2:
-        while j < c_steps.size-1 and c_steps[j]-curr_c <dist_length:
+        while j < c_steps.size-1 and c_steps[j]-curr_c < dist_length:
             j+=1
         L = np.sqrt(sum((data[j+1]-data[i])**2))
         C = c_steps[j] - curr_c
@@ -117,7 +117,7 @@ cpdef np.ndarray[double, ndim=1] tortuosity_of_chunk(np.ndarray[double, ndim=2] 
         t_result.append(C/L)
         curr_c = c_steps[j]
         i=j+1
-        j=i+1
+        j=i
 
     return np.array(t_result, dtype=float)
 

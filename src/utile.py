@@ -31,6 +31,15 @@ def get_camera_names():
 
 fish2camera=np.array(list(product(get_camera_names(), [FRONT, BACK])))
 
+def print_tex_table(fish_ids, filename):
+    tex_dir = "tex/tables"
+    os.makedirs(tex_dir, exist_ok=True)
+    f = open("%s/%s.tex"%(tex_dir,filename), "w+")
+    for fid in fish_ids:
+        camera, position = fish2camera[fid]
+        f.write("%d & %s & %s \\\ \n"%(fid, camera, position))
+    f.close()
+
 def get_days_in_order(interval=None):
     cameras = get_camera_names()
     days = [name[:13] for name in os.listdir(dir_front+"/"+cameras[0]) if name[:8].isnumeric()]

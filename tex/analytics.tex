@@ -1,0 +1,91 @@
+\let\mypdfximage\pdfximage
+\def\pdfximage{\immediate\mypdfximage}
+\documentclass[landscape]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage[a4paper, inner=1em, outer=1em, top=1em]{geometry}
+\usepackage{pgffor}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{hyperref}
+\usepackage{ifthen}
+\usepackage[nomessages]{fp}% http://ctan.org/pkg/fp
+\usepackage{adjustbox}
+\usepackage{tcolorbox}
+\usepackage{xstring}
+\usepackage{xurl}
+\usepackage{etoolbox}
+\usepackage{nopageno}
+\usepackage{tabularx}
+
+\providecommand{\position}{position}
+\providecommand{\block}{blockX}
+\graphicspath{{../vis/\block/}} 
+
+\title{\Large Developing exploration behavior\\
+Analysis of the Trajectories over time. Visualized as sliding window plots over 10 data points for different metrics.\\
+{\normalsize From the 10th of September to the 8th of November.}\\
+\textsc{\block}, $\position$\\
+}
+\author{Research Unit 1, SCIoI Project 21}
+\date{\today}
+
+\newcommand{\subf}[1]{%
+\begin{subfigure}[h]{\textwidth} %height=4.2cm
+    \includegraphics[width=\textwidth]{/#1.pdf}
+    %\caption*{\getsub{#1#3}, \getcsv{#1#3}}
+    %\vspace{-1em}
+\end{subfigure}
+}
+
+
+\newcommand{\plotdays}[1]{%
+\begin{figure}[!hb]
+    \foreach \i in {100_activity,100_tortuosity,100_turning_angle,200_entropy} {
+            \subf{\i_\position#1}
+            \vskip\baselineskip
+    }
+    \label{fig: #1}
+    \caption{Metrics for days \days }
+\end{figure}
+}
+
+\begin{document}
+
+\maketitle  
+\begin{center}
+\subsection*{Legend}
+\begin{tabular}{p{3cm} p{8cm} }
+    \textbf{Activity} & is here defined as the average distance per frame (0.2 seconds) that a fish swims. We compute the mean over 100 seconds. The overall average Activity is $0.2274 cm$ per frame. \\
+    \textbf{Tortuosity} & is a property of a curve being tortuous. It measures how tortuous the fish's trajectory is and scales by a distance of 10cm. For each consecutive time window where the fish swims about 10cm, we calculate the tortuosity $\tau=\frac{C}{L}$ and $\tau \in [1, \infty]$, where $C$ is the traveled distance as the cumulative sum over the frames of the time window and $L$ the direct distance from start to the end of the interval. \\
+    \textbf{Turning Angle} & is the average turning angle in radians over 100 seconds. This indicates if the fish is turning more right or left at the time.\\
+    \textbf{Space Use} & is computed as \textbf{entropy} for every 200 seconds. Let $p_{ij}$ be probability that the fish is in one cell of a $40\times 20$-grid, then entropy is calculated as $S=-\sum_{ij} p_{ij} \cdot ln(p_{ij})$. The entropy measures are in the scope of $e\in [0, 6.17]$. High entropy indicates randomness and four out purpose extensive space use.  \\
+\end{tabular}
+\begin{tabular}{lll}
+    Fish ID & Camera ID & Position \\ \hline
+    \input{tables/\position.tex}
+\end{tabular}
+    
+\end{center}
+
+\foreach \days in {00-05,06-11,12-17,18-23,24-29} {
+        \plotdays{_\days}
+        \vskip\baselineskip
+    }
+
+\foreach \i in {100_activity,100_tortuosity,100_turning_angle,200_entropy} {
+    %\section{\StrMid{\i}{5}{100}{}}
+    \newcounter{cnt}
+    \csdef{m0}{activity}
+    \csdef{m1}{tortuosity}
+    \csdef{m2}{turning angle}
+    \csdef{m3}{space use as entropy}
+    \begin{figure}[!hb]
+        \includegraphics[width=\textwidth]{/\i_\position.pdf}
+        \caption{\block{} \csuse{m\thecnt} for all 29 days.}
+        \stepcounter{cnt}
+    \end{figure}
+}
+
+\end{document}
