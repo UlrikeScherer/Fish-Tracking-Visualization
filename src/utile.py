@@ -15,13 +15,20 @@ SD_GLOBAL = 1.0044248513034164
 S_LIMIT = MEAN_GLOBAL + 3 * SD_GLOBAL
 BATCH_SIZE = 9999
 ROOT=os.environ["rootserver"]
-DIR_CSV=os.environ["path_csv"] # BLOCK
-BLOCK = os.environ["BLOCK"] # 
+DIR_CSV=os.environ["path_csv"] # 
+BLOCK = os.environ["BLOCK"] # block1 or block2
 DIR_CSV_LOCAL = os.environ["path_csv_local"] # 
-dir_front = "%s/FE_%s_autotracks_front"%(DIR_CSV_LOCAL, BLOCK)
-dir_back  = "%s/FE_%s_autotracks_back"%(DIR_CSV_LOCAL, BLOCK)
+POS_STR_FRONT = os.environ["POSITION_STR_FRONT"]
+POS_STR_BACK = os.environ["POSITION_STR_BACK"]
+STIME = os.environ["STIME"]
+dir_front = "%s/%s"%(DIR_CSV_LOCAL, POS_STR_FRONT)
+dir_back  = "%s/%s"%(DIR_CSV_LOCAL, POS_STR_BACK)
 FRONT, BACK = "front", "back"
-ROOT_img = "plots"
+ROOT_img = "plots/%s"%STIME
+
+# FEEDING 
+dir_feeding_front = os.environ["dir_feeding_front"]
+dir_feeding_back = os.environ["dir_feeding_back"]
 
 N_FISHES = 24
 N_SECONDS_OF_DAY = 24*3600
@@ -30,6 +37,22 @@ def get_camera_names():
     return [name for name in os.listdir(dir_front) if len(name)==8 and name.isnumeric()]
 
 fish2camera=np.array(list(product(get_camera_names(), [FRONT, BACK])))
+
+def get_fish_ids():
+    info_df = pd.read_csv("%s/DevEx_fingerprint_activity_lifehistory.csv"%ROOT, delimiter=";")
+    #info_df = pd.read_csv("data/DevEx_fingerprint_activity_lifehistory.csv", delimiter=";")
+    info_df1=info_df[info_df["block"]==int(BLOCK[-1])]
+    info_df1[["fish_id", "camera", "block", "tank"]],
+    fishIDs_order = list()
+    FB_char = np.array(list(map(lambda x: str(x[-1]),info_df1["tank"])))
+
+    for i, (c,p) in enumerate(fish2camera):
+        f1 = info_df1["camera"] == int(c[-2:])
+        f2 = FB_char == p[0].upper()
+        ids = info_df1[f1 & f2]["fish_id"].array
+        fishIDs_order.append((ids[0],i))
+        
+    return np.array(fishIDs_order)
 
 def print_tex_table(fish_ids, filename):
     tex_dir = "tex/tables"

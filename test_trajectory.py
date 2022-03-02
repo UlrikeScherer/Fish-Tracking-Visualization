@@ -4,7 +4,7 @@ import os
 from matplotlib.testing.compare import compare_images
 from src.visualisation import set_figure, subplot_trajectory
 from src.utile import csv_of_the_day
-from src.metric import metric_per_interval
+from src.metrics import metric_per_interval
 
 class TestTrajectory(unittest.TestCase):
     camera_id="23520289"

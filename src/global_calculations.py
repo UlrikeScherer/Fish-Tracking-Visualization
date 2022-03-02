@@ -1,31 +1,44 @@
 import numpy as np
-from src.utile import csv_of_the_day
+from src.utile import csv_of_the_day, fish2camera, S_LIMIT, BACK
 from src.metrics import calc_step_per_frame
 
-def global_mean(cams, days):
+def global_mean(fish_ids, days):
+    s,n = global_activity(fish_ids, days)
+    return s.sum()/n.sum()
+
+def global_mean_by_day(fish_ids, days):
+    s,n = global_activity(fish_ids, days)
+
+def global_activity(fish_ids, days):
     sum_means = 0
     num_N=0
-    for c in cams:
-        for d in days:
-            for is_back in [True, False]:
-                batches = csv_of_the_day(c, d, is_back, drop_out_of_scope=True)
-                for b in batches:
-                    steps = calc_step_per_frame(b)
-                    sum_steps = steps.sum()
-                    if type(sum_steps)!=np.float64:
-                        print(m, b, d, c)
-                        continue
-                    else:
-                        sum_means += sum_steps
-                        num_N += len(steps)
-    return sum_means/(num_N)
+    distance_fish_day = [list() for i in range(len(fish2camera[fish_ids]))]
+    N_steps = [list() for i in range(len(fish2camera[fish_ids]))]
+    for i,(c, pos) in enumerate(fish2camera[fish_ids]):
+        is_back = BACK == pos
+        for j, d in enumerate(days):
+            batches = csv_of_the_day(c, d, is_back, drop_out_of_scope=True)
+            if len(batches)==0:
+                continue
+            sum_steps = 0
+            n_steps = 0
+            for b in batches:
+                steps = calc_step_per_frame(b)
+                steps = steps[steps < 3*S_LIMIT]
+                sum_steps += steps.sum()
+                n_steps += len(steps)
+            if n_steps>0:
+                distance_fish_day[i].append(sum_steps)
+                N_steps[i].append(n_steps)
+            
+    return distance_fish_day, N_steps
     
-def global_sd(cams, days, mean):
+def global_sd(fish_ids, days, mean):
     sum_sd = 0
     num_N=0
-    for c in cams:
-        for d in days:
-            for is_back in [True, False]:
+    for i,(c, pos) in enumerate(fish2camera[fish_ids]):
+        is_back = BACK == pos
+        for j, d in enumerate(days):
                 batches = csv_of_the_day(c, d, is_back, drop_out_of_scope=True)
                 for b in batches:
                     steps = calc_step_per_frame(b)

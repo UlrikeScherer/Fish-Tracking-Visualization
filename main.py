@@ -41,7 +41,7 @@ def plotting_odd_even(results, time_interval, name, ylabel, **kwargs):
         f_ = sliding_window(select_data, time_interval, sw=10, fish_ids=batch, ylabel=ylabel, name=names[i], **kwargs)
         plt.close(f_)
         sliding_window_figures_for_tex(select_data, time_interval, sw=10, fish_ids=batch, ylabel=ylabel, name=names[i], **kwargs)
-  
+        
 def main(program=None, test=0, time_interval=100):
     """param:   test, 0,1 when test==1 run test mode
                 program: trajectory, activity, turning_angle
@@ -58,7 +58,7 @@ def main(program=None, test=0, time_interval=100):
             print("Test RUN ", TRAJECTORY)
             cameras=cameras[1:2]
             days=days[1:2]
-        plots_for_tex(cameras, days)
+        plots_for_tex(days)
 
     elif program == ACTIVITY:
         results = activity_per_interval(time_interval=time_interval, write_to_csv=True)
