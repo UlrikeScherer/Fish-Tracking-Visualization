@@ -5,7 +5,7 @@ RECORDINGTIME="060000" # START TIME FOR THE EXPERIMENT
 FEEDINGTIME="140000" # START TIME FOR THE FEEDING SETUP
 STIME=$RECORDINGTIME   
 rootserver="/Volumes/data/loopbio_data/FE_(fingerprint_experiment)_SepDec2021"  # On MocOS the path to the root of the data
-root_local="/Volumes/Extreme SSD"
+root_local="/Volumes/Extreme SSD" # ".."
 path_recordings="$rootserver/FE_recordings/FE_recordings_$BLOCK/FE_${BLOCK}_recordings_*" # path to the recordings, will allway be on the server
 path_csv="$rootserver/FE_tracks_original/FE_tracks_${STIME}/FE_tracks_${STIME}_$BLOCK"
 
