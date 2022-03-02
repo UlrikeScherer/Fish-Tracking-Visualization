@@ -35,8 +35,7 @@ class TestTrajectory(unittest.TestCase):
 
 
     def test_metric(self):
-        day_df = csv_of_the_day(self.camera_id, self.day, is_back=self.is_back, drop_out_of_scope=True)
-        metric_per_interval()
+        metric_per_interval(fish_ids=[1,3], day_interval=[0,4])
 
 if __name__ == '__main__':
     unittest.main()
