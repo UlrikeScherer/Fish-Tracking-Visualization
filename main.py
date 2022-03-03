@@ -15,12 +15,12 @@ ALL_METRICS="all"
 programs = [TRAJECTORY, ACTIVITY, TURNING_ANGLE, TORTUOSITY, ENTROPY]
 metric_names = [ACTIVITY, TURNING_ANGLE, TORTUOSITY, ENTROPY]
 time_intervals = [100,100,100,200]
+N_FISHES = len(fish2camera)
 
 def map_r_to_idx(results, fish_idx): 
     return [results[i] for i in fish_idx]
 
 def plotting_odd_even(results, time_interval, name, ylabel, **kwargs):
-    N_FISHES = len(fish2camera)
     fish_ids_even = [i for i in range(0 ,N_FISHES,2)]
     fish_ids_odd = [i for i in range(1, N_FISHES, 2)]
     size_even, size_odd = int(len(fish_ids_even)/2), int(len(fish_ids_odd)/2)
@@ -42,7 +42,7 @@ def plotting_odd_even(results, time_interval, name, ylabel, **kwargs):
         plt.close(f_)
         sliding_window_figures_for_tex(select_data, time_interval, sw=10, fish_ids=batch, ylabel=ylabel, name=names[i], **kwargs)
         
-def main(program=None, test=0, time_interval=100):
+def main(program=None, test=0, time_interval=100, fish_id=None):
     """param:   test, 0,1 when test==1 run test mode
                 program: trajectory, activity, turning_angle
                 time_interval: kwarg for the programs activity, turning_angle
@@ -51,6 +51,9 @@ def main(program=None, test=0, time_interval=100):
     days = get_days_in_order()
     time_interval=int(time_interval)
     file_name = "%s_%s"%(time_interval, program)
+    fish_ids = list(range(N_FISHES))
+    if fish_id!=None:
+        fish_ids=[fish_id]
 
     if program == TRAJECTORY:
         print(test)
@@ -58,7 +61,7 @@ def main(program=None, test=0, time_interval=100):
             print("Test RUN ", TRAJECTORY)
             cameras=cameras[1:2]
             days=days[1:2]
-        plots_for_tex(days)
+        plots_for_tex(fish_ids,days)
 
     elif program == ACTIVITY:
         results = activity_per_interval(time_interval=time_interval, write_to_csv=True)

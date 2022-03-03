@@ -72,7 +72,7 @@ cdef double angle(double v0, double v1, double w0, double w1):
 cpdef (double, double) avg_and_sum_angles(df):
     cdef np.ndarray[double, ndim=2] npdf, vecs
     cdef double v0, v1, u0, u1
-    npdf = df[["xpx", "ypx"]].to_numpy()
+    npdf = df[["xpx", "ypx"]].to_numpy(dtype=np.float64)
     vecs = npdf[1:]-npdf[:-1]
     vecs = vecs[np.all(vecs!=0, axis=1)]
     cdef double sum_avg, sum_ang

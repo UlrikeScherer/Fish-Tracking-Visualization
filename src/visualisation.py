@@ -11,10 +11,9 @@ mpl.rcParams['lines.linestyle'] = '-'
 mpl.rcParams['lines.markersize'] = 1.0
 mpl.rcParams["figure.figsize"] = (4,2)
 
-def plots_for_tex(day_list, marker_char=""):
-    i = 0
-    N = len(fish2camera) * len(day_list)
-    for i,(camera_id,pos) in enumerate(fish2camera):
+def plots_for_tex(fish_ids, day_list, marker_char=""):
+    N = len(fish2camera[fish_ids])
+    for i,(camera_id,pos) in enumerate(fish2camera[fish_ids]):
         is_back= pos==BACK
         fo = set_figure(is_back=is_back,  marker_char=marker_char)
         for day in day_list:
@@ -22,7 +21,7 @@ def plots_for_tex(day_list, marker_char=""):
             # write the progress to stdout 
             sys.stdout.write("[%-20s] %d%%" % ('='*int(20*i/N), 100*i/N))
             sys.stdout.flush()
-            i+=1
+      
             day_df = csv_of_the_day(camera_id, day, is_back=is_back, drop_out_of_scope=True)
             plot_day_camera_fast(day_df, camera_id, day, fo, is_back=is_back)
 
@@ -55,7 +54,6 @@ def plot_day_camera_fast(data, camera_id, date, figure_obj, is_back=False):
         return None
     
     nr_of_frames = 0
-    
     for i in range(nrows):       
         for j in range(ncols):
             if (i == j and j == 0):
@@ -67,7 +65,7 @@ def plot_day_camera_fast(data, camera_id, date, figure_obj, is_back=False):
             up = len(batch.x)-1
             time_span="batch: {},    {} - {}".format(idx,get_time_for_day(date,nr_of_frames),get_time_for_day(date, nr_of_frames+batch.FRAME[up]))
             
-            subplot_trajectory(figure_obj, batch, date, data_dir, "%s%s"%(i,j), time_span=time_span, is_back=is_back) # plot ij.pdf
+            fig = subplot_trajectory(figure_obj, batch, date, data_dir, "%s%s"%(i,j), time_span=time_span, is_back=is_back, write_fig=True) # plot ij.pdf
             nr_of_frames+=batch.FRAME[up]
     return None
 
@@ -85,9 +83,9 @@ def subplot_trajectory(fig_obj, batch, date, directory, name, time_span="batch: 
     #ax.draw_artist(line)
     remove_text = meta_text_for_trajectory(ax, batch, is_back=is_back)
     
-    if not os.path.isdir(directory):
-        os.makedirs(directory, exist_ok=True)
     if write_fig:
+        if not os.path.isdir(directory):
+            os.makedirs(directory, exist_ok=True)
         fig.savefig("{}/{}.pdf".format(directory,name),bbox_inches='tight')
     remove_text()
     return fig
