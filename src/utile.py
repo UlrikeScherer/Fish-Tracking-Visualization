@@ -21,10 +21,11 @@ DIR_CSV_LOCAL = os.environ["path_csv_local"] #
 POS_STR_FRONT = os.environ["POSITION_STR_FRONT"]
 POS_STR_BACK = os.environ["POSITION_STR_BACK"]
 STIME = os.environ["STIME"]
+FEEDINGTIME = os.environ["FEEDINGTIME"]
 dir_front = "%s/%s"%(DIR_CSV_LOCAL, POS_STR_FRONT)
 dir_back  = "%s/%s"%(DIR_CSV_LOCAL, POS_STR_BACK)
 FRONT, BACK = "front", "back"
-ROOT_img = "plots/%s"%STIME
+ROOT_img = "plots"
 
 # FEEDING 
 dir_feeding_front = os.environ["dir_feeding_front"]
@@ -33,13 +34,21 @@ dir_feeding_back = os.environ["dir_feeding_back"]
 N_FISHES = 24
 N_SECONDS_OF_DAY = 24*3600
 
-def get_camera_names():
-    return [name for name in os.listdir(dir_front) if len(name)==8 and name.isnumeric()]
+def get_camera_names(is_feeding=False):
+    dir_ = dir_feeding_front if is_feeding else dir_front
+    return sorted([name for name in os.listdir(dir_) if len(name)==8 and name.isnumeric()])
+
+def get_fish2camera_map(is_feeding=False):
+    return np.array(list(product(get_camera_names(is_feeding), [FRONT, BACK])))
 
 fish2camera=np.array(list(product(get_camera_names(), [FRONT, BACK])))
 
 def get_fish_ids():
-    info_df = pd.read_csv("%s/DevEx_fingerprint_activity_lifehistory.csv"%ROOT, delimiter=";")
+    """
+    Return the fish ids defined in ...livehistory.csv corresponding to the indices in fish2camera
+    """
+    # %ROOT
+    info_df = pd.read_csv("data/DevEx_fingerprint_activity_lifehistory.csv", delimiter=";")
     #info_df = pd.read_csv("data/DevEx_fingerprint_activity_lifehistory.csv", delimiter=";")
     info_df1=info_df[info_df["block"]==int(BLOCK[-1])]
     info_df1[["fish_id", "camera", "block", "tank"]],
@@ -50,7 +59,7 @@ def get_fish_ids():
         f1 = info_df1["camera"] == int(c[-2:])
         f2 = FB_char == p[0].upper()
         ids = info_df1[f1 & f2]["fish_id"].array
-        fishIDs_order.append((ids[0],i))
+        fishIDs_order.append(ids[0])
         
     return np.array(fishIDs_order)
 
@@ -63,9 +72,10 @@ def print_tex_table(fish_ids, filename):
         f.write("%d & %s & %s \\\ \n"%(fid, camera, position))
     f.close()
 
-def get_days_in_order(interval=None):
-    cameras = get_camera_names()
-    days = [name[:13] for name in os.listdir(dir_front+"/"+cameras[0]) if name[:8].isnumeric()]
+def get_days_in_order(interval=None, is_feeding=False):
+    cameras = get_camera_names(is_feeding)
+    dir_ = dir_feeding_front if is_feeding else dir_front
+    days = [name[:13] for name in os.listdir(dir_+"/"+cameras[0]) if name[:8].isnumeric()]
     days.sort()
     if interval:
         return days[interval[0]: interval[1]]
@@ -115,14 +125,15 @@ def merge_files(filenames, drop_errors):
     return batches
 
 
-def csv_of_the_day(camera, day, is_back=False, drop_out_of_scope=False):
+def csv_of_the_day(camera, day, is_back=False, drop_out_of_scope=False, is_feeding=False):
     """
     @params: camera, day, is_back, drop_out_of_scope
     returns csv of the day for camera: front or back
     """
-    dir_ = dir_front 
-    if is_back: 
-        dir_ = dir_back
+    dir_ = dir_back if is_back else dir_front
+    if is_feeding:
+        dir_ = dir_feeding_back if is_back else dir_feeding_front
+
     filenames_f = [f for f in glob.glob("{}/{}/{}*/{}_{}*.csv".format(dir_, camera, day, camera, day), recursive=True) if re.search(r'[0-9].*\.csv$', f[-6:])]
     
     filtered_files = filter_filenames(filenames_f) # filters for dublicates in the batches for a day. It takes the FIRST one!!!

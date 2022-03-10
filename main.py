@@ -1,8 +1,9 @@
 import time
 import sys
 import matplotlib.pyplot as plt
+import numpy as np
 from src.utile import get_camera_names, get_days_in_order, DIR_CSV_LOCAL, fish2camera, MEAN_GLOBAL, print_tex_table
-from src.visualisation import plots_for_tex
+from src.visualisation import Trajectory
 from src.metrics import activity_per_interval, turning_angle_per_interval, tortuosity_per_interval, entropy_per_interval
 from src.activity_plotting import sliding_window, sliding_window_figures_for_tex
 
@@ -51,9 +52,10 @@ def main(program=None, test=0, time_interval=100, fish_id=None):
     days = get_days_in_order()
     time_interval=int(time_interval)
     file_name = "%s_%s"%(time_interval, program)
-    fish_ids = list(range(N_FISHES))
+
+    fish_ids = np.arange(N_FISHES)
     if fish_id!=None:
-        fish_ids=[fish_id]
+        fish_ids=np.array([int(fish_id)])
 
     if program == TRAJECTORY:
         print(test)
@@ -61,7 +63,8 @@ def main(program=None, test=0, time_interval=100, fish_id=None):
             print("Test RUN ", TRAJECTORY)
             cameras=cameras[1:2]
             days=days[1:2]
-        plots_for_tex(fish_ids,days)
+        T = Trajectory()
+        T.plots_for_tex(fish_ids,days)
 
     elif program == ACTIVITY:
         results = activity_per_interval(time_interval=time_interval, write_to_csv=True)
