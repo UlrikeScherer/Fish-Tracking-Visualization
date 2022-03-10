@@ -21,14 +21,18 @@
 
 \input{arrayoflinks.tex}
 
+
 \newcounter{daycnt}
 \newcounter{subcnt}
 \providecommand{\camera}{default-error}
 \providecommand{\position}{position}
 \providecommand{\block}{blockX}
+\providecommand{\starttime}{"060000"}
 \providecommand{\secfirstplot}{42}
 \providecommand{\posstr}{POSITION_STRING/}
-\graphicspath{{../plots/\block/\position/}} 
+\providecommand{\maxindex}{14}
+\providecommand{\subfigwidth}{0.22\textwidth}
+\graphicspath{{../plots/\starttime/\block/\position/}} 
 
 %\renewcommand{\posstr}{FE_\block_autotracks_\position/}
 
@@ -36,19 +40,22 @@
 \providecommand{\rootrecord}{/RECORING_DIRECTORY}
 \providecommand{\rootcsv}{/CSV_DIRECTORY}
 
+\input{\block_feedingtime.tex}
+
 \title{Developing exploration behavior\\
 Trajectory over time of the molly at camera: \camera{} and position: \textsc{\position}\\
 From the 10th of September to the 8th of November.\\
-\block \\
+\textsc{\block}\\
+start time: \starttime\\
 }
 \author{Research Unit 1, SCIoI Project 21}
-\date{December 2021}
+\date{\today}
 
 \newcommand{\subf}[3]{%
-\begin{subfigure}[h]{0.22\textwidth}
-    \includegraphics[width=\textwidth, height=4.2cm]{\camera/#1/#2.pdf}
+\begin{subfigure}[h]{\subfigwidth}
+    \includegraphics[width=\textwidth]{\camera/#1/#2.pdf}
     \caption*{\getsub{#1#3}, \getcsv{#1#3}}
-    \vspace{-1em}
+    %\vspace{-1em}
 \end{subfigure}
 }
 
@@ -56,9 +63,11 @@ From the 10th of September to the 8th of November.\\
     {\footnotesize
     Video: \url{\gettext{\thedaycnt}}\\
     \stepcounter{daycnt}
-    CSV: \url{file://\rootcsv/\posstr\camera/#1.\camera/}\\}
-    \parbox[c][3cm]{0.21\textwidth}{\StrMid{#1}{0}{4}/\StrMid{#1}{5}{6}/\StrMid{#1}{7}{8}{} at \StrMid{#1}{10}{11}:\StrMid{#1}{12}{13}\\
-     Trajectory over time of the molly at camera: \camera{} position: \textsc{\position}\\
+    CSV: \url{file://\rootcsv/\posstr\camera/#1.\camera/}}\\
+    \parbox[c][3cm]{\subfigwidth}{\StrMid{#1}{0}{4}/\StrMid{#1}{5}{6}/\StrMid{#1}{7}{8}{} at \StrMid{#1}{10}{11}:\StrMid{#1}{12}{13}\\
+     Trajectory over time of the molly at camera: \camera{}\\ position: \textsc{\position}\\
+    $\Delta$-Feeding Time: \getft{\camera\position#1}\\
+    Number of Visits: \getft{\camera\position#1v}\\
      }
 }
 
@@ -70,7 +79,7 @@ From the 10th of September to the 8th of November.\\
 
 \newcommand{\plotday}[1]{%
 \begin{figure}
-    \firstbox{#100}
+    \firstbox{#1}
     \foreach \i in {0,1,...,3} {
         \foreach \j in {0,1,...,3}{
         \FPeval{\result}{clip(\i+\j)}
@@ -83,11 +92,23 @@ From the 10th of September to the 8th of November.\\
     \label{fig: #1}
 \end{figure}
 }
+\newcommand\z[1]{\ifnum#1<10 0\fi#1}
+
+\newcommand{\plotdayupdate}[1]{%
+\begin{figure}
+    \firstbox{#1}
+    \foreach \i in {0,1,...,\maxindex} {
+        \subf{#1}{\z{\i}}{\i}
+        %\vskip\baselineskip
+    }
+    \label{fig: #1}
+\end{figure}
+}
 
 \newcommand{\plotdayone}[1]{%
 %\foreach \x [count=\xi] in {#1} {
 \begin{figure}
-    \firstbox{#1\secfirstplot}
+    \firstbox{#1}%\secfirstplot
     \foreach \i in {0} {
         \foreach \j in {0,1,...,3}{
         \ifnum \j>0  {
@@ -100,21 +121,33 @@ From the 10th of September to the 8th of November.\\
 \end{figure}
 %}%
 }
+\newcommand{\trajectorylegend}{
+    \begin{center}
+        \subsection*{Legend}
+        \begin{tabular}{p{1cm} p{7cm} }
+            $\mu + \sigma$ & illustrates the mean $\mu$ of step length per frame and its standard derivation $\sigma$ for a batch. \\
+            $\sum_{\alpha_i}$ & is the sum of angles $\alpha$ taken anti-clockwise and where each $\alpha_i \in [-\pi, \pi]$.  \\
+            $\alpha_{avg}$ & is the average turning angle for each batch in radians. \\
+            $\# spikes$ & the number of steps per frame that exceed the limit of the overall $\mu$ and $\sigma$ by the following formula $\mu + 3 \cdot \sigma = 0.2274 + 3 \cdot 1.004 = 3.4246$. \\
+            $N$ & number of valid data point for a batch. A batch of trajectory data points for a time of 30 min contains originally 9999 data points. \\
+        \end{tabular}
+    \end{center}
+}
+\newcommand{\feedinglegend}{
+    \begin{center}
+        \subsection*{Legend}
+        \begin{tabular}{p{3cm} p{7cm} }
+            $\Delta$ Feeding & is the time (minutes:seconds) spend inside the box around the feeding patch for a batch. \\
+            \# Visits & is the number of times the individual entered the illustrated box around the feeding patch. 
+            \end{tabular}
+    \end{center}
+}
+
 
 \begin{document}
 
 \maketitle  
-\begin{center}
-\subsection*{Legend}
-\begin{tabular}{p{1cm} p{7cm} }
-    $\mu + \sigma$ & illustrates the mean $\mu$ of step length per frame and its standard derivation $\sigma$ for a batch. \\
-    $\sum_{\alpha_i}$ & is the sum of angles $\alpha$ taken anti-clockwise and where each $\alpha_i \in [-\pi, \pi]$.  \\
-    $\alpha_{avg}$ & is the average turning angle for each batch in radians. \\
-    $\# spikes$ & the number of steps per frame that exceed the limit of the overall $\mu$ and $\sigma$ by the following formula $\mu + 3 \cdot \sigma = 0.2274 + 3 \cdot 1.004 = 3.4246$. \\
-    $N$ & number of valid data point for a batch. A batch of trajectory data points for a time of 30 min contains originally 9999 data points. \\
-\end{tabular}
-    
-\end{center}
+
 
 \input{days_array.tex}
 %\plotdayone{\day0} 

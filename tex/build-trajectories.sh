@@ -5,45 +5,62 @@ position=("front" "back")
 PREFIX="file://" #run:
 
 source env.sh # get the following variables
+STARTTIME=$RECORDINGTIME
+CSV_DIR=$path_csv_local
+MAX_IDX_OF_DAY=14
+SUBFIGURE_WIDTH="0.24\textwidth"
+LEGEND="\trajectorylegend"
+
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        #-b|--block) block="$2"; shift ;;
+        -t|--test) test=1 ;;
+        -f|--feeding) feeding=1;;
+        *) echo "Unknown parameter passed: $1"; exit 1 ;;
+    esac
+    shift
+done
+if [ $feeding ]; then
+    STARTTIME=$FEEDINGTIME
+    CSV_DIR=$path_csv_feeding_local
+    MAX_IDX_OF_DAY=7
+    SUBFIGURE_WIDTH="0.33\textwidth"
+    LEGEND="\feedinglegend"
+fi
+if [ $test ]; then
+    cameras=('23442333') 
+    position=("back")
+    echo "Testrun using $cameras, position: $position";
+fi
 echo "
 -------------------------
 START generating PDFs for: 
 $BLOCK,
 $rootserver,
 $path_recordings,
-$path_csv
+$CSV_DIR
+$STARTTIME
 -------------------------"
 
-mkdir trajectory/$BLOCK
-
-while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        #-b|--block) block="$2"; shift ;;
-        -t|--test) test=1 ;;
-        *) echo "Unknown parameter passed: $1"; exit 1 ;;
-    esac
-    shift
-done
-
-if [ $test ]; then
-    cameras=('23520289') 
-    position=("back")
-    echo "Testrun using $cameras, position: $position";
-fi
+mkdir trajectory/$STARTTIME
+mkdir trajectory/$STARTTIME/$BLOCK
 
 for b in ${!position[@]}; do
     echo -e "pdf for ${position[$b]} \n"
     POSITION_STR="FE_${STARTTIME}_tracks_${BLOCK}_${position[$b]}"
     for i in ${!cameras[@]}; do
-        secff="$(ls -d $path_csv/$POSITION_STR/${cameras[$i]}/*.${cameras[$i]}/ | sort -V | head -1 | sed 's/.*1550\([^.]*\).*/\1/')"
+        secff="$(ls -d $CSV_DIR/$POSITION_STR/${cameras[$i]}/*.${cameras[$i]}/ | sort -V | head -1 | sed 's/.*1550\([^.]*\).*/\1/')"
         
         texheader="%\usepackage{etoolbox}
                     %% root folders: ---------------------
                     \newcommand\rootserver{$rootserver}
-                    \newcommand\rootcsv{$path_csv}
+                    \newcommand\rootcsv{$CSV_DIR}
                     \newcommand\rootrecord{$path_recordings}
                     \newcommand\block{$BLOCK}
                     \newcommand\posstr{$POSITION_STR/}
+                    \newcommand\starttime{$STARTTIME}
+                    \newcommand\maxindex{$MAX_IDX_OF_DAY}
+                    \newcommand\subfigwidth{$SUBFIGURE_WIDTH}
                     % ---------------------------------------
                     \newcounter{cnt}
                     \newcommand\textlist{}
@@ -76,25 +93,25 @@ for b in ${!position[@]}; do
                         \csuse{csv#1}}
                         "
 
-        daysarray=""
-        days="$(ls -d $path_csv/$POSITION_STR/${cameras[$i]}/*.${cameras[$i]}*/ | sort -V )"
+        daysarray="$LEGEND"
+        days="$(ls -d $CSV_DIR/$POSITION_STR/${cameras[$i]}/*.${cameras[$i]}*/ | sort -V )"
 
         isFIRST=1;
         for d in $days; do 
             d=$(basename $d)
             day=${d: : 24}
             day_id=${day: : 13}
-            if [ "$BLOCK" = "block1" ] && [ "$isFIRST" -eq "1" ]; then
+            if [ "$BLOCK" = "block1" ] && [ "$isFIRST" -eq "1" ] && ![ $feeding ]; then
                 daysarray="$daysarray \plotdayone{${day: : 13}}
                 "
                 isFIRST=0;
             else
-                daysarray="$daysarray\plotday{${day: : 13}}
+                daysarray="$daysarray\plotdayupdate{${day: : 13}}
                 "
             fi 
 
-            filescsv="$(ls $path_csv/$POSITION_STR/${cameras[$i]}/*.${cameras[$i]}*/${cameras[$i]}_$day*.csv | sort -V)"
-            C_i=1
+            filescsv="$(ls $CSV_DIR/$POSITION_STR/${cameras[$i]}/*.${cameras[$i]}*/${cameras[$i]}_$day*.csv | sort -V)"
+            C_i=0
             for f in $filescsv; do 
                 texheader="$texheader \setcsv{${day_id}$C_i}{\href{${PREFIX}${f}}{csv}}
                 "
@@ -106,7 +123,7 @@ for b in ${!position[@]}; do
             "
 
             filesmp4="$(ls $foldermp4/*.mp4 | sort -V)"
-            C_i=1
+            C_i=0
             for f in $filesmp4; do 
                 texheader="$texheader \setsub{${day_id}$C_i}{\href{$PREFIX$f}{mp4}}
                 "
@@ -122,7 +139,7 @@ for b in ${!position[@]}; do
             #pdflatex "\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${cameras[$i]}}\input{main}"
             pdflatex --interaction=nonstopmode "\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${cameras[$i]}}\input{main}"
         done
-        mv main.pdf trajectory/$BLOCK/${cameras[$i]}_${position[$b]}.pdf
+        mv main.pdf trajectory/$STARTTIME/$BLOCK/${STARTTIME}_${BLOCK}_${cameras[$i]}_${position[$b]}.pdf
     done
 done
 
