@@ -15,11 +15,11 @@ To compile the *Cython* code run
 [tex/env.sh](tex/env.sh) contains the paths to the trajectory data. One can configure these to point to the correct location of the data. Reading the data directly from the server `loopbio_data` results in long running times. It is recommended use a external hard drive holding the data.  
 Accessing the data from the server is very slow.  
 To generate the trajectory visualizations, run 
-`python3 main.py` and then `cd tex` to run the `latex` script:
+`python3 main.py program={trajectory, feeding}` and then `cd tex` to run the `latex` script:
 `bash build-trajectories.sh`
 
 #### Activity metrics
-* run: `python3 main.py metric={metric}`
+* run: `python3 main.py program={metric}`
 For the metric argument use one out of `metric={activity, angle, tortuosity, entropy}` 
 
 #### Metrics: 

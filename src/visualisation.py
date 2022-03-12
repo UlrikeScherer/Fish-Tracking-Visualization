@@ -28,6 +28,9 @@ class Trajectory:
         self.fig_obj_front = self.set_figure(is_back=False)
         self.fig_obj_back = self.set_figure(is_back=True)
 
+    def reset_data(self):
+        pass
+
     def subplot_function(self, batch, date, directory, name, fish_id, time_span="batch: 1,   00:00:00 - 00:30:00", is_back=False):
         (fig, ax, line) = self.fig_obj_back if is_back else self.fig_obj_front
         
@@ -85,6 +88,7 @@ class Trajectory:
     def plots_for_tex(self, fish_ids, day_list):
         n_D = len(day_list)
         N = len(self.fish2camera[fish_ids])*n_D
+        self.reset_data()
         for i, fish_idx in enumerate(fish_ids):
             camera_id,pos = self.fish2camera[fish_idx]
             is_back = pos==BACK

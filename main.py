@@ -8,12 +8,13 @@ from src.metrics import activity_per_interval, turning_angle_per_interval, tortu
 from src.activity_plotting import sliding_window, sliding_window_figures_for_tex
 
 TRAJECTORY="trajectory"
+FEEDING="feeding"
 ACTIVITY="activity"
 TURNING_ANGLE="turning_angle"
 TORTUOSITY="tortuosity"
 ENTROPY="entropy"
 ALL_METRICS="all"
-programs = [TRAJECTORY, ACTIVITY, TURNING_ANGLE, TORTUOSITY, ENTROPY]
+programs = [TRAJECTORY,FEEDING, ACTIVITY, TURNING_ANGLE, TORTUOSITY, ENTROPY]
 metric_names = [ACTIVITY, TURNING_ANGLE, TORTUOSITY, ENTROPY]
 time_intervals = [100,100,100,200]
 N_FISHES = len(fish2camera)
@@ -48,8 +49,9 @@ def main(program=None, test=0, time_interval=100, fish_id=None):
                 program: trajectory, activity, turning_angle
                 time_interval: kwarg for the programs activity, turning_angle
     """
-    cameras = get_camera_names()
-    days = get_days_in_order()
+    is_feeding = program==FEEDING
+    cameras = get_camera_names(is_feeding=is_feeding)
+    days = get_days_in_order(is_feeding=is_feeding)
     time_interval=int(time_interval)
     file_name = "%s_%s"%(time_interval, program)
 
@@ -57,14 +59,20 @@ def main(program=None, test=0, time_interval=100, fish_id=None):
     if fish_id!=None:
         fish_ids=np.array([int(fish_id)])
 
+    if int(test) == 1:
+        print("Test RUN ", program)
+        cameras=cameras[1:2]
+        days=days[1:2]
+
     if program == TRAJECTORY:
-        print(test)
-        if int(test) == 1:
-            print("Test RUN ", TRAJECTORY)
-            cameras=cameras[1:2]
-            days=days[1:2]
         T = Trajectory()
         T.plots_for_tex(fish_ids,days)
+
+    elif program == FEEDING:
+        FT =FeedingTrajectory()
+        FT.plots_for_tex(fish_ids,days)
+        FT.feeding_data_to_csv()
+        FT.feeding_data_to_tex()
 
     elif program == ACTIVITY:
         results = activity_per_interval(time_interval=time_interval, write_to_csv=True)
@@ -85,7 +93,7 @@ def main(program=None, test=0, time_interval=100, fish_id=None):
         for p in metric_names: 
             main(p)
     else:
-        print("Please provide a program name that you want to run. One of: ", programs)
+        print("Please provide the program name which you want to run. One of: ", programs)
 
         
     

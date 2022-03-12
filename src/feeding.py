@@ -16,6 +16,10 @@ class FeedingTrajectory(Trajectory):
         self.PATCHES = self.get_feeding_patches()
         self.set_feeding_box(is_back=False)
         self.set_feeding_box(is_back=True)
+        self.feeding_times = []
+        self.visits = []
+
+    def reset_data(self):
         self.feeding_times = [dict() for i in range(self.N_fishes)]
         self.visits = [dict() for i in range(self.N_fishes)]
 
