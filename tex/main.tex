@@ -19,8 +19,7 @@
 \usepackage{nopageno}
 \usepackage{tabularx}
 
-\input{arrayoflinks.tex}
-
+\input{files/arrayoflinks.tex}
 
 \newcounter{daycnt}
 \newcounter{subcnt}
@@ -33,14 +32,11 @@
 \providecommand{\maxindex}{14}
 \providecommand{\subfigwidth}{0.22\textwidth}
 \graphicspath{{../plots/\starttime/\block/\position/}} 
-
-%\renewcommand{\posstr}{FE_\block_autotracks_\position/}
-
 \providecommand{\rootserver}{/ROOT_DIRECTORY}
 \providecommand{\rootrecord}{/RECORING_DIRECTORY}
 \providecommand{\rootcsv}{/CSV_DIRECTORY}
 
-\input{\block_feedingtime.tex}
+\input{files/\block_feedingtime.tex}
 
 \title{Developing exploration behavior\\
 Trajectory over time of the molly at camera: \camera{} and position: \textsc{\position}\\
@@ -66,8 +62,10 @@ start time: \starttime\\
     CSV: \url{file://\rootcsv/\posstr\camera/#1.\camera/}}\\
     \parbox[c][3cm]{\subfigwidth}{\StrMid{#1}{0}{4}/\StrMid{#1}{5}{6}/\StrMid{#1}{7}{8}{} at \StrMid{#1}{10}{11}:\StrMid{#1}{12}{13}\\
      Trajectory over time of the molly at camera: \camera{}\\ position: \textsc{\position}\\
-    $\Delta$-Feeding Time: \getft{\camera\position#1}\\
-    Number of Visits: \getft{\camera\position#1v}\\
+    \ifthenelse{\equal{\starttime}{140000}}
+        {$\Delta$-Feeding Time: \getft{\camera\position#1}\\
+        Number of Visits: \getft{\camera\position#1v}\\}
+        {}%
      }
 }
 
@@ -149,7 +147,7 @@ start time: \starttime\\
 \maketitle  
 
 
-\input{days_array.tex}
+\input{files/days_array.tex}
 %\plotdayone{\day0} 
 %\plotdayone{20210910_1550} 
 

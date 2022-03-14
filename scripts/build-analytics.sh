@@ -1,5 +1,6 @@
 
 #!/bin/bash
+cd tex
 position=("front_1" "front_2" "back_1" "back_2")
 analytics="analytics"
 

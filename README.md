@@ -16,11 +16,12 @@ To compile the *Cython* code run
 Accessing the data from the server is very slow.  
 To generate the trajectory visualizations, run 
 `python3 main.py program={trajectory, feeding}` and then `cd tex` to run the `latex` script:
-`bash build-trajectories.sh`
+`bash build-trajectories.sh` and `bash build-trajectories.sh --feeding` for the feeding trajectories. 
 
 #### Activity metrics
 * run: `python3 main.py program={metric}`
-For the metric argument use one out of `metric={activity, angle, tortuosity, entropy}` 
+For the metric argument use one out of `{activity, angle, tortuosity, entropy}`. 
+* run: `bash build_analytics.sh` to generate the pdfs. 
 
 #### Metrics: 
 + step length is the length of the vector drawn between to consecutive data frames. 
@@ -29,12 +30,6 @@ For the metric argument use one out of `metric={activity, angle, tortuosity, ent
 + For the sum of angles we take each angle between consecutive steps anti-clockwise $`\alpha \in [-\pi, \pi]`$. 
 + For the average angle each angle $`\alpha > 0`$
 
-#### Next Steps
-For the metrics 
-* average activity
-* space used: Entropy heat map
-* direction turning angle
-* Tortuosity in 2-D
 
 Compute: `function(fish_id, time_interval in sec)`
 + compute SD/SE
@@ -48,33 +43,33 @@ Compute: `function(fish_id, time_interval in sec)`
 + `\href` in windows not working. 
 + start BioTracker from link. Install BioTracker on Mac? 
 Further documentation will follow here... 
-### How to start the BioTracker
++ How to start the BioTracker
 `.\BioTracker.lnk --video="X:\1_FE_(fingerprint_experiment)_SepDec2021\FE_recordings\FE_block1_recordings\FE_block1_recordings_week4\23442333\20211006_060000.23442333_front\23442333_20211006_060000.23442333_000000.mp4"`
 
 
-| Fish ID | Camera ID and Position |
-|---|---|
-| 0 | 23520289_front |
-| 1 | 23520289_back |
-| 2 | 23484201_front |
-| 3 | 23484201_back |
-| 4 | 23520258_front |
-| 5 | 23520258_back |
-| 6 | 23442333_front |
-| 7 | 23442333_back |
-| 8 | 23520268_front |
-| 9 | 23520268_back |
-| 10 | 23520257_front |
-| 11 | 23520257_back |
-| 12 | 23520266_front |
-| 13 | 23520266_back |
-| 14 | 23484204_front |
-| 15 | 23484204_back |
-| 16 | 23520278_front |
-| 17 | 23520278_back |
-| 18 | 23520276_front |
-| 19 | 23520276_back |
-| 20 | 23520270_front |
-| 21 | 23520270_back |
-| 22 | 23520264_front |
-| 23 | 23520264_back |
+| Fish ID | Camera ID | Position | ID |
+|---|---|---|---|
+| 0 | 23442333 | front | m1_01|
+| 1 | 23442333 | back | m3_01|
+|2 | 23484201 | front | m1_21|
+|3 | 23484201 | back | m1_22|
+|4 | 23484204 | front | m1_03|
+|5 | 23484204 | back | m1_04|
+|6 | 23520257 | front | m2_02|
+|7 | 23520257 | back | m1_12|
+|8 | 23520258 | front | m2_03|
+|9 | 23520258 | back | m1_16|
+|10 | 23520264 | front | m3_02|
+|11 | 23520264 | back | m2_04|
+|12 | 23520266 | front | m1_13|
+|13 | 23520266 | back | m1_14|
+|14 | 23520268 | front | m1_07|
+|15 | 23520268 | back | m1_08|
+|16 | 23520270 | front | m1_19|
+|17 | 23520270 | back | m1_20|
+|18 | 23520276 | front | m1_23|
+|19 | 23520276 | back | m1_24|
+|20 | 23520278 | front | m1_09|
+|21 | 23520278 | back | m1_10|
+|22 | 23520289 | front | m1_05|
+|23 | 23520289 | back | m2_01|

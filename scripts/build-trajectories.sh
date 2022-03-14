@@ -1,5 +1,6 @@
 #!/bin/bash
 
+cd tex
 cameras=('23520289' '23484201' '23520258' '23442333' '23520268' '23520257' '23520266' '23484204' '23520278' '23520276' '23520270' '23520264')
 position=("front" "back")
 PREFIX="file://" #run:
@@ -10,6 +11,7 @@ CSV_DIR=$path_csv_local
 MAX_IDX_OF_DAY=14
 SUBFIGURE_WIDTH="0.24\textwidth"
 LEGEND="\trajectorylegend"
+FILES="files"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -131,8 +133,8 @@ for b in ${!position[@]}; do
             done
         done
         # daysarray=${daysarray%?}
-        echo "${daysarray}" > days_array.tex
-        echo "$texheader" > arrayoflinks.tex
+        echo "${daysarray}" > $FILES/days_array.tex
+        echo "$texheader" > $FILES/arrayoflinks.tex
 
         END=2
         for k in $(seq 1 $END); do 

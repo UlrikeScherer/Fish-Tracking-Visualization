@@ -67,9 +67,10 @@ def print_tex_table(fish_ids, filename):
     tex_dir = "tex/tables"
     os.makedirs(tex_dir, exist_ok=True)
     f = open("%s/%s.tex"%(tex_dir,filename), "w+")
+    fids = get_fish_ids()
     for fid in fish_ids:
         camera, position = fish2camera[fid]
-        f.write("%d & %s & %s \\\ \n"%(fid, camera, position))
+        f.write("%d & %s & %s & %s\\\ \n"%(fid, camera, position, fids[fid]))
     f.close()
 
 def get_days_in_order(interval=None, is_feeding=False):

@@ -61,8 +61,8 @@ def main(program=None, test=0, time_interval=100, fish_id=None):
 
     if int(test) == 1:
         print("Test RUN ", program)
-        cameras=cameras[1:2]
-        days=days[1:2]
+        fish_ids=fish_ids[0:1]
+        days=days[:5]
 
     if program == TRAJECTORY:
         T = Trajectory()
