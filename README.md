@@ -5,23 +5,26 @@ Holds the scripts to visualize the molly's trajectory.
 The folder [tex/trajectory](tex/trajectory) contains the resulting pdfs.
 To make use of the links to the mp4 and csv-files -- connect to the server `loopbio_data`. Currently the links work for MacOX systems and best with [Adobe Reader](https://get.adobe.com/de/reader/). The Preview.app somehow has permission problems to open files, at least on my system. 
 
+#### Requirements
++ python3, gcc-11
++ install dependencies `pip3 install -r requirements.txt `
 
 #### Build 
 To compile the *Cython* code run 
-+ Mac: `CC='gcc-11' python3 setup.py build_ext --inplace`
-+ Unix: `python3 setup.py build_ext --inplace`
++`python3 setup.py build_ext --inplace` or `CC='gcc-11' setup.py build_ext --inplace`
 
 #### Trajectory Visualization PDFs
 [tex/env.sh](tex/env.sh) contains the paths to the trajectory data. One can configure these to point to the correct location of the data. Reading the data directly from the server `loopbio_data` results in long running times. It is recommended use a external hard drive holding the data.  
 Accessing the data from the server is very slow.  
 To generate the trajectory visualizations, run 
 `python3 main.py program={trajectory, feeding}` and then `cd tex` to run the `latex` script:
-`bash build-trajectories.sh` and `bash build-trajectories.sh --feeding` for the feeding trajectories. 
+`bash scripts/build-trajectories.sh` and `bash scripts/build-trajectories.sh --feeding` for the feeding trajectories. 
 
 #### Activity metrics
-* run: `python3 main.py program={metric}`
-For the metric argument use one out of `{activity, angle, tortuosity, entropy}`. 
-* run: `bash build_analytics.sh` to generate the pdfs. 
+* run: `python3 main.py program={metric} <<optional>> time_interval=<<default>>100`
+For the metric argument use one out of `{activity, angle, tortuosity, entropy}`.
+
+* run: `bash scripts/build_analytics.sh` to generate the pdfs. 
 
 #### Metrics: 
 + step length is the length of the vector drawn between to consecutive data frames. 
@@ -35,9 +38,6 @@ Compute: `function(fish_id, time_interval in sec)`
 + compute SD/SE
 + store output of the function for some *time_interval* as **csv**.
 
-+ Example of entropy heat map. 
-+ activity over time plot
-
 #### Open TODOs
 + pdfs for windows -- adapted the root to `C:\data\...`. (Not needed for now)
 + `\href` in windows not working. 
@@ -47,7 +47,7 @@ Further documentation will follow here...
 `.\BioTracker.lnk --video="X:\1_FE_(fingerprint_experiment)_SepDec2021\FE_recordings\FE_block1_recordings\FE_block1_recordings_week4\23442333\20211006_060000.23442333_front\23442333_20211006_060000.23442333_000000.mp4"`
 
 
-| Fish ID | Camera ID | Position | ID |
+| Index | Camera ID | Position | ID |
 |---|---|---|---|
 | 0 | 23442333 | front | m1_01|
 | 1 | 23442333 | back | m3_01|

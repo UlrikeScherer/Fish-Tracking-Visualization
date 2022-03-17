@@ -103,7 +103,7 @@ for b in ${!position[@]}; do
             d=$(basename $d)
             day=${d: : 24}
             day_id=${day: : 13}
-            if [ "$BLOCK" = "block1" ] && [ "$isFIRST" -eq "1" ] && ![ $feeding ]; then
+            if [ "$BLOCK" = "block1" ] && [ "$isFIRST" -eq "1" ] && [ "$feeding" != "1" ]; then
                 daysarray="$daysarray \plotdayone{${day: : 13}}
                 "
                 isFIRST=0;

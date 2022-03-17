@@ -1,5 +1,5 @@
 import time
-import sys
+import sys, os
 import matplotlib.pyplot as plt
 import numpy as np
 from src.utile import get_camera_names, get_days_in_order, DIR_CSV_LOCAL, fish2camera, MEAN_GLOBAL, print_tex_table
@@ -49,6 +49,9 @@ def main(program=None, test=0, time_interval=100, fish_id=None):
                 program: trajectory, activity, turning_angle
                 time_interval: kwarg for the programs activity, turning_angle
     """
+    if not os.path.isdir(DIR_CSV_LOCAL): 
+        print("WARNING: connect to external hard drive with path %s or edit path in tex/env.sh"%DIR_CSV_LOCAL)
+        return None
     is_feeding = program==FEEDING
     cameras = get_camera_names(is_feeding=is_feeding)
     days = get_days_in_order(is_feeding=is_feeding)
@@ -61,8 +64,9 @@ def main(program=None, test=0, time_interval=100, fish_id=None):
 
     if int(test) == 1:
         print("Test RUN ", program)
-        fish_ids=fish_ids[0:1]
-        days=days[:5]
+        fish_ids=fish_ids#[0:1]
+        days=days[:1]
+        print("For days: %s, fish indices: %s"%(",".join(days),fish_ids))
 
     if program == TRAJECTORY:
         T = Trajectory()
