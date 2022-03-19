@@ -11,7 +11,7 @@ To make use of the links to the mp4 and csv-files -- connect to the server `loop
 
 #### Build 
 To compile the *Cython* code run 
-+`python3 setup.py build_ext --inplace` or `CC='gcc-11' setup.py build_ext --inplace`
++`python3 setup.py build_ext --inplace` or `CC='gcc-11' python3 setup.py build_ext --inplace`
 
 #### Trajectory Visualization PDFs
 [tex/env.sh](tex/env.sh) contains the paths to the trajectory data. One can configure these to point to the correct location of the data. Reading the data directly from the server `loopbio_data` results in long running times. It is recommended use a external hard drive holding the data.  
