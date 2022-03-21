@@ -139,7 +139,7 @@ for b in ${!position[@]}; do
         echo "$texheader" > $FILES/arrayoflinks.tex
         if [ "$feeding" -eq 1 ]; then 
             echo "\input{$FILES/${BLOCK}_feedingtime.tex}" >> $FILES/arrayoflinks.tex
-
+        fi
         END=2
         for k in $(seq 1 $END); do 
             #pdflatex "\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${cameras[$i]}}\input{main}"
