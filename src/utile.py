@@ -7,7 +7,7 @@ import re
 import glob
 from itertools import product
 from envbash import load_envbash
-load_envbash('tex/env.sh')
+load_envbash('scripts/env.sh')
 
 # Calculated MEAN and SD for the data set filtered for erroneous frames 
 MEAN_GLOBAL = 0.22746102241709162

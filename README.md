@@ -14,15 +14,18 @@ To compile the *Cython* code run
 +`python3 setup.py build_ext --inplace` or `CC='gcc-11' python3 setup.py build_ext --inplace`
 
 #### Trajectory Visualization PDFs
-[tex/env.sh](tex/env.sh) contains the paths to the trajectory data. One can configure these to point to the correct location of the data. Reading the data directly from the server `loopbio_data` results in long running times. It is recommended use a external hard drive holding the data.  
+[scripts/env.sh](scripts/env.sh) contains the paths to the trajectory data. One can configure these to point to the correct location of the data. Reading the data directly from the server `loopbio_data` results in long running times. It is recommended use a external hard drive. If you path uses spaces, for example the name of the hard drive, rename it to underscores -- `_`.   
 Accessing the data from the server is very slow.  
-To generate the trajectory visualizations, run 
-`python3 main.py program={trajectory, feeding}` and then `cd tex` to run the `latex` script:
-`bash scripts/build-trajectories.sh` and `bash scripts/build-trajectories.sh --feeding` for the feeding trajectories. 
+
+To generate the trajectory visualizations, run: 
++ `python3 main.py program={trajectory, feeding}` 
++ optional arguments: `fish_id=id one of {0,...,24}`, `test={0,1}`
+and then run the `bash`-script:
++ `bash scripts/build-trajectories.sh` or with optional argument `--feeding` or `-f` for the feeding trajectories. `--test`, `-t` is used to test the script, to generate only the fist pdf. 
 
 #### Activity metrics
 * run: `python3 main.py program={metric} <<optional>> time_interval=<<default>>100`
-For the metric argument use one out of `{activity, angle, tortuosity, entropy}`.
+For the metric argument use one out of `{activity, angle, tortuosity, entropy, all}`.
 
 * run: `bash scripts/build_analytics.sh` to generate the pdfs. 
 

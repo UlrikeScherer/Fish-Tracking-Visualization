@@ -1,10 +1,12 @@
 
 #!/bin/bash
+source scripts/env.sh # get the following variables
+
 cd tex
 position=("front_1" "front_2" "back_1" "back_2")
 analytics="analytics"
 
-source env.sh # get the following variables
+
 echo "
 -------------------------
 START generating analytics PDFs for: 

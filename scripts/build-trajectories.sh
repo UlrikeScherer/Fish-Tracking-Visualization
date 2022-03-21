@@ -1,11 +1,13 @@
 #!/bin/bash
 
+source scripts/env.sh # get the following variables
+
 cd tex
 cameras=('23520289' '23484201' '23520258' '23442333' '23520268' '23520257' '23520266' '23484204' '23520278' '23520276' '23520270' '23520264')
 position=("front" "back")
 PREFIX="file://" #run:
 
-source env.sh # get the following variables
+
 STARTTIME=$RECORDINGTIME
 CSV_DIR=$path_csv_local
 MAX_IDX_OF_DAY=14
