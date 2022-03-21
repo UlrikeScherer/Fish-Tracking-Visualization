@@ -137,6 +137,8 @@ for b in ${!position[@]}; do
         # daysarray=${daysarray%?}
         echo "${daysarray}" > $FILES/days_array.tex
         echo "$texheader" > $FILES/arrayoflinks.tex
+        if [ "$feeding" -eq 1 ]; then 
+            echo "\input{$FILES/${BLOCK}_feedingtime.tex}" >> $FILES/arrayoflinks.tex
 
         END=2
         for k in $(seq 1 $END); do 
