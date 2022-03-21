@@ -36,15 +36,13 @@ For the metric argument use one out of `{activity, angle, tortuosity, entropy, a
 + For the sum of angles we take each angle between consecutive steps anti-clockwise $`\alpha \in [-\pi, \pi]`$. 
 + For the average angle each angle $`\alpha > 0`$
 
-
 Compute: `function(fish_id, time_interval in sec)`
-[src/methods.py](In metrics.py) there are four function to calculate the metrics and store mean and standard derivation in `/results/<<time_interval>>_<<metrics_name>>.csv`. 
+[In methods.py](src/metrics.py) there are four function to calculate the metrics and store mean and standard derivation in `/results/<<time_interval>>_<<metrics_name>>.csv`. 
 
 + `activity_per_interval`
 + `turning_angle_per_interval`
 + `tortuosity_per_interval`
 + `entropy_per_interval`
-+ compute SD/SE
 
 #### Open TODOs
 + pdfs for windows -- adapted the root to `C:\data\...`. (Not needed for now)

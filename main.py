@@ -16,7 +16,7 @@ ENTROPY="entropy"
 ALL_METRICS="all"
 programs = [TRAJECTORY,FEEDING, ACTIVITY, TURNING_ANGLE, TORTUOSITY, ENTROPY]
 metric_names = [ACTIVITY, TURNING_ANGLE, TORTUOSITY, ENTROPY]
-time_intervals = [100,100,100,200]
+#time_intervals = [100,100,100,200]
 
 def map_r_to_idx(results, fish_idx): 
     return [results[i] for i in fish_idx]
