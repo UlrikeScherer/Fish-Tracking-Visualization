@@ -14,6 +14,7 @@ MAX_IDX_OF_DAY=14
 SUBFIGURE_WIDTH="0.24\textwidth"
 LEGEND="\trajectorylegend"
 FILES="files"
+mkdir -p FILES
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -46,8 +47,7 @@ $CSV_DIR
 $STARTTIME
 -------------------------"
 
-mkdir trajectory/$STARTTIME
-mkdir trajectory/$STARTTIME/$BLOCK
+mkdir -p trajectory/$STARTTIME/$BLOCK
 
 for b in ${!position[@]}; do
     echo -e "pdf for ${position[$b]} \n"

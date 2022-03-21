@@ -13,8 +13,8 @@ START generating analytics PDFs for:
 $BLOCK
 -------------------------"
 
-mkdir $analytics
-mkdir $analytics/$BLOCK
+
+mkdir -p $analytics/$BLOCK
 
 
 for b in ${!position[@]}; do
