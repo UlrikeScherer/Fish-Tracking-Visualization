@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.stats import entropy
-from src.utile import S_LIMIT, BACK, fish2camera, get_days_in_order, csv_of_the_day, BLOCK, N_SECONDS_OF_DAY, get_seconds_from_day, N_FISHES
+from src.utile import S_LIMIT, BACK, get_days_in_order, csv_of_the_day, BLOCK, N_SECONDS_OF_DAY, get_seconds_from_day, N_FISHES, get_fish2camera_map
 from methods import activity, calc_steps, turning_angle, tortuosity_of_chunk #cython
 import pandas as pd
 import os
@@ -128,6 +128,7 @@ def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100
     if isinstance(fish_ids, int):
         fish_ids = [fish_ids]
     days = get_days_in_order(interval=day_interval)
+    fish2camera = get_fish2camera_map()
     results = list()
     for i,fish in enumerate(fish_ids):
         camera_id, is_back = fish2camera[fish,0], fish2camera[fish,1]==BACK
@@ -146,6 +147,7 @@ def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100
 
 def metric_data_to_csv(results, time_interval=100, fish_ids=[0], day_interval=[0,1], metric=activity):
     days = get_days_in_order(interval=day_interval)
+    fish2camera = get_fish2camera_map()
     for i,fish in enumerate(fish_ids):
         time = list()
         for j,day in enumerate(days):

@@ -1,5 +1,5 @@
 import numpy as np
-from src.utile import csv_of_the_day, fish2camera, S_LIMIT, BACK
+from src.utile import csv_of_the_day, get_fish2camera_map, S_LIMIT, BACK
 from src.metrics import calc_step_per_frame
 
 def global_mean(fish_ids, days):
@@ -12,8 +12,9 @@ def global_mean_by_day(fish_ids, days):
 def global_activity(fish_ids, days):
     sum_means = 0
     num_N=0
-    distance_fish_day = [list() for i in range(len(fish2camera[fish_ids]))]
-    N_steps = [list() for i in range(len(fish2camera[fish_ids]))]
+    fish2camera=get_fish2camera_map()
+    distance_fish_day = [list() for i in range(len(fish_ids))]
+    N_steps = [list() for i in range(len(fish_ids))]
     for i,(c, pos) in enumerate(fish2camera[fish_ids]):
         is_back = BACK == pos
         for j, d in enumerate(days):
@@ -36,6 +37,7 @@ def global_activity(fish_ids, days):
 def global_sd(fish_ids, days, mean):
     sum_sd = 0
     num_N=0
+    fish2camera=get_fish2camera_map()
     for i,(c, pos) in enumerate(fish2camera[fish_ids]):
         is_back = BACK == pos
         for j, d in enumerate(days):

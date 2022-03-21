@@ -42,7 +42,7 @@ def sliding_window_figures_for_tex(dataset, *args, name="methode", set_title=Fal
         plt.close(f)
     return None
 
-def sliding_window(dataset, time_interval, sw, fish_ids=[0], xlabel="seconds", ylabel="average cm/Frame", name="methode", write_fig=False, logscale=False, baseline=None, set_title=True, set_legend=True, first_day=0):
+def sliding_window(dataset, time_interval, sw, fish_ids=[0], fish_labels=None, xlabel="seconds", ylabel="average cm/Frame", name="methode", write_fig=False, logscale=False, baseline=None, set_title=True, set_legend=True, first_day=0):
     """Summerizes the data for a sliding window and plots a continuous line over time """
     mpl.rcParams['axes.spines.left'] = False
     mpl.rcParams['axes.spines.right'] = False
@@ -74,7 +74,7 @@ def sliding_window(dataset, time_interval, sw, fish_ids=[0], xlabel="seconds", y
             slide_data = [np.mean(data[i:i+sw,0]) for i in range(0, data.shape[0]-sw)]
             x_end = offset + (len(data)-sw)*time_interval
             x_max = max(x_max, x_end) # x_max update to draw the dashed baseline
-            axes[d_idx].plot(range(offset, x_end, time_interval), slide_data,'-', label="fish %s"%fish_ids[f_idx], color=color_map[fish_ids[f_idx]], linewidth=2)
+            axes[d_idx].plot(range(offset, x_end, time_interval), slide_data,'-', label=fish_labels[f_idx], color=color_map[fish_ids[f_idx]], linewidth=2)
             if f_idx == 0:
                 if set_title:
                     axes[d_idx].set_title("Date %s"%days_date[d_idx], y=0.95, pad=4)

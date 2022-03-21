@@ -41,7 +41,7 @@ def get_camera_names(is_feeding=False):
 def get_fish2camera_map(is_feeding=False):
     return np.array(list(product(get_camera_names(is_feeding), [FRONT, BACK])))
 
-fish2camera=np.array(list(product(get_camera_names(), [FRONT, BACK])))
+#fish2camera=np.array(list(product(get_camera_names(), [FRONT, BACK])))
 
 def get_fish_ids():
     """
@@ -54,7 +54,7 @@ def get_fish_ids():
     info_df1[["fish_id", "camera", "block", "tank"]],
     fishIDs_order = list()
     FB_char = np.array(list(map(lambda x: str(x[-1]),info_df1["tank"])))
-
+    fish2camera = get_fish2camera_map()
     for i, (c,p) in enumerate(fish2camera):
         f1 = info_df1["camera"] == int(c[-2:])
         f2 = FB_char == p[0].upper()
@@ -68,9 +68,10 @@ def print_tex_table(fish_ids, filename):
     os.makedirs(tex_dir, exist_ok=True)
     f = open("%s/%s.tex"%(tex_dir,filename), "w+")
     fids = get_fish_ids()
+    fish2camera = get_fish2camera_map()
     for fid in fish_ids:
         camera, position = fish2camera[fid]
-        f.write("%d & %s & %s & %s\\\ \n"%(fid, camera, position, fids[fid]))
+        f.write("%d & %s & %s & %s\\\ \n"%(fid, camera, position, fids[fid].replace("_","\_")))
     f.close()
 
 def get_days_in_order(interval=None, is_feeding=False):
@@ -153,6 +154,7 @@ def filter_filenames(filenames_f):
     return filtered_files      
     
 def activity_for_day_hist(fish_id, day_idx=1):
+    fish2camera=get_fish2camera_map()
     camera_id, is_back = fish2camera[fish_id,0], fish2camera[fish_id,1]=="back"
     mu_sd = list()
     all_days = get_days_in_order()

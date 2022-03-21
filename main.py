@@ -2,7 +2,7 @@ import time
 import sys, os
 import matplotlib.pyplot as plt
 import numpy as np
-from src.utile import get_camera_names, get_days_in_order, DIR_CSV_LOCAL, fish2camera, MEAN_GLOBAL, print_tex_table
+from src.utile import get_camera_names, get_days_in_order, DIR_CSV_LOCAL, MEAN_GLOBAL, print_tex_table, get_fish2camera_map, N_FISHES, get_fish_ids
 from src.visualisation import Trajectory
 from src.metrics import activity_per_interval, turning_angle_per_interval, tortuosity_per_interval, entropy_per_interval
 from src.activity_plotting import sliding_window, sliding_window_figures_for_tex
@@ -17,13 +17,12 @@ ALL_METRICS="all"
 programs = [TRAJECTORY,FEEDING, ACTIVITY, TURNING_ANGLE, TORTUOSITY, ENTROPY]
 metric_names = [ACTIVITY, TURNING_ANGLE, TORTUOSITY, ENTROPY]
 time_intervals = [100,100,100,200]
-N_FISHES = len(fish2camera)
 
 def map_r_to_idx(results, fish_idx): 
     return [results[i] for i in fish_idx]
 
 def plotting_odd_even(results, time_interval, name, ylabel, **kwargs):
-    fish_ids_even = [i for i in range(0 ,N_FISHES,2)]
+    fish_ids_even = [i for i in range(0, N_FISHES, 2)]
     fish_ids_odd = [i for i in range(1, N_FISHES, 2)]
     size_even, size_odd = int(len(fish_ids_even)/2), int(len(fish_ids_odd)/2)
     fish_ids_even_1 = fish_ids_even[:size_even]
@@ -33,6 +32,7 @@ def plotting_odd_even(results, time_interval, name, ylabel, **kwargs):
 
     kwargs["write_fig"]=True
     fish_batches = [fish_ids_even_1, fish_ids_even_2, fish_ids_odd_1, fish_ids_odd_2]
+    fish_labels = get_fish_ids()
     positions = ["front_1", "front_2", "back_1", "back_2"]
     names = ["%s_%s"%(name, p) for p in positions]
 
@@ -40,9 +40,9 @@ def plotting_odd_even(results, time_interval, name, ylabel, **kwargs):
         print("Plotting %s %s"%(names[i], batch))
         print_tex_table(batch, positions[i])
         select_data = map_r_to_idx(results,batch)
-        f_ = sliding_window(select_data, time_interval, sw=10, fish_ids=batch, ylabel=ylabel, name=names[i], **kwargs)
+        f_ = sliding_window(select_data, time_interval, sw=10, fish_ids=batch, fish_labels=fish_labels[batch], ylabel=ylabel, name=names[i], **kwargs)
         plt.close(f_)
-        sliding_window_figures_for_tex(select_data, time_interval, sw=10, fish_ids=batch, ylabel=ylabel, name=names[i], **kwargs)
+        sliding_window_figures_for_tex(select_data, time_interval, sw=10, fish_ids=batch, fish_labels=fish_labels[batch], ylabel=ylabel, name=names[i], **kwargs)
         
 def main(program=None, test=0, time_interval=100, fish_id=None):
     """param:   test, 0,1 when test==1 run test mode
@@ -55,6 +55,8 @@ def main(program=None, test=0, time_interval=100, fish_id=None):
     is_feeding = program==FEEDING
     cameras = get_camera_names(is_feeding=is_feeding)
     days = get_days_in_order(is_feeding=is_feeding)
+    fish2camera = get_fish2camera_map(is_feeding=is_feeding)
+    N_FISHES = len(fish2camera) 
     time_interval=int(time_interval)
     file_name = "%s_%s"%(time_interval, program)
 
@@ -93,9 +95,9 @@ def main(program=None, test=0, time_interval=100, fish_id=None):
         results = entropy_per_interval(time_interval=time_interval, write_to_csv=True)
         plotting_odd_even(results, time_interval=time_interval, name=file_name, ylabel="entropy", baseline=0)
 
-    elif program == ALL:
+    elif program == ALL_METRICS:
         for p in metric_names: 
-            main(p)
+            main(p, time_interval=time_interval, fish_id=fish_id)
     else:
         print("Please provide the program name which you want to run. One of: ", programs)
 
