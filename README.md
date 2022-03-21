@@ -38,6 +38,13 @@ For the metric argument use one out of `{activity, angle, tortuosity, entropy, a
 
 
 Compute: `function(fish_id, time_interval in sec)`
+[src/methods.py](In metrics.py) there are four function to calculate the metrics and store mean and standard derivation in `/results/<<time_interval>>_<<metrics_name>>`. 
+`
+activity_per_interval
+turning_angle_per_interval
+tortuosity_per_interval
+entropy_per_interval
+`
 + compute SD/SE
 + store output of the function for some *time_interval* as **csv**.
 

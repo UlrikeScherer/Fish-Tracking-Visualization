@@ -75,7 +75,7 @@ def main(program=None, test=0, time_interval=100, fish_id=None):
         T.plots_for_tex(fish_ids,days)
 
     elif program == FEEDING:
-        FT =FeedingTrajectory()
+        FT = FeedingTrajectory()
         FT.plots_for_tex(fish_ids,days)
         FT.feeding_data_to_csv()
         FT.feeding_data_to_tex()
