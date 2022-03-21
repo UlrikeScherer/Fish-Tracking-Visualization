@@ -14,7 +14,7 @@ MAX_IDX_OF_DAY=14
 SUBFIGURE_WIDTH="0.24\textwidth"
 LEGEND="\trajectorylegend"
 FILES="files"
-mkdir -p $FILES
+mkdir $FILES
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
