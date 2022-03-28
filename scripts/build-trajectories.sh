@@ -9,7 +9,7 @@ PREFIX="file://" #run:
 
 
 STARTTIME=$RECORDINGTIME
-CSV_DIR=$path_csv_local
+CSV_DIR=$path_csv
 MAX_IDX_OF_DAY=14
 SUBFIGURE_WIDTH="0.24\textwidth"
 LEGEND="\trajectorylegend"
@@ -34,7 +34,7 @@ if [ $feeding ]; then
 fi
 if [ $test ]; then
     cameras=('23442333') 
-    position=("back")
+    position=("front")
     echo "Testrun using $cameras, position: $position";
 fi
 echo "
