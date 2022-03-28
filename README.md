@@ -22,6 +22,7 @@ To generate the trajectory visualizations, run:
 + optional arguments: `fish_id=id one of {0,...,24}`, `test={0,1}`
 and then run the `bash`-script:
 + `bash scripts/build-trajectories.sh` or with optional argument `--feeding` or `-f` for the feeding trajectories. `--test`, `-t` is used to test the script, to generate only the fist pdf. 
+**Remark:** For the bash-script you can not build feeding and non feeding trajectories in parallel as they use the same files. 
 
 #### Activity metrics
 * run: `python3 main.py program={metric} <<optional>> time_interval=<<default>>100`

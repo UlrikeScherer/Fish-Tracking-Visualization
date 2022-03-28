@@ -27,7 +27,7 @@ while [[ "$#" -gt 0 ]]; do
 done
 if [ $feeding ]; then
     STARTTIME=$FEEDINGTIME
-    CSV_DIR=$path_csv_feeding_local
+    CSV_DIR=$path_csv_feeding
     MAX_IDX_OF_DAY=7
     SUBFIGURE_WIDTH="0.33\textwidth"
     LEGEND="\feedinglegend"
