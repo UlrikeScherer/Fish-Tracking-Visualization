@@ -111,7 +111,7 @@ def get_position_string(is_back):
         return FRONT
     
 def read_batch_csv(filename, drop_errors):
-    df = pd.read_csv(filename,skiprows=3, delimiter=';', error_bad_lines=False, usecols=["x", "y", "FRAME", "time", "xpx", "ypx"])
+    df = pd.read_csv(filename,skiprows=3, delimiter=';', on_bad_lines=False, usecols=["x", "y", "FRAME", "time", "xpx", "ypx"])
     df.dropna(axis="rows", how="any", inplace=True)
     if drop_errors:
         indexNames = df[:-1][ df[:-1].x.array <= -1].index # exept the last index for time recording
