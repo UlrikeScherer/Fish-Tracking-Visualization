@@ -13,6 +13,7 @@ path_csv_local="$root_local/FE_tracks_original/FE_tracks_${STIME}/FE_tracks_${ST
 POSITION_STR_FRONT="FE_${STIME}_tracks_${BLOCK}_front"
 POSITION_STR_BACK="FE_${STIME}_tracks_${BLOCK}_back"
 
+path_csv_feeding="$rootserver/FE_tracks_original/FE_tracks_${FEEDINGTIME}/FE_tracks_${FEEDINGTIME}_$BLOCK"
 path_csv_feeding_local="$root_local/FE_tracks_original/FE_tracks_${FEEDINGTIME}/FE_tracks_${FEEDINGTIME}_$BLOCK"
 dir_feeding_front="${path_csv_feeding_local}/FE_${FEEDINGTIME}_tracks_${BLOCK}_front"
 dir_feeding_back="${path_csv_feeding_local}/FE_${FEEDINGTIME}_tracks_${BLOCK}_back"

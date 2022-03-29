@@ -16,7 +16,7 @@ ENTROPY="entropy"
 ALL_METRICS="all"
 programs = [TRAJECTORY,FEEDING, ACTIVITY, TURNING_ANGLE, TORTUOSITY, ENTROPY]
 metric_names = [ACTIVITY, TURNING_ANGLE, TORTUOSITY, ENTROPY]
-time_intervals = [100,100,100,200]
+#time_intervals = [100,100,100,200]
 
 def map_r_to_idx(results, fish_idx): 
     return [results[i] for i in fish_idx]
@@ -75,7 +75,7 @@ def main(program=None, test=0, time_interval=100, fish_id=None):
         T.plots_for_tex(fish_ids,days)
 
     elif program == FEEDING:
-        FT =FeedingTrajectory()
+        FT = FeedingTrajectory()
         FT.plots_for_tex(fish_ids,days)
         FT.feeding_data_to_csv()
         FT.feeding_data_to_tex()

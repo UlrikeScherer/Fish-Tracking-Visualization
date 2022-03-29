@@ -22,6 +22,7 @@ To generate the trajectory visualizations, run:
 + optional arguments: `fish_id=id one of {0,...,24}`, `test={0,1}`
 and then run the `bash`-script:
 + `bash scripts/build-trajectories.sh` or with optional argument `--feeding` or `-f` for the feeding trajectories. `--test`, `-t` is used to test the script, to generate only the fist pdf. 
+**Remark:** For the bash-script you can not build feeding and non feeding trajectories in parallel as they use the same files. 
 
 #### Activity metrics
 * run: `python3 main.py program={metric} <<optional>> time_interval=<<default>>100`
@@ -36,10 +37,13 @@ For the metric argument use one out of `{activity, angle, tortuosity, entropy, a
 + For the sum of angles we take each angle between consecutive steps anti-clockwise $`\alpha \in [-\pi, \pi]`$. 
 + For the average angle each angle $`\alpha > 0`$
 
-
 Compute: `function(fish_id, time_interval in sec)`
-+ compute SD/SE
-+ store output of the function for some *time_interval* as **csv**.
+[In methods.py](src/metrics.py) there are four function to calculate the metrics and store mean and standard derivation in `/results/<<time_interval>>_<<metrics_name>>.csv`. 
+
++ `activity_per_interval`
++ `turning_angle_per_interval`
++ `tortuosity_per_interval`
++ `entropy_per_interval`
 
 #### Open TODOs
 + pdfs for windows -- adapted the root to `C:\data\...`. (Not needed for now)
