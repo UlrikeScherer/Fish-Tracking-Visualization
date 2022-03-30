@@ -45,6 +45,10 @@ Compute: `function(fish_id, time_interval in sec)`
 + `tortuosity_per_interval`
 + `entropy_per_interval`
 
+#### Next Steps 
++ t-sne or pca with activity, tortuosity, entrophy, avg, truning angle. 
++ t-sne with lines (distance, direction angle).
+
 #### Open TODOs
 + pdfs for windows -- adapted the root to `C:\data\...`. (Not needed for now)
 + `\href` in windows not working. 

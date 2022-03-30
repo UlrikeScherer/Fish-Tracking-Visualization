@@ -124,8 +124,9 @@ cpdef np.ndarray[double, ndim=1] tortuosity_of_chunk(np.ndarray[double, ndim=2] 
 cpdef np.ndarray[float, ndim=1] avg_turning_direction(np.ndarray[double, ndim=2] data):
     cdef np.ndarray[double, ndim=2] vecs
     cdef double v0, v1, u0, u1
-    vecs = data[1:]-data[:-1]
-    vecs = vecs[np.all(vecs!=0, axis=1)]
+    vecs_in = data[1:]-data[:-1]
+    indices = np.all(vecs_in!=0, axis=1)
+    vecs = vecs_in[indices]
     cdef int N_alpha
     N_alpha = len(vecs)
     cdef np.ndarray sum_ang = np.zeros([N_alpha], dtype=float)
@@ -137,7 +138,10 @@ cpdef np.ndarray[float, ndim=1] avg_turning_direction(np.ndarray[double, ndim=2]
         (v0, v1) = unit_vector(vecs[i,0], vecs[i,1])
         sum_ang[i-1] = direction_angle(u0,u1,v0,v1)
         u0, u1 = v0, v1
-    return sum_ang
+
+    results = np.zeros(len(vecs_in), dtype=float)
+    results[indices] = sum_ang
+    return results
 
 
 cpdef np.ndarray[double, ndim=2] activity(np.ndarray[double, ndim=2] data, int frame_interval):

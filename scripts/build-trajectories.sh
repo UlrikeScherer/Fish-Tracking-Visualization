@@ -51,7 +51,7 @@ mkdir -p trajectory/$STARTTIME/$BLOCK
 
 for b in ${!position[@]}; do
     echo -e "pdf for ${position[$b]} \n"
-    POSITION_STR="FE_${STARTTIME}_tracks_${BLOCK}_${position[$b]}"
+    POSITION_STR="FE_${STARTTIME}_tracks_${BLOCK}_${position[$b]}*"
     for i in ${!cameras[@]}; do
         secff="$(ls -d $CSV_DIR/$POSITION_STR/${cameras[$i]}/*.${cameras[$i]}/ | sort -V | head -1 | sed 's/.*1550\([^.]*\).*/\1/')"
         

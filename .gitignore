@@ -2,7 +2,7 @@
 **/methods.html
 **/methods.c
 Metrics.ipynb 
-
+*.pdf
 # MacOS
 .DS_Store
 **/.vscode

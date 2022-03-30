@@ -50,7 +50,7 @@ def main(program=None, test=0, time_interval=100, fish_id=None):
                 time_interval: kwarg for the programs activity, turning_angle
     """
     if not os.path.isdir(DIR_CSV_LOCAL): 
-        print("WARNING: connect to external hard drive with path %s or edit path in tex/env.sh"%DIR_CSV_LOCAL)
+        print("TERMINATED: Please connect to external hard drive with path %s or edit path in scripts/env.sh"%DIR_CSV_LOCAL)
         return None
     is_feeding = program==FEEDING
     cameras = get_camera_names(is_feeding=is_feeding)
