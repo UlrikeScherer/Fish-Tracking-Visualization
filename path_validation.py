@@ -6,8 +6,8 @@ def check_foldersystem(path):
     LOG_msg = ["For path: %s"%path]
     for c in [name for name in os.listdir(path) if len(name)==8 and name.isnumeric()]:
         for d in [name for name in os.listdir("{}/{}".format(path,c)) if name[:8].isnumeric()]:
-            if "{}.{}".format(d[:15],c) != d:
-                LOG_msg.append("Day %s is not in the correct format"%d)
+            #if "{}.{}".format(d[:15],c) != d:
+            #    LOG_msg.append("Day %s is not in the correct format"%d) # this message can be ignored
             files = glob.glob("{}/{}/{}/*.csv".format(path, c, d))
             files = [os.path.basename(f) for f in files]
             wrote_folder = False

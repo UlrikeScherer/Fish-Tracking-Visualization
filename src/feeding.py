@@ -5,6 +5,7 @@ from time import gmtime, strftime
 from src.utile import BACK, FRONT, get_days_in_order, get_fish_ids, BLOCK
 from src.metrics import DATA_results
 from src.visualisation import Trajectory
+from src.transformation import pixel_to_cm
 
 class FeedingTrajectory(Trajectory):
 
@@ -19,6 +20,7 @@ class FeedingTrajectory(Trajectory):
         self.set_feeding_box(is_back=True)
         self.feeding_times = []
         self.visits = []
+        self.reset_data()
 
     def reset_data(self):
         self.feeding_times = [dict() for i in range(self.N_fishes)]
@@ -35,18 +37,18 @@ class FeedingTrajectory(Trajectory):
 
         if batch.x.array[-1] <= -1:
             batch.drop(batch.tail(1).index)
-        batchxy = pixel_to_cm(batch[["xpx", "ypx"]].to_numpy().T).T
-        line.set_data(*batchxy)
+        batchxy = pixel_to_cm(batch[["xpx", "ypx"]].to_numpy())
+        line.set_data(*batchxy.T)
 
         feeding_b, box = self.feeding_data(batch, fish_id)
         feeding_size = feeding_b.shape[0]
         index_swim_in = np.where(feeding_b.FRAME[1:].array-feeding_b.FRAME[:-1].array != 1)[0]
         index_visits = [0, *(index_swim_in+1), feeding_size-1]
         entries = len(index_visits)
-        fb = pixel_to_cm(feeding_b[["xpx", "ypx"]].to_numpy().T).T   
+        fb = pixel_to_cm(feeding_b[["xpx", "ypx"]].to_numpy()).T   
         lines = ax.get_lines()
         # UPDATE BOX
-        box_cm = pixel_to_cm(box.T)
+        box_cm = pixel_to_cm(box)
         lines[1].set_data(*box_cm.T)
 
         lines = lines[2:]
@@ -129,9 +131,6 @@ def get_feeding_cords(data,camera_id, is_back):
     patches = pd.read_csv("data/feeding_patch_coords.csv", delimiter=";")
     return get_feeding_box(data,*find_cords(camera_id, pos, patches))
 
-def rotation(t):
-    return np.array([[np.cos(t), -np.sin(t)], [np.sin(t), np.cos(t)]])
-
 def get_feeding_box(data, TL_x, TL_y, TR_x, TR_y):
     scale = 2
     if abs(TL_x - TR_x) < abs(TL_y - TR_y):
@@ -155,51 +154,3 @@ def get_feeding_box(data, TL_x, TL_y, TR_x, TR_y):
         
     feeding = data[f1 & f2 & f3]
     return feeding, box
-
-def pixel_to_cm(pixels):
-    R = rotation(-np.pi/4)
-    t = [0.02326606,0.02326606]# 0.01541363]
-    T = np.diag(t)
-    trans_cm = np.array([19.86765585, -1.16965425])
-    return (T@R@pixels).T - trans_cm
-
-def pixel_to_cm2(patch, batch):
-    px, cm = batch[["xpx", "ypx"]].to_numpy(), batch[[ "x", "y"]].to_numpy()
-    i_start = 0
-    i_end = 0
-    for i in range(i_start,len(cm)):
-        if np.all(np.abs(cm[i]-cm[i_start])>10): 
-            i_end = i
-            break
-    # ---------------
-    R, t,S = find_rot_tras(px, cm)
-    return (R@patch).T + t
-
-def find_rot_tras(px, cm):
-    """
-    @params: px, cm: np.array 2x2 row-wise
-    returns: R rotation-translation matrix to map from pixels to centimeter coordinates. 
-    """
-    n = px.shape[0]
-    px_dist = abs(px[1]-px[0])
-    cm_dist = abs(cm[-1]-cm[0])
-    fraq = cm_dist/px_dist
-    #px = px * fraq
-    px_center = px.sum(axis=0)*(1/px.shape[0])
-    cm_center = cm.sum(axis=0)*(1/cm.shape[0])
-    
-    H = (px-px_center).T@(cm-cm_center)
-    U, S, V = np.linalg.svd(H)
-    R = V@U.T
-    px_t = (R@px.T).T
-    px_dist_t = abs(px_t[-1]-px_t[0])
-    T = np.diag((cm_dist/px_dist_t))
-    if np.linalg.det(R) < 0:
-        U,S,V = np.linalg.svd(R)    # multiply 3rd column of V by -1
-        V[:,-1]=V[:,-1]*-1
-        R = V @ U.T
-        
-    trans = cm_center - T@(R@px_center)
-    return T@R, trans, S
-
-

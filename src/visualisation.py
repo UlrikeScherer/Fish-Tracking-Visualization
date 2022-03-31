@@ -4,7 +4,9 @@ import os
 import sys
 from src.utile import csv_of_the_day, get_position_string, get_time_for_day, BLOCK, ROOT_img, get_fish2camera_map, BACK, STIME, FEEDINGTIME
 from src.metrics import num_of_spikes, calc_step_per_frame, mean_sd
+from src.transformation import pixel_to_cm
 from methods import avg_and_sum_angles # import cython functions for faster for-loops. 
+
 
 mpl.rcParams['lines.linewidth'] = 0.5
 mpl.rcParams['lines.linestyle'] = '-'
@@ -15,7 +17,7 @@ class Trajectory:
 
     is_feeding = False
 
-    def __init__(self, marker_char="", y_max=45, write_fig=True):
+    def __init__(self, marker_char="", y_max=55, write_fig=True):
         self.marker_char = marker_char
         self.y_max = y_max
         self.y_min = 2
@@ -37,10 +39,12 @@ class Trajectory:
         ax.set_title(time_span,fontsize=10)
         if batch.x.array[-1] <= -1:
             batch.drop(batch.tail(1).index)
-        line.set_data(batch.x.array, batch.y.array)
+
+        batchxy = pixel_to_cm(batch[["xpx", "ypx"]].to_numpy())
+        line.set_data(*batchxy.T)
         #ax.draw_artist(ax.patch)
         #ax.draw_artist(line)
-        remove_text = self.meta_text_for_trajectory(ax, batch, is_back=is_back)
+        remove_text = self.meta_text_for_trajectory(ax, batchxy, batch.FRAME.array, is_back=is_back)
         
         if self.write_fig:
             self.write_figure(fig, directory, name)
@@ -52,11 +56,11 @@ class Trajectory:
             os.makedirs(directory, exist_ok=True)
         fig.savefig("{}/{}.pdf".format(directory,name),bbox_inches='tight')
 
-    def meta_text_for_trajectory(self, ax, batch, is_back=False):
-        steps = calc_step_per_frame(batch)
+    def meta_text_for_trajectory(self, ax, batchxy, frames, is_back=False):
+        steps = calc_step_per_frame(batchxy, frames)
         mean, sd = mean_sd(steps)
         spiks = num_of_spikes(steps)
-        avg_alpha, sum_alpha = avg_and_sum_angles(batch)
+        avg_alpha, sum_alpha = avg_and_sum_angles(batchxy)
         N = len(steps)
         text_l = [r"$\alpha_{avg}: %.3f$"%avg_alpha,r"$\sum \alpha_i : %.f$"%sum_alpha, r"$\mu + \sigma: %.2f + %.2f$"%(mean, sd)]
         text_r = [" ",r"$N: %.f$"%N, r"$ \# spikes: %.f$"%(spiks)]

@@ -2,30 +2,29 @@ import unittest
 import time 
 import os
 from matplotlib.testing.compare import compare_images
-from src.visualisation import set_figure, subplot_trajectory
+from src.visualisation import Trajectory
 from src.utile import csv_of_the_day
 from src.metrics import metric_per_interval
 
 class TestTrajectory(unittest.TestCase):
     camera_id="23520289"
-    day= "20210910_1550"
+    day= "20210912_0600"
     is_back=False 
 
     def test_trajectory_plot(self):
-        img1 = "plots/block1/front/{}/{}/{}.pdf".format(self.camera_id, self.day, "01")
+        img1 = "plots/060000/block1/front/{}/{}/{}.pdf".format(self.camera_id, self.day, "01")
         img2 = "./output/test.pdf"
 
         tstart = time.time()
         day_df = csv_of_the_day(self.camera_id, self.day, is_back=self.is_back, drop_out_of_scope=True)
         tmid = time.time()
-        print("Reading CSVs of %s at day %s CTIME:\t %f"%(self.camera_id, self.day, tmid-tstart))
-
-        fig_o = set_figure(self.is_back, marker_char="")
-        for batch in day_df:
-            subplot_trajectory(fig_o, batch, self.day, "./output", "test", is_back=self.is_back)
+        print("Reading %d CSVs of %s at day %s CTIME:\t %f"%(len(day_df), self.camera_id, self.day, tmid-tstart))
+        T = Trajectory()
+        for batch in day_df[1:2]:
+            fig = T.subplot_function(batch, self.day, "output", "test",None, is_back=self.is_back)
         tmid2 = time.time()
         print("Trajectory Plotting Time:%s %f"%("\t"*4,tmid2-tmid))
-        self.assertTrue( (tmid2-tmid) < 2 )                                 # smaller one second
+        self.assertTrue( (tmid2-tmid) < 3 )                                 # smaller one second
         compare_images(img1, img2, 0.001)
         print("Compare Time:%s %f"%("\t"*6,time.time()-tmid2))
 

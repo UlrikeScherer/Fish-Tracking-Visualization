@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.stats import entropy
 from src.utile import S_LIMIT, BACK, get_days_in_order, csv_of_the_day, BLOCK, N_SECONDS_OF_DAY, get_seconds_from_day, N_FISHES, get_fish2camera_map
+from src.transformation import pixel_to_cm
 from methods import activity, calc_steps, turning_angle, tortuosity_of_chunk #cython
 import pandas as pd
 import os
@@ -21,11 +22,11 @@ def calc_length_of_steps(df):
     c=np.sqrt(ysq + xsq)
     return c
 
-def calc_step_per_frame(df):
+def calc_step_per_frame(batchxy, frames):
     """ This function calculates the eucleadian step length in centimerters per FRAME, this is useful as a speed measument after the removal of erroneous data points."""
-    ysq = (df.y.array[1:] - df.y.array[:-1])**2
-    xsq = (df.x.array[1:] - df.x.array[:-1])**2
-    frame_dist = df.FRAME.array[1:] - df.FRAME.array[:-1]
+    xsq = (batchxy[1:,0]-batchxy[:1,0])**2
+    ysq = (batchxy[1:,1]-batchxy[:1,1])**2
+    frame_dist = frames[1:] - frames[:-1]
     c=np.sqrt(ysq + xsq)/frame_dist
     return c
 
@@ -137,7 +138,7 @@ def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100
             df_day = csv_of_the_day(camera_id, day, is_back=is_back, drop_out_of_scope=True) ## True or False testing needed
             if len(df_day)>0:
                 df = pd.concat(df_day)
-                result = metric(df[["x", "y"]].to_numpy(),time_interval*5)
+                result = metric(pixel_to_cm(df[["xpx", "ypx"]].to_numpy()),time_interval*5)
                 day_list.append(result)
             else: day_list.append(np.empty([0, 2]))
         results.append(day_list)
