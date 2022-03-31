@@ -38,7 +38,7 @@ def check_foldersystem(path):
 def main():
     path = '/Volumes/data/loopbio_data/FE_(fingerprint_experiment)_SepDec2021/FE_tracks_retracked/FE_tracks_060000_block1_retracked'
     back = 'FE_060000_tracks_block1_back_retracked'
-    front = '/FE_060000_tracks_block1_front_retracked'
+    front = 'FE_060000_tracks_block1_front_retracked'
     paths_to_check = ["%s/%s"%(path, back),"%s/%s"%(path, front)]
     LOG = list()
     for p in paths_to_check:
