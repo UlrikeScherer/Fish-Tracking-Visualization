@@ -98,23 +98,16 @@ for b in ${!position[@]}; do
                         "
 
         daysarray="$LEGEND"
-        days="$(ls -d $CSV_DIR/$POSITION_STR/${cameras[$i]}/*.${cameras[$i]}*/ | sort -V )"
+        days="$(ls -d $CSV_DIR/$POSITION_STR/${cameras[$i]}/*${STARTTIME}.${cameras[$i]}*/ | sort -V )"
 
-        isFIRST=1;
         for d in $days; do 
             d=$(basename $d)
             day=${d: : 24}
             day_id=${day: : 13}
-            if [ "$BLOCK" = "block1" ] && [ "$isFIRST" -eq "1" ] && [ "$feeding" != "1" ]; then
-                daysarray="$daysarray \plotdayone{${day: : 13}}
-                "
-                isFIRST=0;
-            else
-                daysarray="$daysarray\plotdayupdate{${day: : 13}}
-                "
-            fi 
+            daysarray="$daysarray\plotdayupdate{${day: : 13}}
+            "
 
-            filescsv="$(ls $CSV_DIR/$POSITION_STR/${cameras[$i]}/*.${cameras[$i]}*/${cameras[$i]}_$day*.csv | sort -V)"
+            filescsv="$(ls $CSV_DIR/$POSITION_STR/${cameras[$i]}/*${STARTTIME}.${cameras[$i]}*/${cameras[$i]}_$day*.csv | sort -V)"
             C_i=0
             for f in $filescsv; do 
                 texheader="$texheader \setcsv{${day_id}$C_i}{\href{${PREFIX}${f}}{csv}}
@@ -125,7 +118,6 @@ for b in ${!position[@]}; do
             foldermp4="$(ls -d $path_recordings/${cameras[$i]}/${day}*/ | head )"
             texheader="$texheader \addtext{$PREFIX$foldermp4}
             "
-
             filesmp4="$(ls $foldermp4/*.mp4 | sort -V)"
             C_i=0
             for f in $filesmp4; do 

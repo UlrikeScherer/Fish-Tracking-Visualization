@@ -113,6 +113,7 @@ cpdef np.ndarray[double, ndim=1] tortuosity_of_chunk(np.ndarray[double, ndim=2] 
         C = c_steps[j] - curr_c
         if L < min_L: L=min_L
         if C < min_L: C=min_L
+        if L > C: L=C
         t_result.append(C/L)
         curr_c = c_steps[j]
         i=j+1

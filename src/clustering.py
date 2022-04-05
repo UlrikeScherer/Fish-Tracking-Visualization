@@ -30,7 +30,7 @@ def transfrom_to_traces2(batch, trace_size):
     lenX = setX.shape[0]
     sizeSet = int(lenX/trace_size)
     newSet = np.zeros((sizeSet,trace_size,2))
-    for i in range(sizeSet-1):
+    for i in range(sizeSet):
         newSet[i,:,0] = steps[i*trace_size:(i+1)*trace_size]
         if len(angels)<=i: continue
         newSet[i,:,1] = angels[i*trace_size:(i+1)*trace_size]
@@ -47,13 +47,26 @@ def transfrom_to_traces_metric_based(batch, trace_size):
     newSet = np.zeros((sizeSet,4))
     traceSet = np.zeros((sizeSet,trace_size,2))
     
-    for i in range(sizeSet-1):
+    for i in range(sizeSet):
         newSet[i,0] = np.mean(steps[i*trace_size:(i+1)*trace_size])
-        if len(angels)<=i: continue
-        newSet[i,1] = sum(angels[i*trace_size:(i+1)*trace_size])
+        if len(angels)>i:
+            newSet[i,1] = sum(angels[i*trace_size:(i+1)*trace_size])/len(angels)
         newSet[i,2] = np.mean(tortuosity_of_chunk(setX[i*trace_size:(i+1)*trace_size]))
         newSet[i,3], _ = entropy_for_chunk(setX[i*trace_size:(i+1)*trace_size])
+        if np.isnan(newSet[i,3]): newSet[i,3] = 0.0
     return newSet, transfrom_to_traces(batch, trace_size)[1]
+
+def transfrom_to_traces_seq_metrics(batch, trace_size, step):
+    setX = batch[["xpx", "ypx"]].to_numpy()
+    steps = calc_steps(setX)
+    angels = avg_turning_direction(setX)
+    
+    lenX = setX.shape[0]
+    setSize = int(lenX/step)
+    newSet = np.zeros(())
+    
+    #for i in enumerate(range(0,setSize,step)):
+        
         
 def normalize_data(traces):
     d_std, d_mean = np.std(traces[:,0::2]), np.mean(traces[:,0::2])
@@ -76,7 +89,7 @@ def TSNE_vis(X_embedded):
     plt.savefig("TSNE.pdf")
     return p
 
-def TSNE_vis_2(X_embedded, centers=None):
+def TSNE_vis_2(X_embedded, centers=None, clusters=None, fig_name="TSNE_vis"):
     x = X_embedded[:,0]
     y = X_embedded[:,1]
     res = go.Histogram2dContour(x = x, y = y, colorscale = 'Blues')
@@ -92,17 +105,27 @@ def TSNE_vis_2(X_embedded, centers=None):
             ),
             text=["cluster %d, n: %d"%(i,n) for (i,n) in enumerate(centers[:,2])]
         ))
+        
     fig.add_trace(go.Scatter(
         x = x, y = y,
         xaxis = 'x', yaxis = 'y',
         mode = 'markers',
         marker = dict(
-            color = 'rgba(0,0,0,0.1)',
-            size = 3
+            cmax=clusters.max(),
+            cmin=0,
+            color=clusters,
+            colorbar=dict(
+                title="Clusters"
+            ),
+            colorscale="Viridis",
+            #color = 'rgba(0,0,0,0.1)',
+            size = 3,
+            opacity=0.5
         )
     ))
     
-    fig.update_layout( height = 400, width = 600 )
+    fig.update_layout( height = 600, width = 600 )
+    fig.write_image("%s.pdf"%fig_name)
     return fig
 
 def get_neighbourhood_selection(X_embedded, nSs, c_x=None, c_y=None, radius=1):
@@ -133,7 +156,7 @@ def plot_lines_angle(lines_to_plot, limit=20):
     plt.savefig("lines_exp.pdf")
     
 def plot_lines_cumsum(lines_to_plot, limit=20, ax=None, title="x:, y: "):
-    ax.set_title(title)
+    if ax is not None: ax.set_title(title)
     for line in lines_to_plot[:limit]:
         line = np.cumsum(line*px2cm(),axis=0)
         if ax is None:
@@ -142,3 +165,4 @@ def plot_lines_cumsum(lines_to_plot, limit=20, ax=None, title="x:, y: "):
             ax.plot(line[:,0], line[:,1])
             
     plt.savefig("lines_exp.pdf")
+    

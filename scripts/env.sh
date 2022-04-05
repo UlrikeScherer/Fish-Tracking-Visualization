@@ -7,17 +7,18 @@ STIME=$RECORDINGTIME
 rootserver="/Volumes/data/loopbio_data/FE_(fingerprint_experiment)_SepDec2021"  # On MocOS the path to the root of the data
 root_local="/Volumes/Extreme_SSD" # ".."
 path_recordings="$rootserver/FE_recordings/FE_recordings_$BLOCK/FE_${BLOCK}_recordings_*" # path to the recordings, will allway be on the server
-path_csv="$rootserver/FE_tracks_original/FE_tracks_${STIME}/FE_tracks_${STIME}_$BLOCK"
+path="FE_tracks_retracked/FE_tracks_${STIME}_${BLOCK}_retracked"
+#path_original="FE_tracks_original/FE_tracks_${STIME}/FE_tracks_${STIME}_$BLOCK"
+path_csv="$rootserver/$path"
 
-path_csv_local="$root_local/FE_tracks_original/FE_tracks_${STIME}/FE_tracks_${STIME}_$BLOCK"
-POSITION_STR_FRONT="FE_${STIME}_tracks_${BLOCK}_front"
-POSITION_STR_BACK="FE_${STIME}_tracks_${BLOCK}_back"
+path_csv_local="$root_local/$path"
+POSITION_STR_FRONT="FE_${STIME}_tracks_${BLOCK}_front_retracked"
+POSITION_STR_BACK="FE_${STIME}_tracks_${BLOCK}_back_retracked"
 
 path_csv_feeding="$rootserver/FE_tracks_original/FE_tracks_${FEEDINGTIME}/FE_tracks_${FEEDINGTIME}_$BLOCK"
 path_csv_feeding_local="$root_local/FE_tracks_original/FE_tracks_${FEEDINGTIME}/FE_tracks_${FEEDINGTIME}_$BLOCK"
 dir_feeding_front="${path_csv_feeding_local}/FE_${FEEDINGTIME}_tracks_${BLOCK}_front"
 dir_feeding_back="${path_csv_feeding_local}/FE_${FEEDINGTIME}_tracks_${BLOCK}_back"
-
 
 NUM_OF_BATCHES=14
 
