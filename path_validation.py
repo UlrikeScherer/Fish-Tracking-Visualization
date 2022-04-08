@@ -1,8 +1,9 @@
 import os, sys, re, glob
-
+import time
 from src.utile import *
 
-def check_foldersystem(path):
+
+def check_foldersystem(path, n_files = 15, delete=0):
     LOG_msg = ["For path: %s"%path]
     for c in [name for name in os.listdir(path) if len(name)==8 and name.isnumeric()]:
         for d in [name for name in os.listdir("{}/{}".format(path,c)) if name[:8].isnumeric()]:
@@ -11,40 +12,93 @@ def check_foldersystem(path):
             files = glob.glob("{}/{}/{}/*.csv".format(path, c, d))
             files = [os.path.basename(f) for f in files]
             wrote_folder = False
+
+            # ignore no fish folders
+            if "_no_fish" in d: 
+                if len(files)>0:
+                    LOG_msg.append("Folders with no_fish suffix should be empty!")
+                else: continue
+            # expect only 4 files in the folder for the first day
             if "_1550" in d: 
                 if len(files) != 4:
                     wrote_folder = True
                     LOG_msg.append("In folder %s the number of csv files is unequal the expected number 4, it is %d instead"%(
                     "{}/{}/{}".format(path, c, d), len(files))
                               )
-            elif len(files) != 15: 
-                wrote_folder = True
-                LOG_msg.append("In folder %s the number of csv files is unequal the expected number 15, it is %d instead"%(
-                    "{}/{}/{}".format(path, c, d), len(files))
-                              )
-            if not wrote_folder:
-                LOG_msg.append("In folder %s has the correct number of csv files: "%"{}/{}/{}".format(path, c, d))
-            files.sort()
-            i = 0
+                msg, duplicate_f = filter_files(c,d,files, 4)
 
-            for f in files: 
-                pattern = re.compile("{}_{}.{}_{:06d}_\d*-\d*-\d*T\d*_\d*_\d*_\d*.csv".format(c,d[:15],c,i))
-                if pattern.match(f) is None:
-                    LOG_msg.append("files: %s has corrupted name or is duplicate."%(f))
-                else: i+=1
-                    
+            # normal case
+            else: 
+                if len(files) != 15: 
+                    wrote_folder = True
+                    LOG_msg.append("In folder %s the number of csv files is unequal the expected number 15, it is %d instead"%(
+                        "{}/{}/{}".format(path, c, d), len(files))
+                                )
+                msg, duplicate_f = filter_files(c,d,files, n_files)
+
+            # if the are any complains add the to the LOG list 
+            if len(msg)>0:
+                if not wrote_folder:
+                    LOG_msg.append("In folder %s has the correct number of csv files: "%"{}/{}/{}".format(path, c, d))
+                # if the delete flag is set and they are duplicates ==> remove them 
+                if delete and len(duplicate_f)>0: 
+                    LOG_msg.append("----DELETING DUPLICATES----")
+                    for df in duplicate_f:
+                        os.remove("{}/{}/{}/{}".format(path, c, d, df))
+
+                LOG_msg.extend(msg)
+
     return LOG_msg
 
-def main():
-    path = '/Volumes/data/loopbio_data/FE_(fingerprint_experiment)_SepDec2021/FE_tracks_retracked/FE_tracks_060000_block1_retracked'
-    back = 'FE_060000_tracks_block1_back_retracked'
-    front = 'FE_060000_tracks_block1_front_retracked'
-    paths_to_check = ["%s/%s"%(path, back),"%s/%s"%(path, front)]
+def filter_files(c, d, files, n_files):
+    LOG = []
+    missing_numbers = []
+    duplicate_f = []
+    correct_f = []
+    for i in range(n_files): 
+        pattern = re.compile("{}_{}.{}_{:06d}_\d*-\d*-\d*T\d*_\d*_\d*_\d*.csv".format(c,d[:15],c,i))
+        i_f = [f for f in files if pattern.match(f) is not None]
+        if len(i_f)>1:
+            i_f.sort()
+            duplicate_f.extend(i_f[:-1])
+            correct_f.append(i_f[-1])
+        elif len(i_f)==0:
+            missing_numbers.append(" {:06d}".format(i))
+
+    pattern_general = re.compile("{}_{}.{}_\d*_\d*-\d*-\d*T\d*_\d*_\d*_\d*.csv".format(c,d[:15],c)) 
+    corrupted_f = [f for f in files if pattern_general.match(f) is None]  
+
+    if len(missing_numbers)>0:
+        LOG.append("The following files are missing: \n \t\t{}".format(" ".join(missing_numbers)))
+    if len(duplicate_f)>0:
+        LOG.append("The following files are duplicates: \n\t{}".format("\n\t".join(duplicate_f)))
+    if len(corrupted_f)>0:
+        LOG.append("The following file names are corrupted, maybe wrong folder: \n\t{}".format("\n\t".join(corrupted_f)))
+    return LOG, duplicate_f
+
+def main(delete=0, n_files=15):
+    """
+    This main has two optional arguments
+    delete: 0 or 1 indecation if files that are duplicates should be removed 
+    n_files: defines how many files to expect in each folder, default is 15, for feeding use 8, for a log file that is more clear. 
+    """
+    # past your path here as pathx
+    path1 = '/Volumes/Extreme_SSD/FE_tracks_retracked/FE_tracks_060000_block1_retracked/FE_060000_tracks_block1_%s_retracked'
+    path2 = '/Volumes/data/loopbio_data/FE_(fingerprint_experiment)_SepDec2021/FE_tracks_retracked/FE_tracks_060000_block1_retracked/FE_060000_tracks_block1_%s_retracked'
+
+    # select the path here and use the %s to replace "front" or "back"
+    PATH=path1 
+    position = ["front", "back"]
     LOG = list()
-    for p in paths_to_check:
-        LOG.extend(check_foldersystem(p))
+    for p in position: # validating files for front and back position
+        LOG.append(p.upper()+"-"*100+"\n")
+        LOG.extend(check_foldersystem(PATH%p,n_files=n_files, delete=delete)) 
     f = open("log-path-validation.txt", "w")
     f.writelines("\n".join(LOG))
 
 if __name__ == '__main__':
-    main()
+    tstart = time.time()
+    main(**dict(arg.split('=') for arg in sys.argv[1:]))
+    tend = time.time()
+    print("Running time:", tend-tstart, "sec.")
+    
