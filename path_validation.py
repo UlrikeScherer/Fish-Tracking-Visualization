@@ -1,6 +1,5 @@
 import os, sys, re, glob
 import time
-from src.utile import *
 
 
 def check_foldersystem(path, n_files = 15, delete=0):
