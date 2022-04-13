@@ -2,7 +2,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import os
 import sys
-from src.utile import csv_of_the_day, get_position_string, get_time_for_day, BLOCK, ROOT_img, get_fish2camera_map, BACK, STIME, FEEDINGTIME
+from src.utile import csv_of_the_day, get_position_string, get_time_for_day, BLOCK, ROOT_img, get_fish2camera_map, get_days_in_order, BACK, STIME, FEEDINGTIME
 from src.metrics import num_of_spikes, calc_step_per_frame, mean_sd
 from src.transformation import pixel_to_cm
 from methods import avg_and_sum_angles # import cython functions for faster for-loops. 
@@ -61,9 +61,10 @@ class Trajectory:
         mean, sd = mean_sd(steps)
         spiks = num_of_spikes(steps)
         avg_alpha, sum_alpha = avg_and_sum_angles(batchxy)
+        last_frame = frames[-1]
         N = len(steps)
         text_l = [r"$\alpha_{avg}: %.3f$"%avg_alpha,r"$\sum \alpha_i : %.f$"%sum_alpha, r"$\mu + \sigma: %.2f + %.2f$"%(mean, sd)]
-        text_r = [" ",r"$N: %.f$"%N, r"$ \# spikes: %.f$"%(spiks)]
+        text_r = [" ",r"$N: %.f$"%N, r"$\# misses: %.f$"%(last_frame-N),r"$ \# spikes: %.f$"%(spiks)]
         return self.meta_text_for_plot(ax, text_l=text_l, text_r=text_r, is_back=is_back)
 
         
@@ -89,18 +90,19 @@ class Trajectory:
             pos_y = y_lim[1] - ((y_lim[1] - y_lim[0]) * 0.35)
         return pos_x1, pos_x2, pos_y
 
-    def plots_for_tex(self, fish_ids, day_list):
-        n_D = len(day_list)
-        N = len(self.fish2camera[fish_ids])*n_D
+    def plots_for_tex(self, fish_ids):
+        N = len(self.fish2camera[fish_ids])
         self.reset_data()
         for i, fish_idx in enumerate(fish_ids):
             camera_id,pos = self.fish2camera[fish_idx]
             is_back = pos==BACK
+            day_list = get_days_in_order(is_feeding=self.is_feeding, camera=camera_id)
+            N_days = len(day_list)
             for j, day in enumerate(day_list):
                 sys.stdout.write('\r')
                 # write the progress to stdout 
-                progress = (i*n_D+j)
-                sys.stdout.write("[%-20s] %d%%" % ('='*int(20*progress/N), 100*progress/N))
+                progress = (i/N+j/(N*N_days))
+                sys.stdout.write("[%-20s] %d%%" % ('='*int(20*progress), 100*progress))
                 sys.stdout.flush()
         
                 day_df = csv_of_the_day(camera_id, day, is_back=is_back, drop_out_of_scope=True, is_feeding=self.is_feeding)

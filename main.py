@@ -66,17 +66,16 @@ def main(program=None, test=0, time_interval=100, fish_id=None):
 
     if int(test) == 1:
         print("Test RUN ", program)
-        fish_ids=fish_ids#[0:1]
-        days=days[:1]
+        fish_ids=fish_ids[0:1]
         print("For days: %s, fish indices: %s"%(",".join(days),fish_ids))
 
     if program == TRAJECTORY:
         T = Trajectory()
-        T.plots_for_tex(fish_ids,days)
+        T.plots_for_tex(fish_ids)
 
     elif program == FEEDING:
         FT = FeedingTrajectory()
-        FT.plots_for_tex(fish_ids,days)
+        FT.plots_for_tex(fish_ids)
         FT.feeding_data_to_csv()
         FT.feeding_data_to_tex()
 

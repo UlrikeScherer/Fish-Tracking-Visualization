@@ -12,7 +12,7 @@ load_envbash('scripts/env.sh')
 # Calculated MEAN and SD for the data set filtered for erroneous frames 
 MEAN_GLOBAL = 0.22746102241709162
 SD_GLOBAL = 1.0044248513034164
-S_LIMIT = MEAN_GLOBAL + 3 * SD_GLOBAL
+S_LIMIT = 6 #MEAN_GLOBAL + 3 * SD_GLOBAL
 BATCH_SIZE = 9999
 ROOT=os.environ["rootserver"]
 DIR_CSV=os.environ["path_csv"] # 
@@ -34,14 +34,23 @@ dir_feeding_back = os.environ["dir_feeding_back"]
 N_FISHES = 24
 N_SECONDS_OF_DAY = 24*3600
 
-def get_camera_names(is_feeding=False):
-    dir_ = dir_feeding_front if is_feeding else dir_front
+def get_directory(is_feeding=False, is_back=False):
+    if is_feeding:
+        if is_back:return dir_back
+        else: return dir_front
+    else: 
+        if is_back: return dir_feeding_back
+        else: return dir_feeding_front
+
+
+def get_camera_names(is_feeding=False, is_back=False):
+    dir_ = get_directory(is_feeding, is_back)
     return sorted([name for name in os.listdir(dir_) if len(name)==8 and name.isnumeric()])
 
 def get_fish2camera_map(is_feeding=False):
-    return np.array(list(product(get_camera_names(is_feeding), [FRONT, BACK])))
-
-#fish2camera=np.array(list(product(get_camera_names(), [FRONT, BACK])))
+    l_front = list(product(get_camera_names(is_feeding, is_back=BACK==FRONT), [FRONT]))
+    l_back = list(product(get_camera_names(is_feeding, is_back=BACK==BACK), [BACK]))
+    return np.array([j for i in zip(l_front,l_back) for j in i])
 
 def get_fish_ids():
     """
@@ -74,10 +83,16 @@ def print_tex_table(fish_ids, filename):
         f.write("%d & %s & %s & %s\\\ \n"%(fid, camera, position, fids[fid].replace("_","\_")))
     f.close()
 
-def get_days_in_order(interval=None, is_feeding=False):
-    cameras = get_camera_names(is_feeding)
+def get_days_in_order(interval=None, is_feeding=False, camera=None):
+    """
+    @params
+    interval tuple (int i,int j) i<j, to return only days from i to j
+    is_feeding: select feeding directory if True, default False. 
+    camera: concider days of the cameras folder, default: first camera, that expects all cameras to have the same number of cameras. 
+    """
+    if camera is None: camera = get_camera_names(is_feeding)[0]
     dir_ = dir_feeding_front if is_feeding else dir_front
-    days = [name[:13] for name in os.listdir(dir_+"/"+cameras[0]) if name[:8].isnumeric()]
+    days = [name[:13] for name in os.listdir(dir_+"/"+camera) if name[:8].isnumeric()]
     days.sort()
     if interval:
         return days[interval[0]: interval[1]]
@@ -114,7 +129,7 @@ def read_batch_csv(filename, drop_errors):
     df = pd.read_csv(filename,skiprows=3, delimiter=';', error_bad_lines=False, usecols=["x", "y", "FRAME", "time", "xpx", "ypx"])
     df.dropna(axis="rows", how="any", inplace=True)
     if drop_errors:
-        indexNames = df[:-1][ df[:-1].x.array <= -1].index # exept the last index for time recording
+        indexNames = df[:-1][ df[:-1].x.array <= -1].index # except the last index for time recording
         df = df.drop(index=indexNames)
     df.reset_index(drop=True, inplace=True)
     return df

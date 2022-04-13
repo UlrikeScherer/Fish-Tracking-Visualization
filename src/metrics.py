@@ -23,9 +23,9 @@ def calc_length_of_steps(df):
     return c
 
 def calc_step_per_frame(batchxy, frames):
-    """ This function calculates the eucleadian step length in centimerters per FRAME, this is useful as a speed measument after the removal of erroneous data points."""
-    xsq = (batchxy[1:,0]-batchxy[:1,0])**2
-    ysq = (batchxy[1:,1]-batchxy[:1,1])**2
+    """ This function calculates the eucleadian step length in centimeters per FRAME, this is useful as a speed measument after the removal of erroneous data points."""
+    xsq = (batchxy[1:,0]-batchxy[:-1,0])**2
+    ysq = (batchxy[1:,1]-batchxy[:-1,1])**2
     frame_dist = frames[1:] - frames[:-1]
     c=np.sqrt(ysq + xsq)/frame_dist
     return c
