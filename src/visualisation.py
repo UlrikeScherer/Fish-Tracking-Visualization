@@ -2,8 +2,8 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import os
 import sys
-from src.utile import csv_of_the_day, get_position_string, get_time_for_day, BLOCK, ROOT_img, get_fish2camera_map, get_days_in_order, BACK, STIME, FEEDINGTIME
-from src.metrics import num_of_spikes, calc_step_per_frame, mean_sd
+from src.utile import csv_of_the_day, get_position_string, get_time_for_day,BLOCK, ROOT_img, get_fish2camera_map, get_days_in_order, BACK, STIME, FEEDINGTIME
+from src.metrics import num_of_spikes, calc_step_per_frame, mean_sd, get_gaps_in_dataframes
 from src.transformation import pixel_to_cm
 from methods import avg_and_sum_angles # import cython functions for faster for-loops. 
 
@@ -14,7 +14,7 @@ mpl.rcParams['lines.markersize'] = 1.0
 mpl.rcParams["figure.figsize"] = (4,2)
 
 class Figure:
-    def __init__(self, is_back, marker_char=""):
+    def __init__(self, is_back=False, marker_char=""):
         self.is_back = is_back
         self.marker_char = marker_char
         self.y_max = 55
@@ -22,7 +22,7 @@ class Figure:
         self.x_max = 90
         self.x_min = -5
         self.figsize = (5,(self.y_min+self.y_max)/(-self.x_min+self.x_max)*5)
-        self.fig, self.ax, self.line = self.set_figure(is_back=is_back)
+        self.fig, self.ax, self.line = self.set_figure()
 
     def set_figure(self):
         """
@@ -68,7 +68,7 @@ class Figure:
         return lambda: (text1.remove(), text2.remove())
 
     def get_text_positions(self):
-        x_lim, y_lim = self.ax.get_xlim(), ax.get_ylim()
+        x_lim, y_lim = self.ax.get_xlim(), self.ax.get_ylim()
         pos_y = y_lim[0] + (y_lim[1] - y_lim[0]) * 0.05 
         pos_x1 = x_lim[0] + (x_lim[1] - x_lim[0]) * 0.01
         pos_x2 = x_lim[0] + (x_lim[1] - x_lim[0]) * 0.7
@@ -104,7 +104,7 @@ class Trajectory:
         # draw spikes where datapoints were lost
         #ax.draw_artist(ax.patch)
         #ax.draw_artist(line)
-        lines = ax.get_lines()
+        lines = F.ax.get_lines()
         for l in lines[1:]:
             l.remove()
         gaps_idx = get_gaps_in_dataframes(batch.FRAME.array)
@@ -115,7 +115,7 @@ class Trajectory:
         if self.write_fig:
             F.write_figure( directory, name)
         remove_text()
-        return fig
+        return F.fig
 
     def plots_for_tex(self, fish_ids):
         N = len(self.fish2camera[fish_ids])
