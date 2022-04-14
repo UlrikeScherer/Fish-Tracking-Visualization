@@ -17,6 +17,7 @@ S_LIMIT = 15 #MEAN_GLOBAL + 3 * SD_GLOBAL
 BATCH_SIZE = 9999
 ROOT=os.environ["rootserver"]
 DIR_CSV=os.environ["path_csv"] # 
+DIR_CSV_LOCAL=os.environ["path_csv_local"] # 
 BLOCK = os.environ["BLOCK"] # block1 or block2
 
 # TRAJECTORY 
@@ -46,7 +47,6 @@ def get_directory(is_feeding=False, is_back=False):
         if is_back:return dir_back
         else: return dir_front
     
-
 def get_number_of_batches(is_feeding=False):
     return N_BATCHES_FEEDING if is_feeding else N_BATCHES
 
