@@ -6,7 +6,7 @@ from src.utile import get_camera_names, get_days_in_order, DIR_CSV_LOCAL, MEAN_G
 from src.visualisation import Trajectory
 from src.metrics import activity_per_interval, turning_angle_per_interval, tortuosity_per_interval, entropy_per_interval
 from src.activity_plotting import sliding_window, sliding_window_figures_for_tex
-
+from src.feeding import FeedingTrajectory
 TRAJECTORY="trajectory"
 FEEDING="feeding"
 ACTIVITY="activity"

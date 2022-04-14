@@ -136,7 +136,9 @@ def read_batch_csv(filename, drop_errors):
     df = pd.read_csv(filename,skiprows=3, delimiter=';', error_bad_lines=False, usecols=["x", "y", "FRAME", "time", "xpx", "ypx"])
     df.dropna(axis="rows", how="any", inplace=True)
     if drop_errors:
-        indexNames = df[:-1][ df[:-1].x.array <= -1].index # except the last index for time recording
+        x = df[:-1].xpx
+        y = df[:-1].ypx
+        indexNames = df[:-1][((x == -1) & (y == -1)) | ((x == 0) & (y == 0))].index # except the last index for time recording
         df = df.drop(index=indexNames)
     df.reset_index(drop=True, inplace=True)
     return df

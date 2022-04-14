@@ -109,11 +109,11 @@ class Trajectory:
             l.remove()
         gaps_idx = get_gaps_in_dataframes(batch.FRAME.array)
         for i in gaps_idx:
-            F.ax.plot(*batchxy.T[:,i:i+1], "o-")
+            F.ax.plot(*batchxy.T[:,i:i+1], "r-", solid_capstyle="projecting", markersize=0.2)
         remove_text = F.meta_text_for_trajectory(batchxy, batch.FRAME.array)
         
         if self.write_fig:
-            F.write_figure( directory, name)
+            F.write_figure(directory, name)
         remove_text()
         return F.fig
 

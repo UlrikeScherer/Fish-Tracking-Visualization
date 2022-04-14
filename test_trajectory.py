@@ -32,7 +32,6 @@ class TestTrajectory(unittest.TestCase):
         print("IMG Size is :", img2_size, "bytes")
         self.assertTrue( (img2_size) < 70000)  
 
-
     def test_metric(self):
         metric_per_interval(fish_ids=[1,3], day_interval=[0,4])
 
