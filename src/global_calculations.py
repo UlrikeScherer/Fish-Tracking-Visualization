@@ -18,7 +18,7 @@ def global_activity(fish_ids, days):
     for i,(c, pos) in enumerate(fish2camera[fish_ids]):
         is_back = BACK == pos
         for j, d in enumerate(days):
-            batches = csv_of_the_day(c, d, is_back, drop_out_of_scope=True)
+            keys, batches = csv_of_the_day(c, d, is_back, drop_out_of_scope=True)
             if len(batches)==0:
                 continue
             sum_steps = 0
@@ -41,7 +41,7 @@ def global_sd(fish_ids, days, mean):
     for i,(c, pos) in enumerate(fish2camera[fish_ids]):
         is_back = BACK == pos
         for j, d in enumerate(days):
-                batches = csv_of_the_day(c, d, is_back, drop_out_of_scope=True)
+                keys, batches = csv_of_the_day(c, d, is_back, drop_out_of_scope=True)
                 for b in batches:
                     steps = calc_step_per_frame(b)
                     x = np.abs(steps - mean)**2

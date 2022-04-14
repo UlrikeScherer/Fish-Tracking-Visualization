@@ -66,7 +66,7 @@ def main(program=None, test=0, time_interval=100, fish_id=None):
 
     if int(test) == 1:
         print("Test RUN ", program)
-        fish_ids=fish_ids[0:1]
+        fish_ids=fish_ids[0:2]
         print("For days: %s, fish indices: %s"%(",".join(days),fish_ids))
 
     if program == TRAJECTORY:

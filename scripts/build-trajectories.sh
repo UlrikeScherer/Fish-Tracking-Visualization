@@ -5,6 +5,7 @@ source scripts/env.sh # get the following variables
 cd tex
 cameras=('23520289' '23484201' '23520258' '23442333' '23520268' '23520257' '23520266' '23484204' '23520278' '23520276' '23520270' '23520264')
 position=("front" "back")
+POS_STRINGS=($POSITION_STR_FRONT $POSITION_STR_BACK)
 PREFIX="file://" #run:
 
 
@@ -27,6 +28,7 @@ while [[ "$#" -gt 0 ]]; do
 done
 if [ $feeding ]; then
     STARTTIME=$FEEDINGTIME
+    POS_STRINGS=($POSITION_STR_FRONT_FEEDING $POSITION_STR_BACK_FEEDING)
     CSV_DIR=$path_csv_feeding
     MAX_IDX_OF_DAY=7
     SUBFIGURE_WIDTH="0.33\textwidth"
@@ -51,7 +53,7 @@ mkdir -p trajectory/$STARTTIME/$BLOCK
 
 for b in ${!position[@]}; do
     echo -e "pdf for ${position[$b]} \n"
-    POSITION_STR="FE_${STARTTIME}_tracks_${BLOCK}_${position[$b]}*"
+    POSITION_STR=${POS_STRINGS[$b]}
     for i in ${!cameras[@]}; do
         secff="$(ls -d $CSV_DIR/$POSITION_STR/${cameras[$i]}/*.${cameras[$i]}/ | sort -V | head -1 | sed 's/.*1550\([^.]*\).*/\1/')"
         
@@ -103,8 +105,8 @@ for b in ${!position[@]}; do
         for d in $days; do 
             d=$(basename $d)
             day=${d: : 24}
-            day_id=${day: : 13}
-            daysarray="$daysarray\plotdayupdate{${day: : 13}}
+            day_id=${day: : 15}
+            daysarray="$daysarray\plotdayupdate{${day_id}}
             "
 
             filescsv="$(ls $CSV_DIR/$POSITION_STR/${cameras[$i]}/*${STARTTIME}.${cameras[$i]}*/${cameras[$i]}_$day*.csv | sort -V)"

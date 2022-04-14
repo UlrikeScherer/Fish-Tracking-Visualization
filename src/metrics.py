@@ -21,9 +21,12 @@ def calc_length_of_steps(df):
     xsq = (df.x.array[1:] - df.x.array[:-1])**2
     c=np.sqrt(ysq + xsq)
     return c
+def get_gaps_in_dataframes(frames):
+    dists = frames[1:] - frames[:-1]
+    return np.where(dists>1)[0]
 
 def calc_step_per_frame(batchxy, frames):
-    """ This function calculates the eucleadian step length in centimeters per FRAME, this is useful as a speed measument after the removal of erroneous data points."""
+    """ This function calculates the eucleadian step length in centimeters per FRAME, this is useful as a speed measurement after the removal of erroneous data points."""
     xsq = (batchxy[1:,0]-batchxy[:-1,0])**2
     ysq = (batchxy[1:,1]-batchxy[:-1,1])**2
     frame_dist = frames[1:] - frames[:-1]
@@ -135,7 +138,7 @@ def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100
         camera_id, is_back = fish2camera[fish,0], fish2camera[fish,1]==BACK
         day_list = list()
         for j,day in enumerate(days):
-            df_day = csv_of_the_day(camera_id, day, is_back=is_back, drop_out_of_scope=True) ## True or False testing needed
+            keys, df_day = csv_of_the_day(camera_id, day, is_back=is_back, drop_out_of_scope=True) ## True or False testing needed
             if len(df_day)>0:
                 df = pd.concat(df_day)
                 result = metric(pixel_to_cm(df[["xpx", "ypx"]].to_numpy()),time_interval*5)

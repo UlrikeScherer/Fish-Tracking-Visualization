@@ -95,7 +95,7 @@ start time: \starttime\\
 \begin{figure}
     \firstbox{#1}
     \foreach \i in {0,1,...,\maxindex} {
-        \subf{#1}{\z{\i}}{\i}
+        \subf{#1}{0000\z{\i}}{\i}
         %\vskip\baselineskip
     }
     \label{fig: #1}
@@ -107,7 +107,7 @@ start time: \starttime\\
 \begin{figure}
     \firstbox{#1}%\secfirstplot
     \foreach \j in {0,1,...,3}{
-        \subf{#1}{\z{\j}}{\j}
+        \subf{#1}{0000\z{\j}}{\j}
     }
     \label{fig:#1}
 \end{figure}
@@ -120,6 +120,7 @@ start time: \starttime\\
             $\mu + \sigma$ & illustrates the mean $\mu$ of step length per frame and its standard derivation $\sigma$ for a batch. \\
             $\sum_{\alpha_i}$ & is the sum of angles $\alpha$ taken anti-clockwise and where each $\alpha_i \in [-\pi, \pi]$.  \\
             $\alpha_{avg}$ & is the average turning angle for each batch in radians. \\
+            $\# misses $ & the number of misses in the csv-batch, such as invalid data frames outside of the tank and non values. \\
             $\# spikes$ & the number of steps per frame that exceed the limit of the overall $\mu$ and $\sigma$ by the following formula $\mu + 3 \cdot \sigma = 0.2274 + 3 \cdot 1.004 = 3.4246$. \\
             $N$ & number of valid data point for a batch. A batch of trajectory data points for a time of 30 min contains originally 9999 data points. \\
         \end{tabular}
