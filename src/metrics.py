@@ -14,23 +14,29 @@ def mean_sd(steps):
     return mean, sd
 
 def num_of_spikes(steps):
-    return np.sum(steps > S_LIMIT)
+    spike_places = steps > S_LIMIT
+    return np.sum(spike_places), spike_places
 
-def calc_length_of_steps(df):
-    ysq = (df.y.array[1:] - df.y.array[:-1])**2
-    xsq = (df.x.array[1:] - df.x.array[:-1])**2
+def calc_length_of_steps(batchxy):
+    xsq = (batchxy[1:,0]-batchxy[:-1,0])**2
+    ysq = (batchxy[1:,1]-batchxy[:-1,1])**2
     c=np.sqrt(ysq + xsq)
     return c
+
+def activity_mean_sd(steps, ignore_flags):
+    steps = steps[False == ignore_flags]
+    if len(steps)==0:
+        return 0.0,0.0
+    return mean_sd(steps)
+
 def get_gaps_in_dataframes(frames):
-    dists = frames[1:] - frames[:-1]
-    return np.where(dists>1)[0]
+    gaps_select = (frames[1:] - frames[:-1]) > 1
+    return np.where(gaps_select)[0], gaps_select
 
 def calc_step_per_frame(batchxy, frames):
     """ This function calculates the eucleadian step length in centimeters per FRAME, this is useful as a speed measurement after the removal of erroneous data points."""
-    xsq = (batchxy[1:,0]-batchxy[:-1,0])**2
-    ysq = (batchxy[1:,1]-batchxy[:-1,1])**2
     frame_dist = frames[1:] - frames[:-1]
-    c=np.sqrt(ysq + xsq)/frame_dist
+    c=calc_length_of_steps(batchxy)/frame_dist
     return c
 
 def unit_vector(vector):

@@ -22,6 +22,7 @@ while [[ "$#" -gt 0 ]]; do
         #-b|--block) block="$2"; shift ;;
         -t|--test) test=1 ;;
         -f|--feeding) feeding=1;;
+        -l|--local) local=1;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
     shift
@@ -38,6 +39,13 @@ if [ $test ]; then
     cameras=('23442333') 
     position=("front")
     echo "Testrun using $cameras, position: $position";
+fi
+if [ $local ]; then
+    if [ $feeding ]; then
+        CSV_DIR=$path_csv_feeding_local
+    else
+        CSV_DIR=$path_csv_local
+    fi
 fi
 echo "
 -------------------------

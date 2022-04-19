@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import os
 import sys
 from src.utile import csv_of_the_day, get_position_string, get_time_for_day,BLOCK, ROOT_img, get_fish2camera_map, get_days_in_order, BACK, STIME, FEEDINGTIME
-from src.metrics import num_of_spikes, calc_step_per_frame, mean_sd, get_gaps_in_dataframes
+from src.metrics import num_of_spikes, calc_step_per_frame, calc_length_of_steps, mean_sd, get_gaps_in_dataframes, activity_mean_sd
 from src.transformation import pixel_to_cm
 from methods import avg_and_sum_angles # import cython functions for faster for-loops. 
 
@@ -43,15 +43,9 @@ class Figure:
             os.makedirs(directory, exist_ok=True)
         self.fig.savefig("{}/{}.pdf".format(directory,name),bbox_inches='tight')
 
-    def meta_text_for_trajectory(self, batchxy, frames):
-        steps = calc_step_per_frame(batchxy, frames)
-        mean, sd = mean_sd(steps)
-        spiks = num_of_spikes(steps)
-        avg_alpha, sum_alpha = avg_and_sum_angles(batchxy)
-        last_frame = frames[-1]
-        N = len(steps)
+    def meta_text_for_trajectory(self,mean, sd, avg_alpha, sum_alpha, spikes, misses, N):
         text_l = [r"$\alpha_{avg}: %.3f$"%avg_alpha,r"$\sum \alpha_i : %.f$"%sum_alpha, r"$\mu + \sigma: %.2f + %.2f$"%(mean, sd)]
-        text_r = [r"$N: %.f$"%N, r"$\# misses: %.f$"%(last_frame-N),r"$ \# spikes: %.f$"%(spiks)]
+        text_r = [r"$N: %.f$"%N, r"$\# misses: %.f$"%(misses),r"$ \# spikes: %.f$"%(spikes)]
         return self.meta_text_for_plot(text_l=text_l, text_r=text_r)
 
     def meta_text_for_plot(self, text_l=[], text_r=[]):
@@ -75,7 +69,11 @@ class Figure:
         if self.is_back: 
             pos_y = y_lim[1] - ((y_lim[1] - y_lim[0]) * 0.35)
         return pos_x1, pos_x2, pos_y
-
+    
+    def remove_extra_lines(self,index=1):
+        lines = self.ax.get_lines()
+        for l in lines[index:]:
+            l.remove()
 
 class Trajectory:
 
@@ -95,8 +93,8 @@ class Trajectory:
         F = self.fig_back if is_back else self.fig_front
         
         F.ax.set_title(time_span,fontsize=10)
-
-        if batch.x.array[-1] <= -1:
+        last_frame = batch.FRAME.array[-1]
+        if (batch.xpx.array[-1] == -1 and batch.ypx.array[-1] == -1) or (batch.xpx.array[-1] == 0 and batch.ypx.array[-1] == 0): # remove error point, only need to carry it to this point to record the last frame number
             batch.drop(batch.tail(1).index)
 
         batchxy = pixel_to_cm(batch[["xpx", "ypx"]].to_numpy())
@@ -104,13 +102,20 @@ class Trajectory:
         # draw spikes where datapoints were lost
         #ax.draw_artist(ax.patch)
         #ax.draw_artist(line)
-        lines = F.ax.get_lines()
-        for l in lines[1:]:
-            l.remove()
-        gaps_idx = get_gaps_in_dataframes(batch.FRAME.array)
+        F.remove_extra_lines(index=1)
+        gaps_idx, gaps_select = get_gaps_in_dataframes(batch.FRAME.array)
         for i in gaps_idx:
-            F.ax.plot(*batchxy.T[:,i:i+1], "r-", solid_capstyle="projecting", markersize=0.2)
-        remove_text = F.meta_text_for_trajectory(batchxy, batch.FRAME.array)
+            F.ax.plot(*batchxy.T[:,i:i+2], "r-", alpha=0.7, solid_capstyle="projecting")
+
+        # metric calculations
+        steps = calc_length_of_steps(batchxy)
+        spikes, spike_places = num_of_spikes(steps)
+        ignore_flags = (spike_places | gaps_select) # spike or gap ignore them for the next calculation
+        mean, sd = activity_mean_sd(steps, ignore_flags)
+        avg_alpha, sum_alpha = avg_and_sum_angles(batchxy)
+        N = len(steps)
+        misses = last_frame-N
+        remove_text = F.meta_text_for_trajectory(mean, sd, avg_alpha, sum_alpha,spikes, misses, N)
         
         if self.write_fig:
             F.write_figure(directory, name)
@@ -147,7 +152,7 @@ class Trajectory:
         for idx in range(len(data)):       
                 batch = data[idx]
                 up = len(batch.x)-1
-                time_span="batch: {},    {} - {}".format(idx,get_time_for_day(date,nr_of_frames),get_time_for_day(date, nr_of_frames+batch.FRAME[up]))
+                time_span="batch: {},    {} - {}".format(keys[idx],get_time_for_day(date,nr_of_frames),get_time_for_day(date, nr_of_frames+batch.FRAME[up]))
                 
                 fig = self.subplot_function(batch, date, data_dir, keys[idx], fish_id, time_span=time_span, is_back=is_back) # plot ij.pdf
                 nr_of_frames+=batch.FRAME[up]

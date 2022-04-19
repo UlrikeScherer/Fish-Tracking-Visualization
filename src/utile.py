@@ -15,6 +15,7 @@ MEAN_GLOBAL = 0.22746102241709162
 SD_GLOBAL = 1.0044248513034164
 S_LIMIT = 15 #MEAN_GLOBAL + 3 * SD_GLOBAL
 BATCH_SIZE = 9999
+FRAMES_PER_SECOND = 5
 ROOT=os.environ["rootserver"]
 DIR_CSV=os.environ["path_csv"] # 
 DIR_CSV_LOCAL=os.environ["path_csv_local"] # 
@@ -37,7 +38,8 @@ N_BATCHES=15
 N_BATCHES_FEEDING=8
 
 N_FISHES = 24
-N_SECONDS_OF_DAY = 24*3600
+N_SECONDS_PER_HOUR = 3600
+N_SECONDS_OF_DAY = 24*N_SECONDS_PER_HOUR
 
 def get_directory(is_feeding=False, is_back=False):
     if is_feeding:
