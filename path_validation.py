@@ -100,7 +100,7 @@ def main(delete=0, n_files=15):
     path2 = '/Volumes/data/loopbio_data/FE_(fingerprint_experiment)_SepDec2021/FE_tracks_retracked/FE_tracks_060000_block1_retracked/FE_060000_tracks_block1_%s_retracked'
 
     # select the path here and use the %s to replace "front" or "back"
-    PATH=path1 
+    PATH=path2
     position = ["front", "back"]
     LOG = list()
     for p in position: # validating files for front and back position

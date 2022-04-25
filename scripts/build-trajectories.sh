@@ -62,8 +62,16 @@ mkdir -p trajectory/$STARTTIME/$BLOCK
 for b in ${!position[@]}; do
     echo -e "pdf for ${position[$b]} \n"
     POSITION_STR=${POS_STRINGS[$b]}
+    if [ $test ]; then 
+        echo "TEST" 
+    else
+        cameras="$(ls -d $CSV_DIR/$POSITION_STR/[0-9]*[0-9]/ | sort -V )"
+    fi
+
     for i in ${!cameras[@]}; do
-        secff="$(ls -d $CSV_DIR/$POSITION_STR/${cameras[$i]}/*.${cameras[$i]}/ | sort -V | head -1 | sed 's/.*1550\([^.]*\).*/\1/')"
+        camera=$(basename ${cameras[$i]})
+        echo $camera
+        secff="$(ls -d $CSV_DIR/$POSITION_STR/${camera}/*.${camera}/ | sort -V | head -1 | sed 's/.*1550\([^.]*\).*/\1/')"
         
         texheader="%\usepackage{etoolbox}
                     %% root folders: ---------------------
@@ -108,7 +116,7 @@ for b in ${!position[@]}; do
                         "
 
         daysarray="$LEGEND"
-        days="$(ls -d $CSV_DIR/$POSITION_STR/${cameras[$i]}/*${STARTTIME}.${cameras[$i]}*/ | sort -V )"
+        days="$(ls -d $CSV_DIR/$POSITION_STR/${camera}/*${STARTTIME}.${camera}*/ | sort -V )"
 
         for d in $days; do 
             d=$(basename $d)
@@ -117,7 +125,7 @@ for b in ${!position[@]}; do
             daysarray="$daysarray\plotdayupdate{${day_id}}
             "
 
-            filescsv="$(ls $CSV_DIR/$POSITION_STR/${cameras[$i]}/*${STARTTIME}.${cameras[$i]}*/${cameras[$i]}_$day*.csv | sort -V)"
+            filescsv="$(ls $CSV_DIR/$POSITION_STR/${camera}/*${STARTTIME}.${camera}*/${camera}_$day*.csv | sort -V)"
             C_i=0
             for f in $filescsv; do 
                 texheader="$texheader \setcsv{${day_id}$C_i}{\href{${PREFIX}${f}}{csv}}
@@ -125,7 +133,7 @@ for b in ${!position[@]}; do
                 let C_i++
             done
 
-            foldermp4="$(ls -d $path_recordings/${cameras[$i]}/${day}*/ | head )"
+            foldermp4="$(ls -d $path_recordings/${camera}/${day}*/ | head )"
             texheader="$texheader \addtext{$PREFIX$foldermp4}
             "
             filesmp4="$(ls $foldermp4/*.mp4 | sort -V)"
@@ -139,17 +147,16 @@ for b in ${!position[@]}; do
         # daysarray=${daysarray%?}
         echo "${daysarray}" > $FILES/days_array.tex
         echo "$texheader" > $FILES/arrayoflinks.tex
-        if [ "$feeding" -eq 1 ]; then 
+        if [ $feeding ]; then 
             echo "\input{$FILES/${BLOCK}_feedingtime.tex}" >> $FILES/arrayoflinks.tex
         fi
         END=2
         for k in $(seq 1 $END); do 
-            #pdflatex "\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${cameras[$i]}}\input{main}"
-            pdflatex --interaction=nonstopmode "\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${cameras[$i]}}\input{main}"
+            #pdflatex "\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}"
+            pdflatex --interaction=nonstopmode "\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}"
         done
-        mv main.pdf trajectory/$STARTTIME/$BLOCK/${STARTTIME}_${BLOCK}_${cameras[$i]}_${position[$b]}.pdf
+        mv main.pdf trajectory/$STARTTIME/$BLOCK/${STARTTIME}_${BLOCK}_${camera}_${position[$b]}.pdf
     done
 done
-
 
 echo "Execution time: $SECONDS "

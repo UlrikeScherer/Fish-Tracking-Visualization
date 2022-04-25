@@ -48,7 +48,7 @@ start time: \starttime\\
 
 \newcommand{\subf}[3]{%
 \begin{subfigure}[h]{\subfigwidth}
-    \includegraphics[width=\textwidth]{\camera/#1/#2.pdf}
+    \includegraphics[width=\textwidth, height=.24\textheight]{\camera/#1/#2.pdf}
     \caption*{\getsub{#1#3}, \getcsv{#1#3}}
     %\vspace{-1em}
 \end{subfigure}
