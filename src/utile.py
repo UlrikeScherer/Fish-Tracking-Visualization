@@ -38,6 +38,8 @@ N_BATCHES=15
 N_BATCHES_FEEDING=8
 
 N_FISHES = 24
+N_DAYS = 28
+HOURS_PER_DAY = 8
 N_SECONDS_PER_HOUR = 3600
 N_SECONDS_OF_DAY = 24*N_SECONDS_PER_HOUR
 
@@ -138,12 +140,16 @@ def read_batch_csv(filename, drop_errors):
     df = pd.read_csv(filename,skiprows=3, delimiter=';', error_bad_lines=False, usecols=["x", "y", "FRAME", "time", "xpx", "ypx"])
     df.dropna(axis="rows", how="any", inplace=True)
     if drop_errors:
-        x = df[:-1].xpx
-        y = df[:-1].ypx
-        indexNames = df[:-1][((x == -1) & (y == -1)) | ((x == 0) & (y == 0))].index # except the last index for time recording
-        df = df.drop(index=indexNames)
+        err_filter = get_error_indices(df[:-1])
+        df = df.drop(index=df[:-1][err_filter].index)
     df.reset_index(drop=True, inplace=True)
     return df
+
+def get_error_indices(dataframe):
+    x = dataframe.xpx
+    y = dataframe.ypx
+    indexNames = ((x == -1) & (y == -1)) | ((x == 0) & (y == 0)) # except the last index for time recording
+    return indexNames
 
 def merge_files(filenames, drop_errors):
     batches = []
@@ -152,7 +158,7 @@ def merge_files(filenames, drop_errors):
         batches.append(df)
     return batches
 
-def csv_of_the_day(camera, day, is_back=False, drop_out_of_scope=False, is_feeding=False):
+def csv_of_the_day(camera, day, is_back=False, drop_out_of_scope=False, is_feeding=False, print_log=False):
     """
     @params: camera, day, is_back, drop_out_of_scope
     returns csv of the day for camera: front or back
@@ -166,7 +172,7 @@ def csv_of_the_day(camera, day, is_back=False, drop_out_of_scope=False, is_feedi
     LOG, _, filtered_files = filter_files(camera,day,filenames_f, get_number_of_batches(is_feeding)) # filters for duplicates in the batches for a day. It takes the LAST one!!!
     file_keys = list(filtered_files.keys())
     correct_files = list(filtered_files.values())
-    if len(LOG)>0:
+    if print_log and len(LOG)>0:
         print("\n {}/{}/{}*: \n".format(dir_, camera, day),"\n".join(LOG))
     return file_keys, merge_files(correct_files, drop_out_of_scope)     
     

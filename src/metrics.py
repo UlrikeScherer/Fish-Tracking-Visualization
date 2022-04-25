@@ -1,12 +1,15 @@
 import numpy as np
 from scipy.stats import entropy
-from src.utile import S_LIMIT, BACK, get_days_in_order, csv_of_the_day, BLOCK, N_SECONDS_OF_DAY, get_seconds_from_day, N_FISHES, get_fish2camera_map
+from src.utile import *
 from src.transformation import pixel_to_cm
 from methods import activity, calc_steps, turning_angle, tortuosity_of_chunk #cython
 import pandas as pd
 import os
+from itertools import product
 
 DATA_results = "results"
+float_format='%.10f'
+sep=";"
 
 def mean_sd(steps):
     mean = np.mean(steps)
@@ -95,13 +98,12 @@ def entropy_for_chunk(chunk):
     prob.extend(hist[indi_2])
     return entropy(prob),np.std(prob)*100
 
-def entropy_for_data(data, frame_interval):
+def entropy_for_data(data, frame_interval, filter_files):
     SIZE = data.shape[0]
     len_out = int(np.ceil(SIZE/frame_interval))
     mu_sd = np.zeros([len_out,2], dtype=float)
     for i,s in enumerate(range(frame_interval, data.shape[0], frame_interval)):
-        chunk = data[s-frame_interval:s]
-        chunk = chunk[chunk[:,0] > -1] # only consider valid points. 
+        chunk = data[s-frame_interval:s] 
         result = entropy_for_chunk(chunk)
         mu_sd[i, 0] = result[0]
         mu_sd[i, 1] = result[1]
@@ -113,17 +115,16 @@ def average_by_metric(data, frame_interval, metric_f):
     mu_sd = np.zeros([len_out,2], dtype=float)
     for i,s in enumerate(range(frame_interval, data.shape[0], frame_interval)):
         chunk = data[s-frame_interval:s]
-        chunk = chunk[chunk[:,0] > -1] # only consider valid points. 
         avg_metric = metric_f(chunk)
         result_size = avg_metric.size
         mu_sd[i, 0] = sum(avg_metric)/result_size
         mu_sd[i, 1] = np.sqrt(sum((avg_metric-mu_sd[i, 0])**2)/result_size)
     return mu_sd
 
-def tortuosity(data, frame_interval):
+def tortuosity(data, frame_interval, filter_files):
     return average_by_metric(data, frame_interval, tortuosity_of_chunk)
 
-def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100, day_interval = (0, 29), metric=activity, write_to_csv=False):
+def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100, day_interval = (0, N_DAYS), metric=activity, write_to_csv=False, drop_out_of_scope=False):
     """
     Applies a given function to all fishes in fish_ids with the time_interval, for all days in the day_interval interval
     Args:
@@ -139,37 +140,57 @@ def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100
         fish_ids = [fish_ids]
     days = get_days_in_order(interval=day_interval)
     fish2camera = get_fish2camera_map()
-    results = list()
+    results = dict()
+    package = dict(metric_name=metric.__name__, time_interval=time_interval, results=results)
     for i,fish in enumerate(fish_ids):
         camera_id, is_back = fish2camera[fish,0], fish2camera[fish,1]==BACK
-        day_list = list()
+        day_dict = dict()
         for j,day in enumerate(days):
-            keys, df_day = csv_of_the_day(camera_id, day, is_back=is_back, drop_out_of_scope=True) ## True or False testing needed
+            keys, df_day = csv_of_the_day(camera_id, day, is_back=is_back, drop_out_of_scope=drop_out_of_scope) ## True or False testing needed
             if len(df_day)>0:
                 df = pd.concat(df_day)
-                result = metric(pixel_to_cm(df[["xpx", "ypx"]].to_numpy()),time_interval*5)
-                day_list.append(result)
-            else: day_list.append(np.empty([0, 2]))
-        results.append(day_list)
+                err_filter = get_error_indices(df).to_numpy()
+                data = pixel_to_cm(df[["xpx", "ypx"]].to_numpy())
+                result = metric(data,time_interval*FRAMES_PER_SECOND, err_filter)
+                day_dict[day]=result
+            else: day_dict[day]=np.empty([0, 2])
+        results["%s_%s"%(camera_id, fish2camera[fish,1])]=day_dict
     if write_to_csv:
-        metric_data_to_csv(results, time_interval=time_interval, fish_ids=fish_ids, day_interval=day_interval, metric=metric)
-    return results
+        metric_data_to_csv(**package)
+    return package
 
-def metric_data_to_csv(results, time_interval=100, fish_ids=[0], day_interval=[0,1], metric=activity):
-    days = get_days_in_order(interval=day_interval)
-    fish2camera = get_fish2camera_map()
-    for i,fish in enumerate(fish_ids):
+def metric_data_to_csv(results=None, metric_name=None, time_interval=None):
+    for i, (cam_pos, days) in enumerate(results.items()):
         time = list()
-        for j,day in enumerate(days):
-            time.extend([(day,t*time_interval+j*N_SECONDS_OF_DAY+get_seconds_from_day(day)) for t in range(1,results[i][j].shape[0]+1)])
+        for j,(day, value) in enumerate(days.items()):
+            time.extend([(day,t*time_interval+j*N_SECONDS_OF_DAY+get_seconds_from_day(day)) for t in range(1,value.shape[0]+1)])
         time_np = np.array(time)
-        concat_r = np.concatenate(results[i])
+        concat_r = np.concatenate(list(days.values()))
         data = np.concatenate((time_np, concat_r), axis=1)
         
         df = pd.DataFrame(data, columns=["day", "time", "mean", "std"])
-        directory="%s/%s/%s/"%(DATA_results, BLOCK,metric.__name__)
+        directory="%s/%s/%s/"%(DATA_results, BLOCK,metric_name)
         os.makedirs(directory, exist_ok=True)
-        df.to_csv("%s/%s_%s.csv"%(directory,time_interval,"_".join(fish2camera[fish])))
+        df.to_csv("%s/%s_%s.csv"%(directory,time_interval,cam_pos),sep=sep, float_format=float_format)
+
+def metric_per_hour_csv(results=None, metric_name=None, time_interval=None):
+    data_idx = np.array(list(product(results.keys(), range(HOURS_PER_DAY))))
+    # initialize table of nan
+    data = np.empty((data_idx.shape[0], N_DAYS))
+    data.fill(np.nan) 
+    days = get_days_in_order()
+    df = pd.DataFrame(data=data_idx, columns=["CAMERA_POSITION","HOUR"])
+    df_d = pd.DataFrame(data=data,columns=days)
+    df_mean = pd.concat((df,df_d),axis=1)
+    df_std = df_mean.copy()
+    for i,(cam_pos, fish) in enumerate(results.items()):
+        for j,(day,day_data) in enumerate(fish.items()):
+            idx = i*HOURS_PER_DAY
+            k = idx + day_data.shape[0]-1
+            df_mean.loc[idx:k, day] = day_data[:,0]
+            df_std.loc[idx:k, day] = day_data[:,1]
+    df_mean.to_csv("%s/%s/%s_mean.csv"%(DATA_results, BLOCK, metric_name),sep=sep, float_format=float_format)
+    df_std.to_csv("%s/%s/%s_std.csv"%(DATA_results, BLOCK, metric_name),sep=sep, float_format=float_format)
 
 def activity_per_interval(*args, **kwargs):
     return metric_per_interval(*args, **kwargs, metric=activity)

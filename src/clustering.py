@@ -1,5 +1,5 @@
 from src.transformation import rotation, px2cm
-from methods import avg_turning_direction, calc_steps, tortuosity_of_chunk 
+from methods import turning_directions, calc_steps, tortuosity_of_chunk 
 from src.metrics import entropy_for_chunk
 import numpy as np
 import seaborn as sns
@@ -25,7 +25,7 @@ def transfrom_to_traces2(batch, trace_size):
     setX = batch[["xpx", "ypx"]].to_numpy()
     #setX = setX[1:]-setX[:-1]
     steps = calc_steps(setX)
-    angels = avg_turning_direction(setX)
+    angels = turning_directions(setX)
     #print(len(steps), len(angels))
     lenX = setX.shape[0]
     sizeSet = int(lenX/trace_size)
@@ -40,7 +40,7 @@ def transfrom_to_traces2(batch, trace_size):
 def transfrom_to_traces_metric_based(batch, trace_size):
     setX = batch[["xpx", "ypx"]].to_numpy()
     steps = calc_steps(setX)
-    angels = avg_turning_direction(setX)
+    angels = turning_directions(setX)
     
     lenX = setX.shape[0]
     sizeSet = int(lenX/trace_size)
@@ -59,7 +59,7 @@ def transfrom_to_traces_metric_based(batch, trace_size):
 def transfrom_to_traces_seq_metrics(batch, trace_size, step):
     setX = batch[["xpx", "ypx"]].to_numpy()
     steps = calc_steps(setX)
-    angels = avg_turning_direction(setX)
+    angels = turning_directions(setX)
     
     lenX = setX.shape[0]
     setSize = int(lenX/step)

@@ -121,54 +121,64 @@ cpdef np.ndarray[double, ndim=1] tortuosity_of_chunk(np.ndarray[double, ndim=2] 
 
     return np.array(t_result, dtype=float)
 
-cpdef np.ndarray[float, ndim=1] avg_turning_direction(np.ndarray[double, ndim=2] data):
+cpdef np.ndarray[float, ndim=1] turning_directions(np.ndarray[double, ndim=2] data):
     cdef np.ndarray[double, ndim=2] vecs
     cdef double v0, v1, u0, u1
     vecs_in = data[1:]-data[:-1]
-    indices = np.all(vecs_in!=0, axis=1)
+    indices = np.any(vecs_in!=0, axis=1) # remove all vectors where both dimentions are 0
     vecs = vecs_in[indices]
-    cdef int N_alpha
-    N_alpha = len(vecs)
-    cdef np.ndarray sum_ang = np.zeros([N_alpha], dtype=float)
-    if N_alpha == 0: 
-        return sum_ang
+    cdef int N_alpha = len(vecs)
+    cdef np.ndarray d_angles = np.zeros([N_alpha], dtype=float) # one point smaller then vecs and two points smaller
+    if N_alpha <= 1: 
+        return d_angles
     (u0, u1) = unit_vector(vecs[0,0], vecs[0,1])
     cdef int i
     for i in range(1,N_alpha):
         (v0, v1) = unit_vector(vecs[i,0], vecs[i,1])
-        sum_ang[i-1] = direction_angle(u0,u1,v0,v1)
+        d_angles[i-1] = direction_angle(u0,u1,v0,v1)
         u0, u1 = v0, v1
 
-    results = np.zeros(len(vecs_in), dtype=float)
-    results[indices] = sum_ang
-    return results
+    results = np.zeros([len(vecs_in)], dtype=float) 
+    results[indices] = d_angles
+    return results[:-1]
 
-cpdef np.ndarray[double, ndim=2] activity(np.ndarray[double, ndim=2] data, int frame_interval):
+cpdef np.ndarray[np.npy_bool, ndim=1] get_spikes_filter(np.ndarray[double, ndim=1]  steps):
+    return (steps > 15)
+
+cpdef np.ndarray[double, ndim=2] activity(np.ndarray[double, ndim=2] data, int frame_interval, np.ndarray[np.npy_bool, ndim=1] filter_index):
     cdef int len_out, i, s
-    cdef np.ndarray[double, ndim=2] chunk
     cdef np.ndarray[double, ndim=1] steps
     cdef double SIZE = data.shape[0]
     len_out = int(ceil(SIZE/frame_interval))
     cdef np.ndarray mu_sd = np.zeros([len_out,2], dtype=float)
-    for i,s in enumerate(range(0, data.shape[0], frame_interval)):
-        chunk = data[s:s+frame_interval]
-        chunk = chunk[chunk[:,0] > -1]
-        steps = calc_steps(chunk)
-        mu_sd[i, 0] = sum(steps)/frame_interval
-        mu_sd[i, 1] = sqrt(sum((steps-mu_sd[i, 0])**2)/frame_interval)
+    steps = calc_steps(data)
+    filter_index = ~ ( filter_index[:-1] | filter_index[1:] | get_spikes_filter(steps) )
+
+    cdef np.ndarray[double, ndim=1] chunk
+    for i,s in enumerate(range(0, steps.shape[0], frame_interval)):
+        chunk = steps[s:s+frame_interval][filter_index[s:s+frame_interval]] # select chunk and filter it
+        mu_sd[i,:]=mean_std(chunk)
     return mu_sd
 
-cpdef np.ndarray[double, ndim=2] turning_angle(np.ndarray[double, ndim=2] data, int frame_interval):
+cpdef np.ndarray[double, ndim=2] turning_angle(np.ndarray[double, ndim=2] data, int frame_interval, np.ndarray[np.npy_bool, ndim=1] filter_index):
     cdef int len_out, i, s
-    cdef np.ndarray[double, ndim=2] chunk
-    cdef np.ndarray[double, ndim=1] avg_turning
-    cdef double SIZE = data.shape[0]
-    len_out = int(ceil(SIZE/frame_interval))
+    cdef np.ndarray[double, ndim=1] angles
+    angles = turning_directions(data)
+    filter_index = ( filter_index[:-1] | filter_index[1:] | get_spikes_filter(calc_steps(data)) )
+    filter_index = ~ (filter_index[:-1] | filter_index[1:])
+
+    len_out = int(ceil(angles.size/frame_interval))
     cdef np.ndarray mu_sd = np.zeros([len_out,2], dtype=float)
-    for i,s in enumerate(range(0, data.shape[0], frame_interval)):
-        chunk = data[s:s+frame_interval+1]
-        chunk = chunk[chunk[:,0] > -1]
-        avg_turning = avg_turning_direction(chunk)
-        mu_sd[i, 0] = sum(avg_turning)/frame_interval
-        mu_sd[i, 1] = sqrt(sum((avg_turning-mu_sd[i, 0])**2)/frame_interval)
+    cdef np.ndarray[double, ndim=1] chunk
+    for i,s in enumerate(range(0, angles.size, frame_interval)):
+        chunk = angles[s:s+frame_interval][filter_index[s:s+frame_interval]] # select chunk and filter it
+        mu_sd[i,:]=mean_std(chunk)
     return mu_sd
+
+cdef (double, double) mean_std(np.ndarray[double, ndim=1] data):
+    if data.size == 0:
+        return (np.nan, np.nan)
+    cdef double mean, std
+    mean = data.sum()/data.size
+    std = sqrt(((data-mean)**2).sum()/data.size)
+    return (mean, std)
