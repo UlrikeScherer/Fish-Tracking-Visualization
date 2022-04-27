@@ -5,6 +5,7 @@ import numpy as np
 import os
 import re
 import glob
+import json
 from itertools import product
 from envbash import load_envbash
 from path_validation import filter_files
@@ -17,6 +18,7 @@ S_LIMIT = 15 #MEAN_GLOBAL + 3 * SD_GLOBAL
 BATCH_SIZE = 9999
 FRAMES_PER_SECOND = 5
 ROOT=os.environ["rootserver"]
+ROOT_LOCAL=os.environ["root_local"]
 DIR_CSV=os.environ["path_csv"] # 
 DIR_CSV_LOCAL=os.environ["path_csv_local"] # 
 BLOCK = os.environ["BLOCK"] # block1 or block2
@@ -33,6 +35,7 @@ FEEDINGTIME = os.environ["FEEDINGTIME"]
 
 FRONT, BACK = "front", "back"
 ROOT_img = "plots"
+DATA_DIR = "data"
 
 N_BATCHES=15
 N_BATCHES_FEEDING=8
@@ -63,12 +66,16 @@ def get_fish2camera_map(is_feeding=False):
     l_back = list(product(get_camera_names(is_feeding, is_back=BACK==BACK), [BACK]))
     return np.array([j for i in zip(l_front,l_back) for j in i])
 
+def get_camera_pos_keys(is_feeding=False):
+    m = get_fish2camera_map(is_feeding=is_feeding)
+    return ["%s_%s"%(c,p) for (c,p) in m]
+
 def get_fish_ids():
     """
     Return the fish ids defined in ...livehistory.csv corresponding to the indices in fish2camera
     """
     # %ROOT
-    info_df = pd.read_csv("data/DevEx_fingerprint_activity_lifehistory.csv", delimiter=";")
+    info_df = pd.read_csv("{}/DevEx_fingerprint_activity_lifehistory.csv".format(DATA_DIR), delimiter=";")
     #info_df = pd.read_csv("data/DevEx_fingerprint_activity_lifehistory.csv", delimiter=";")
     info_df1=info_df[info_df["block"]==int(BLOCK[-1])]
     info_df1[["fish_id", "camera", "block", "tank"]],
@@ -82,6 +89,18 @@ def get_fish_ids():
         fishIDs_order.append(ids[0])
         
     return np.array(fishIDs_order)
+
+def write_area_data_to_json(area_data):
+    area_d = dict(zip(area_data.keys(), map(lambda v: v.tolist(),area_data.values())))
+    with open("{}/{}_area_data.json".format(DATA_DIR,BLOCK), "w") as outfile:
+        json.dump(area_d, outfile, indent=2)
+        
+def read_area_data_from_json():
+    with open("{}/{}_area_data.json".format(DATA_DIR,BLOCK), "r") as infile:
+        area_data = json.load(infile)
+        for k in area_data.keys():
+            area_data[k]=np.array(area_data[k])
+        return area_data
 
 def print_tex_table(fish_ids, filename):
     tex_dir = "tex/tables"
@@ -137,7 +156,8 @@ def get_position_string(is_back):
         return FRONT
     
 def read_batch_csv(filename, drop_errors):
-    df = pd.read_csv(filename,skiprows=3, delimiter=';', error_bad_lines=False, usecols=["x", "y", "FRAME", "time", "xpx", "ypx"])
+    df = pd.read_csv(filename,skiprows=3, delimiter=';', error_bad_lines=False, usecols=["x", "y", "FRAME", "time", "xpx", "ypx"], 
+                     dtype={"xpx": np.float64, "ypx": np.float64, "time":np.float64})
     df.dropna(axis="rows", how="any", inplace=True)
     if drop_errors:
         err_filter = get_error_indices(df[:-1])
@@ -146,6 +166,10 @@ def read_batch_csv(filename, drop_errors):
     return df
 
 def get_error_indices(dataframe):
+    """
+   @params: dataframe
+   returns a boolean pandas array with all indices to filter set to True
+    """
     x = dataframe.xpx
     y = dataframe.ypx
     indexNames = ((x == -1) & (y == -1)) | ((x == 0) & (y == 0)) # except the last index for time recording

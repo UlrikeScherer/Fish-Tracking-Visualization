@@ -31,6 +31,7 @@ export BLOCK
 export STIME
 export FEEDINGTIME
 export rootserver
+export root_local
 export path_csv
 export path_csv_local
 export path_recordings

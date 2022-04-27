@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from src.utile import get_camera_names, get_days_in_order, DIR_CSV_LOCAL, MEAN_GLOBAL, print_tex_table, get_fish2camera_map, N_FISHES, get_fish_ids, N_SECONDS_PER_HOUR
 from src.visualisation import Trajectory
-from src.metrics import activity_per_interval, turning_angle_per_interval, tortuosity_per_interval, entropy_per_interval, metric_per_hour_csv
+from src.metrics import activity_per_interval, turning_angle_per_interval, tortuosity_per_interval, entropy_per_interval, metric_per_hour_csv, distance_to_wall_per_interval
 from src.activity_plotting import sliding_window, sliding_window_figures_for_tex
 from src.feeding import FeedingTrajectory
 TRAJECTORY="trajectory"
@@ -13,8 +13,9 @@ ACTIVITY="activity"
 TURNING_ANGLE="turning_angle"
 TORTUOSITY="tortuosity"
 ENTROPY="entropy"
+WALL_DISTANCE="wall_distance"
 ALL_METRICS="all"
-programs = [TRAJECTORY,FEEDING, ACTIVITY, TURNING_ANGLE, TORTUOSITY, ENTROPY]
+programs = [TRAJECTORY,FEEDING, ACTIVITY, TURNING_ANGLE, TORTUOSITY, ENTROPY, WALL_DISTANCE]
 metric_names = [ACTIVITY, TURNING_ANGLE, TORTUOSITY, ENTROPY]
 #time_intervals = [100,100,100,200]
 
@@ -98,7 +99,10 @@ def main(program=None, test=0, time_interval=100, sw=10, fish_id=None):
         plotting_odd_even(**results, name=file_name, ylabel="turning angle", baseline=0, sw=sw)
     elif program == ENTROPY:
         results = entropy_per_interval(time_interval=time_interval, write_to_csv=True)
-        plotting_odd_even(**results, name=file_name, ylabel="entropy", baseline=0, sw=sw)
+        plotting_odd_even(**results, name=file_name, ylabel="entropy", sw=sw)
+    elif program == WALL_DISTANCE:
+        results = distance_to_wall_per_interval(time_interval=time_interval, write_to_csv=True)
+        plotting_odd_even(**results, name=file_name, ylabel="distance in px", baseline=0, sw=sw)
 
     elif program == ALL_METRICS:
         for p in metric_names: 

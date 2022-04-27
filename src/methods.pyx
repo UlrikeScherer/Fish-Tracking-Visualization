@@ -182,3 +182,41 @@ cdef (double, double) mean_std(np.ndarray[double, ndim=1] data):
     mean = data.sum()/data.size
     std = sqrt(((data-mean)**2).sum()/data.size)
     return (mean, std)
+
+#### DINSTANCE TO THE WALL --------------
+
+cpdef np.ndarray[double, ndim=1] distance_to_wall_chunk(np.ndarray[double, ndim=2] data, np.ndarray[double, ndim=2] area):
+    cdef int size 
+    size = data.shape[0]
+    cdef np.ndarray[double, ndim=1] dists
+    cdef np.ndarray[double, ndim=2] abcn = calc_wall_lines(area)
+    #for i in range(size):
+    dists = min_distance(data, abcn)
+    return dists
+
+cdef np.ndarray[double, ndim=2] calc_wall_lines(np.ndarray[double, ndim=2] area):
+    cdef np.ndarray[double, ndim=2] abcn = np.zeros((area.shape[0], 4))
+    cdef int i
+    cdef int size = area.shape[0]
+    cdef double v1, v2, x, y
+    for i in range(size):
+        v1,v2 = area[(i+1) % size]-area[i]
+        abcn[i,0] = v2 # a
+        abcn[i,1] = -v1 # b 
+        x,y = area[i]
+        abcn[i,2] = y*v1-v2*x # c
+        abcn[i,3]=norm(v2,v1) # norm(a,b)
+    return abcn
+
+cdef np.ndarray[double, ndim=1] min_distance(np.ndarray[double, ndim=2] data, np.ndarray[double, ndim=2] abcn):
+    cdef np.ndarray[double, ndim=2] min_dists
+    min_dists = distance_to_line(data[:,0], data[:,1], abcn[:,0], abcn[:,1], abcn[:,2], abcn[:,3])
+    return np.min(min_dists, axis=0)
+
+cdef np.ndarray[double, ndim=2] distance_to_line(
+    np.ndarray[double, ndim=1] x, 
+    np.ndarray[double, ndim=1] y, 
+    np.ndarray[double, ndim=1] a, 
+    np.ndarray[double, ndim=1] b, np.ndarray[double, ndim=1] c,
+    np.ndarray[double, ndim=1] n):
+    return np.abs(a[:,np.newaxis]*x+b[:,np.newaxis]*y+c[:,np.newaxis])/n[:,np.newaxis]

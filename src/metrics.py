@@ -2,7 +2,7 @@ import numpy as np
 from scipy.stats import entropy
 from src.utile import *
 from src.transformation import pixel_to_cm
-from methods import activity, calc_steps, turning_angle, tortuosity_of_chunk #cython
+from methods import activity, calc_steps, turning_angle, tortuosity_of_chunk, distance_to_wall_chunk #cython
 import pandas as pd
 import os
 from itertools import product
@@ -87,6 +87,8 @@ def sum_of_angles(df):
     return sum_alpha
 
 def entropy_for_chunk(chunk):
+    if chunk.shape[0]==0:
+        return np.nan, np.nan
     hist = np.histogram2d(chunk[:,0],chunk[:,1], bins=(40, 20), density=True)[0]
     prob = list()
     l_x,l_y = hist.shape
@@ -98,16 +100,19 @@ def entropy_for_chunk(chunk):
     prob.extend(hist[indi_2])
     return entropy(prob),np.std(prob)*100
 
-def entropy_for_data(data, frame_interval, filter_files):
+def entropy_for_data(data, frame_interval, filter_index):
     SIZE = data.shape[0]
-    len_out = int(np.ceil(SIZE/frame_interval))
+    len_out = int((SIZE/frame_interval))
     mu_sd = np.zeros([len_out,2], dtype=float)
     for i,s in enumerate(range(frame_interval, data.shape[0], frame_interval)):
-        chunk = data[s-frame_interval:s] 
+        chunk = data[s-frame_interval:s][~ filter_index[s-frame_interval:s]]
         result = entropy_for_chunk(chunk)
         mu_sd[i, 0] = result[0]
         mu_sd[i, 1] = result[1]
     return mu_sd
+
+def distance_to_wall(data, frame_interval, filter_index, area):
+    return average_by_metric(data, frame_interval, lambda data: distance_to_wall_chunk(data, area))
 
 def average_by_metric(data, frame_interval, metric_f):
     SIZE = data.shape[0]
@@ -121,10 +126,10 @@ def average_by_metric(data, frame_interval, metric_f):
         mu_sd[i, 1] = np.sqrt(sum((avg_metric-mu_sd[i, 0])**2)/result_size)
     return mu_sd
 
-def tortuosity(data, frame_interval, filter_files):
-    return average_by_metric(data, frame_interval, tortuosity_of_chunk)
+def tortuosity(data, frame_interval, filter_index):
+    return average_by_metric(data, frame_interval, lambda data: tortuosity_of_chunk(data))
 
-def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100, day_interval = (0, N_DAYS), metric=activity, write_to_csv=False, drop_out_of_scope=False):
+def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100, day_interval = (0, N_DAYS), metric=activity, write_to_csv=False, drop_out_of_scope=False, area_data=None):
     """
     Applies a given function to all fishes in fish_ids with the time_interval, for all days in the day_interval interval
     Args:
@@ -144,17 +149,22 @@ def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100
     package = dict(metric_name=metric.__name__, time_interval=time_interval, results=results)
     for i,fish in enumerate(fish_ids):
         camera_id, is_back = fish2camera[fish,0], fish2camera[fish,1]==BACK
+        fish_key = "%s_%s"%(camera_id, fish2camera[fish,1])
         day_dict = dict()
         for j,day in enumerate(days):
             keys, df_day = csv_of_the_day(camera_id, day, is_back=is_back, drop_out_of_scope=drop_out_of_scope) ## True or False testing needed
             if len(df_day)>0:
                 df = pd.concat(df_day)
                 err_filter = get_error_indices(df).to_numpy()
-                data = pixel_to_cm(df[["xpx", "ypx"]].to_numpy())
-                result = metric(data,time_interval*FRAMES_PER_SECOND, err_filter)
+                if area_data is not None:  
+                    data = df[["xpx", "ypx"]].to_numpy()                          # DISTANCE TO WALL METRIC 
+                    result = metric(data,time_interval*FRAMES_PER_SECOND, err_filter, area_data[fish_key])
+                else:
+                    data = pixel_to_cm(df[["xpx", "ypx"]].to_numpy())
+                    result = metric(data,time_interval*FRAMES_PER_SECOND, err_filter)
                 day_dict[day]=result
             else: day_dict[day]=np.empty([0, 2])
-        results["%s_%s"%(camera_id, fish2camera[fish,1])]=day_dict
+        results[fish_key]=day_dict
     if write_to_csv:
         metric_data_to_csv(**package)
     return package
@@ -203,3 +213,7 @@ def tortuosity_per_interval(*args, **kwargs):
 
 def entropy_per_interval(*args, **kwargs): 
     return metric_per_interval(*args, **kwargs, metric=entropy_for_data)
+
+def distance_to_wall_per_interval(*args, **kwargs):
+    area_data = read_area_data_from_json()
+    return metric_per_interval(*args, **kwargs, metric=distance_to_wall, area_data=area_data)
