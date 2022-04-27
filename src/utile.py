@@ -9,6 +9,7 @@ import json
 from itertools import product
 from envbash import load_envbash
 from path_validation import filter_files
+from src.tank_area_config import read_area_data_from_json
 load_envbash('scripts/env.sh')
 
 # Calculated MEAN and SD for the data set filtered for erroneous frames 
@@ -89,18 +90,6 @@ def get_fish_ids():
         fishIDs_order.append(ids[0])
         
     return np.array(fishIDs_order)
-
-def write_area_data_to_json(area_data):
-    area_d = dict(zip(area_data.keys(), map(lambda v: v.tolist(),area_data.values())))
-    with open("{}/{}_area_data.json".format(DATA_DIR,BLOCK), "w") as outfile:
-        json.dump(area_d, outfile, indent=2)
-        
-def read_area_data_from_json():
-    with open("{}/{}_area_data.json".format(DATA_DIR,BLOCK), "r") as infile:
-        area_data = json.load(infile)
-        for k in area_data.keys():
-            area_data[k]=np.array(area_data[k])
-        return area_data
 
 def print_tex_table(fish_ids, filename):
     tex_dir = "tex/tables"

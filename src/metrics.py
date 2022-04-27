@@ -2,7 +2,7 @@ import numpy as np
 from scipy.stats import entropy
 from src.utile import *
 from src.transformation import pixel_to_cm
-from methods import activity, calc_steps, turning_angle, tortuosity_of_chunk, distance_to_wall_chunk #cython
+from methods import activity, calc_steps, turning_angle, tortuosity_of_chunk, distance_to_wall_chunk, mean_std #cython
 import pandas as pd
 import os
 from itertools import product
@@ -10,11 +10,6 @@ from itertools import product
 DATA_results = "results"
 float_format='%.10f'
 sep=";"
-
-def mean_sd(steps):
-    mean = np.mean(steps)
-    sd = np.std(steps)
-    return mean, sd
 
 def num_of_spikes(steps):
     spike_places = steps > S_LIMIT
@@ -26,11 +21,11 @@ def calc_length_of_steps(batchxy):
     c=np.sqrt(ysq + xsq)
     return c
 
-def activity_mean_sd(steps, ignore_flags):
-    steps = steps[False == ignore_flags]
+def activity_mean_sd(steps, error_index):
+    steps = steps[~ error_index]
     if len(steps)==0:
-        return 0.0,0.0
-    return mean_sd(steps)
+        return np.nan, np.nan
+    return mean_std(steps)
 
 def get_gaps_in_dataframes(frames):
     gaps_select = (frames[1:] - frames[:-1]) > 1
@@ -100,34 +95,23 @@ def entropy_for_chunk(chunk):
     prob.extend(hist[indi_2])
     return entropy(prob),np.std(prob)*100
 
-def entropy_for_data(data, frame_interval, filter_index):
-    SIZE = data.shape[0]
-    len_out = int((SIZE/frame_interval))
-    mu_sd = np.zeros([len_out,2], dtype=float)
-    for i,s in enumerate(range(frame_interval, data.shape[0], frame_interval)):
-        chunk = data[s-frame_interval:s][~ filter_index[s-frame_interval:s]]
-        result = entropy_for_chunk(chunk)
-        mu_sd[i, 0] = result[0]
-        mu_sd[i, 1] = result[1]
-    return mu_sd
-
-def distance_to_wall(data, frame_interval, filter_index, area):
-    return average_by_metric(data, frame_interval, lambda data: distance_to_wall_chunk(data, area))
-
-def average_by_metric(data, frame_interval, metric_f):
+def average_by_metric(data, frame_interval, avg_metric_f, error_index):
     SIZE = data.shape[0]
     len_out = int(np.ceil(SIZE/frame_interval))
     mu_sd = np.zeros([len_out,2], dtype=float)
-    for i,s in enumerate(range(frame_interval, data.shape[0], frame_interval)):
-        chunk = data[s-frame_interval:s]
-        avg_metric = metric_f(chunk)
-        result_size = avg_metric.size
-        mu_sd[i, 0] = sum(avg_metric)/result_size
-        mu_sd[i, 1] = np.sqrt(sum((avg_metric-mu_sd[i, 0])**2)/result_size)
+    for i,s in enumerate(range(frame_interval, data.shape[0]+frame_interval, frame_interval)):
+        chunk = data[s-frame_interval:s][~ error_index[s-frame_interval:s]]
+        mu_sd[i,:] = avg_metric_f(chunk)
     return mu_sd
 
-def tortuosity(data, frame_interval, filter_index):
-    return average_by_metric(data, frame_interval, lambda data: tortuosity_of_chunk(data))
+def entropy_for_data(data, frame_interval, error_index):
+    return average_by_metric(data, frame_interval, entropy_for_chunk, error_index)
+
+def distance_to_wall(data, frame_interval, error_index, area):
+    return average_by_metric(data, frame_interval, lambda chunk: mean_std(distance_to_wall_chunk(chunk, area)), error_index)
+
+def tortuosity(data, frame_interval, error_index):
+    return average_by_metric(data, frame_interval, lambda chunk: mean_std(tortuosity_of_chunk(chunk)), error_index)
 
 def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100, day_interval = (0, N_DAYS), metric=activity, write_to_csv=False, drop_out_of_scope=False, area_data=None):
     """
@@ -139,7 +123,7 @@ def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100
         metric(function):       A function to apply to the data, {activity, tortuosity, turning_angle,...}
         write_to_csv(bool):     Indicate weather the results should be written to a csv
     Returns: 
-        results(list):          List of computed results
+        package:                dict of computed results, and meta information
     """
     if isinstance(fish_ids, int):
         fish_ids = [fish_ids]

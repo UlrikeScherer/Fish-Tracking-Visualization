@@ -175,7 +175,7 @@ cpdef np.ndarray[double, ndim=2] turning_angle(np.ndarray[double, ndim=2] data, 
         mu_sd[i,:]=mean_std(chunk)
     return mu_sd
 
-cdef (double, double) mean_std(np.ndarray[double, ndim=1] data):
+cpdef (double, double) mean_std(np.ndarray[double, ndim=1] data):
     if data.size == 0:
         return (np.nan, np.nan)
     cdef double mean, std
