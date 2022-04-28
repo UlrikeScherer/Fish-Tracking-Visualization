@@ -9,7 +9,6 @@ import json
 from itertools import product
 from envbash import load_envbash
 from path_validation import filter_files
-from src.tank_area_config import read_area_data_from_json
 load_envbash('scripts/env.sh')
 
 # Calculated MEAN and SD for the data set filtered for erroneous frames 

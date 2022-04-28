@@ -1,7 +1,7 @@
 import glob, json
 import matplotlib.pyplot as plt
 import numpy as np
-from src.utile FRONT, BACK, ROOT, BLOCK, DATA_DIR
+from src.utile import FRONT, BACK, ROOT, BLOCK, DATA_DIR
 
 def read_area_data_from_json():
     with open("{}/{}_area_data.json".format(DATA_DIR,BLOCK), "r") as infile:
@@ -19,7 +19,7 @@ def get_areas():
         c = os.path.basename(f)[:8]
         if BACK in f:
             p = BACK
-        else: configuration
+        else: 
             p = FRONT
         key = "%s_%s"%(c,p)
         for l in file_read.readlines():

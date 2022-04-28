@@ -1,7 +1,8 @@
 import numpy as np
 from scipy.stats import entropy
 from src.utile import *
-from src.transformation import pixel_to_cm
+from src.tank_area_config import read_area_data_from_json
+from src.transformation import pixel_to_cm, px2cm
 from methods import activity, calc_steps, turning_angle, tortuosity_of_chunk, distance_to_wall_chunk, mean_std #cython
 import pandas as pd
 import os
@@ -108,7 +109,7 @@ def entropy_for_data(data, frame_interval, error_index):
     return average_by_metric(data, frame_interval, entropy_for_chunk, error_index)
 
 def distance_to_wall(data, frame_interval, error_index, area):
-    return average_by_metric(data, frame_interval, lambda chunk: mean_std(distance_to_wall_chunk(chunk, area)), error_index)
+    return average_by_metric(data, frame_interval, lambda chunk: mean_std(px2cm(distance_to_wall_chunk(chunk, area))), error_index)
 
 def tortuosity(data, frame_interval, error_index):
     return average_by_metric(data, frame_interval, lambda chunk: mean_std(tortuosity_of_chunk(chunk)), error_index)

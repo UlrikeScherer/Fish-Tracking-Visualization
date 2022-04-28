@@ -158,7 +158,7 @@ def plot_lines_angle(lines_to_plot, limit=20):
 def plot_lines_cumsum(lines_to_plot, limit=20, ax=None, title="x:, y: "):
     if ax is not None: ax.set_title(title)
     for line in lines_to_plot[:limit]:
-        line = np.cumsum(line*px2cm(),axis=0)
+        line = np.cumsum(px2cm(line),axis=0)
         if ax is None:
             plt.plot(line[:,0], line[:,1])
         else: 
