@@ -87,7 +87,7 @@ def sliding_window(dataset, time_interval, sw, fish_keys=None, day_keys=None, fi
                     axes[d_idx].set_ylabel(ylabel, fontsize=20)
     if baseline != None:
         for i in range(n_days):
-            axes[i].plot((offset, x_max), (baseline, baseline), ":", color="black")
+            axes[i].plot((offset, time_interval*((x_max//time_interval)-1)), (baseline, baseline), ":", color="black")
                 
     for i in range(n_days, len(axes)):
         axes[i].axis('off')

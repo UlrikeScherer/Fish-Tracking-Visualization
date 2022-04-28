@@ -141,8 +141,8 @@ def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100
             if len(df_day)>0:
                 df = pd.concat(df_day)
                 err_filter = get_error_indices(df).to_numpy()
-                if area_data is not None:  
-                    data = df[["xpx", "ypx"]].to_numpy()                          # DISTANCE TO WALL METRIC 
+                if area_data is not None:
+                    data = df[["xpx", "ypx"]].to_numpy()                          # DISTANCE TO WALL METRIC
                     result = metric(data,time_interval*FRAMES_PER_SECOND, err_filter, area_data[fish_key])
                 else:
                     data = pixel_to_cm(df[["xpx", "ypx"]].to_numpy())
