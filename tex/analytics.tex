@@ -22,6 +22,7 @@
 
 \providecommand{\position}{position}
 \providecommand{\block}{blockX}
+\providecommand{\timeinterval}{100}
 \graphicspath{{../vis/\block/}} 
 
 \title{\Large Developing exploration behavior\\
@@ -43,7 +44,7 @@ Analysis of the Trajectories over time. Visualized as sliding window plots over 
 
 \newcommand{\plotdays}[1]{%
 \begin{figure}[!hb]
-    \foreach \i in {100_activity,100_tortuosity,100_turning_angle,200_entropy, 100_wall_distance} {
+    \foreach \i in {\timeinterval_activity,\timeinterval_tortuosity,\timeinterval_turning_angle,\timeinterval_entropy,\timeinterval_wall_distance} {
             \subf{\i_\position#1}
             %\vskip\baselineskip
     }
@@ -58,11 +59,11 @@ Analysis of the Trajectories over time. Visualized as sliding window plots over 
 \begin{center}
 \subsection*{Legend}
 \begin{tabular}{p{3cm} p{8cm} }
-    \textbf{Activity} & is here defined as the average distance per frame (0.2 seconds) that a fish swims. We compute the mean over 100 seconds. The overall average Activity is $0.2274 cm$ per frame. \\
+    \textbf{Activity} & is here defined as the average distance per frame (0.2 seconds) that a fish swims. We compute the mean over \timeinterval{} seconds. The overall average Activity is $0.2274 cm$ per frame. \\
     \textbf{Tortuosity} & is a property of a curve being tortuous. It measures how tortuous the fish's trajectory is and scales by a distance of 10cm. For each consecutive time window where the fish swims about 10cm, we calculate the tortuosity $\tau=\frac{C}{L}$ and $\tau \in [1, \infty]$, where $C$ is the traveled distance as the cumulative sum over the frames of the time window and $L$ the direct distance from start to the end of the interval. \\
-    \textbf{Turning Angle} & is the average turning angle in radians over 100 seconds. This indicates if the fish is turning more right or left at the time.\\
-    \textbf{Space Use} & is computed as \textbf{entropy} for every 200 seconds. Let $p_{ij}$ be probability that the fish is in one cell of a $40\times 20$-grid, then entropy is calculated as $S=-\sum_{ij} p_{ij} \cdot ln(p_{ij})$. The entropy measures are in the scope of $e\in [0, 6.17]$. High entropy indicates randomness and four out purpose extensive space use.  \\
-    \textbf{Wall Distance} & is the distance to the nearest wall in average for every 100 seconds. 
+    \textbf{Turning Angle} & is the average turning angle in radians over \timeinterval{} seconds. This indicates if the fish is turning more right or left at the time.\\
+    \textbf{Space Use} & is computed as \textbf{entropy} for every \timeinterval{} seconds. Let $p_{ij}$ be probability that the fish is in one cell of a $40\times 20$-grid, then entropy is calculated as $S=-\sum_{ij} p_{ij} \cdot ln(p_{ij})$. The entropy measures are in the scope of $e\in [0, 6.17]$. High entropy indicates randomness and four out purpose extensive space use.  \\
+    \textbf{Wall Distance} & is the distance to the nearest wall in average for every \timeinterval{} seconds. 
 \end{tabular}
 \begin{tabular}{llll}
     Index & Camera ID & Position & ID\\ \hline
@@ -76,7 +77,7 @@ Analysis of the Trajectories over time. Visualized as sliding window plots over 
         \vskip\baselineskip
     }
 
-\foreach \i in {100_activity,100_tortuosity,100_turning_angle,200_entropy, 100_wall_distance} {
+\foreach \i in {\timeinterval_activity,\timeinterval_tortuosity,\timeinterval_turning_angle,\timeinterval_entropy, \timeinterval_wall_distance} {
     %\section{\StrMid{\i}{5}{100}{}}
     \newcounter{cnt}
     \csdef{m0}{activity}

@@ -99,7 +99,6 @@ cpdef np.ndarray[double, ndim=1] tortuosity_of_chunk(np.ndarray[double, ndim=2] 
     cdef int dist_length = 10 # normed by 10cm of distance traveled
     cdef np.ndarray[double, ndim=1] steps = calc_steps(data)
     cdef np.ndarray[double, ndim=1] c_steps = np.cumsum(steps)  # cumulative sum
-    cdef int length = int(c_steps[-1]/dist_length)
     cdef list t_result = []
     cdef double L, C, curr_c
     cdef int i = 0

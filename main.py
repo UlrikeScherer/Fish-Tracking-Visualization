@@ -16,7 +16,7 @@ ENTROPY="entropy"
 WALL_DISTANCE="wall_distance"
 ALL_METRICS="all"
 programs = [TRAJECTORY,FEEDING, ACTIVITY, TURNING_ANGLE, TORTUOSITY, ENTROPY, WALL_DISTANCE]
-metric_names = [ACTIVITY, TURNING_ANGLE, TORTUOSITY, ENTROPY]
+metric_names = [ACTIVITY, TURNING_ANGLE, TORTUOSITY, ENTROPY, WALL_DISTANCE]
 #time_intervals = [100,100,100,200]
 
 def map_r_to_idx(results, fish_idx): 
@@ -60,7 +60,7 @@ def main(program=None, test=0, time_interval=100, sw=10, fish_id=None):
     days = get_days_in_order(is_feeding=is_feeding)
     fish2camera = get_fish2camera_map(is_feeding=is_feeding)
     N_FISHES = len(fish2camera) 
-    if time_interval == "hour":
+    if time_interval == "hour": # change of parameters when computing metrics by hour 
         time_interval=N_SECONDS_PER_HOUR
         sw=1
     else:
@@ -102,7 +102,7 @@ def main(program=None, test=0, time_interval=100, sw=10, fish_id=None):
         plotting_odd_even(**results, name=file_name, ylabel="entropy", sw=sw)
     elif program == WALL_DISTANCE:
         results = distance_to_wall_per_interval(time_interval=time_interval, write_to_csv=True)
-        plotting_odd_even(**results, name=file_name, ylabel="distance in px", baseline=0, sw=sw)
+        plotting_odd_even(**results, name=file_name, ylabel="distance to the wall", baseline=0, sw=sw)
 
     elif program == ALL_METRICS:
         for p in metric_names: 

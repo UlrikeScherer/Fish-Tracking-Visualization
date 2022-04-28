@@ -12,7 +12,10 @@ echo "
 START generating analytics PDFs for: 
 $BLOCK
 -------------------------"
-
+TIME_INTERVAL=100
+if [ $1 ]; then 
+    TIME_INTERVAL=$1
+fi 
 
 mkdir -p $analytics/$BLOCK
 
@@ -22,8 +25,12 @@ for b in ${!position[@]}; do
 
     END=2
     for k in $(seq 1 $END); do 
-        pdflatex --interaction=nonstopmode "\newcommand\block{$BLOCK}\newcommand\position{${position[$b]}}\input{analytics}"
+        pdflatex --interaction=nonstopmode "\newcommand\block{$BLOCK}\newcommand\position{${position[$b]}}\newcommand\timeinterval{$TIME_INTERVAL}\input{analytics}"
 
     done
-    mv analytics.pdf $analytics/$BLOCK/${analytics}_${position[$b]}.pdf
+    mv ${analytics}.pdf $analytics/$BLOCK/${TIME_INTERVAL}_${analytics}_${position[$b]}.pdf
 done 
+
+rm ${analytics}.out ${analytics}.log ${analytics}.aux
+
+echo "DONE!"
