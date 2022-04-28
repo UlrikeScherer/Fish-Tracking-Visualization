@@ -68,13 +68,16 @@ def main(program=None, test=0, time_interval=100, sw=10, fish_id=None):
     file_name = "%s_%s"%(time_interval, program)
 
     fish_ids = np.arange(N_FISHES)
-    if fish_id!=None:
+    if fish_id != None:
         fish_ids=np.array([int(fish_id)])
 
     if int(test) == 1:
         print("Test RUN ", program)
         fish_ids=fish_ids[8:9]
         print("For days: %s, fish indices: %s"%(",".join(days),fish_ids))
+
+    kwargs_metrics=dict(fish_ids=fish_ids, time_interval=time_interval, write_to_csv=True)
+    kwargs_plotting=dict(name=file_name, sw=sw)
 
     if program == TRAJECTORY:
         T = Trajectory()
@@ -87,31 +90,32 @@ def main(program=None, test=0, time_interval=100, sw=10, fish_id=None):
         FT.feeding_data_to_tex()
 
     elif program == ACTIVITY:
-        results = activity_per_interval(time_interval=time_interval, write_to_csv=True)
+        results = activity_per_interval(**kwargs_metrics)
         plotting_odd_even(**results, name=file_name, ylabel="activity", set_title=True, set_legend=True, baseline=MEAN_GLOBAL, sw=sw)
 
     elif program == TORTUOSITY:
-        results = tortuosity_per_interval(time_interval=time_interval, write_to_csv=True)
-        plotting_odd_even(**results, name=file_name, ylabel="tortuosity", logscale=True, baseline=1, sw=sw)
+        results = tortuosity_per_interval(**kwargs_metrics)
+        plotting_odd_even(**results, ylabel="tortuosity", logscale=True, baseline=1, **kwargs_plotting)
 
     elif program == TURNING_ANGLE:
-        results = turning_angle_per_interval(time_interval=time_interval, write_to_csv=True)
-        plotting_odd_even(**results, name=file_name, ylabel="turning angle", baseline=0, sw=sw)
+        results = turning_angle_per_interval(**kwargs_metrics)
+        plotting_odd_even(**results, ylabel="turning angle", baseline=0, **kwargs_plotting)
+
     elif program == ENTROPY:
-        results = entropy_per_interval(time_interval=time_interval, write_to_csv=True)
-        plotting_odd_even(**results, name=file_name, ylabel="entropy", sw=sw)
+        results = entropy_per_interval(**kwargs_metrics)
+        plotting_odd_even(**results, ylabel="entropy", **kwargs_plotting)
+
     elif program == WALL_DISTANCE:
-        results = distance_to_wall_per_interval(time_interval=time_interval, write_to_csv=True)
-        plotting_odd_even(**results, name=file_name, ylabel="distance to the wall", baseline=0, sw=sw)
+        results = distance_to_wall_per_interval(**kwargs_metrics)
+        plotting_odd_even(**results, ylabel="distance to the wall", baseline=0, **kwargs_plotting)
 
     elif program == ALL_METRICS:
         for p in metric_names: 
-            main(p, time_interval=time_interval, fish_id=fish_id)
+            main(p, time_interval=time_interval, fish_id=fish_id, sw=sw)
     else:
         print("Please provide the program name which you want to run. One of: ", programs)
 
-
-    if time_interval == N_SECONDS_PER_HOUR:
+    if program in ALL_METRICS and time_interval == N_SECONDS_PER_HOUR:
         metric_per_hour_csv(**results)
         
     

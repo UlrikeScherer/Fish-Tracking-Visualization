@@ -71,8 +71,8 @@ def sliding_window(dataset, time_interval, sw, fish_keys=None, day_keys=None, fi
     for i, f_key in enumerate(fish_keys):
         for d_idx, d_key in enumerate(day_keys):
             data = dataset[f_key][d_key]
-            slide_data = [np.mean(data[i:i+sw,0]) for i in range(0, data.shape[0]-sw)]
-            x_end = offset + (len(data)-sw)*time_interval
+            slide_data = [np.mean(data[i:i+sw,0]) for i in range(0, data.shape[0]-sw+1)]
+            x_end = offset + (len(data)-sw+1)*time_interval
             x_max = max(x_max, x_end) # x_max update to draw the dashed baseline
             axes[d_idx].plot(range(offset, x_end, time_interval), slide_data,'-', label=fish_labels[i], color=color_map[i], linewidth=2)
             if i == 0:
