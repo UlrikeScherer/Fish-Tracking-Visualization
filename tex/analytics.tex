@@ -41,7 +41,6 @@ Analysis of the Trajectories over time. Visualized as sliding window plots over 
 \end{subfigure}
 }
 
-
 \newcommand{\plotdays}[1]{%
 \begin{figure}[!hb]
     \foreach \i in {\timeinterval_activity,\timeinterval_tortuosity,\timeinterval_turning_angle,\timeinterval_entropy,\timeinterval_wall_distance} {
@@ -87,7 +86,7 @@ Analysis of the Trajectories over time. Visualized as sliding window plots over 
     \csdef{m4}{distance to the nearest wall}
     \begin{figure}[!hb]
         \includegraphics[width=\textwidth]{/\i_\position.pdf}
-        \caption{\block{} \csuse{m\thecnt} for all 29 days.}
+        \caption{\block{} \csuse{m\thecnt} for all 28 days.}
         \stepcounter{cnt}
     \end{figure}
 }

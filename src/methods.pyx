@@ -141,6 +141,9 @@ cpdef np.ndarray[float, ndim=1] turning_directions(np.ndarray[double, ndim=2] da
     results[indices] = d_angles
     return results[:-1]
 
+cpdef np.ndarray[double, ndim=1] abs_angles(np.ndarray[double, ndim=2] data):
+    return np.abs(turning_directions(data))
+
 cpdef np.ndarray[np.npy_bool, ndim=1] get_spikes_filter(np.ndarray[double, ndim=1]  steps):
     return (steps > 15)
 
