@@ -16,15 +16,10 @@ path="FE_${BLOCK}_${STIME}_retracks_final"
 # TRAJECTORY PATHS
 path_csv="$rootserver/$path"
 path_csv_local="$root_local/$path"
-<<<<<<< HEAD
 POSITION_STR_FRONT="FE_${BLOCK}_${STIME}_front_final"
-POSITION_STR_BACK="FE_${BLOCK}_${STIME}_front_final"
-=======
-POSITION_STR_FRONT="FE_${STIME}_tracks_${BLOCK}_front_retracked"
-POSITION_STR_BACK="FE_${STIME}_tracks_${BLOCK}_back_retracked"
+POSITION_STR_BACK="FE_${BLOCK}_${STIME}_back_final"
 dir_front=$path_csv_local/$POSITION_STR_FRONT
 dir_back=$path_csv_local/$POSITION_STR_BACK
->>>>>>> ac25d936595755595f00f322a26be15122814fe9
 
 # FEEDING PATHS
 path_csv_feeding="$rootserver/FE_tracks_original/FE_tracks_${FEEDINGTIME}/FE_tracks_${FEEDINGTIME}_$BLOCK"
