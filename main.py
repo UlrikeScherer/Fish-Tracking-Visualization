@@ -4,19 +4,20 @@ import matplotlib.pyplot as plt
 import numpy as np
 from src.utile import get_camera_names, get_days_in_order, DIR_CSV_LOCAL, MEAN_GLOBAL, print_tex_table, get_fish2camera_map, N_FISHES, get_fish_ids, N_SECONDS_PER_HOUR
 from src.visualisation import Trajectory
-from src.metrics import activity_per_interval, turning_angle_per_interval, tortuosity_per_interval, entropy_per_interval, metric_per_hour_csv, distance_to_wall_per_interval
+from src.metrics import activity_per_interval, turning_angle_per_interval, tortuosity_per_interval, entropy_per_interval, metric_per_hour_csv, distance_to_wall_per_interval, absolute_angle_per_interval
 from src.activity_plotting import sliding_window, sliding_window_figures_for_tex
 from src.feeding import FeedingTrajectory
 TRAJECTORY="trajectory"
 FEEDING="feeding"
 ACTIVITY="activity"
 TURNING_ANGLE="turning_angle"
+ABS_ANGLE="abs_angle"
 TORTUOSITY="tortuosity"
 ENTROPY="entropy"
 WALL_DISTANCE="wall_distance"
 ALL_METRICS="all"
-programs = [TRAJECTORY,FEEDING, ACTIVITY, TURNING_ANGLE, TORTUOSITY, ENTROPY, WALL_DISTANCE]
-metric_names = [ACTIVITY, TURNING_ANGLE, TORTUOSITY, ENTROPY, WALL_DISTANCE]
+programs = [TRAJECTORY,FEEDING, ACTIVITY, TURNING_ANGLE, ABS_ANGLE, TORTUOSITY, ENTROPY, WALL_DISTANCE]
+metric_names = [ACTIVITY, TURNING_ANGLE, ABS_ANGLE, TORTUOSITY, ENTROPY, WALL_DISTANCE]
 #time_intervals = [100,100,100,200]
 
 def map_r_to_idx(results, fish_idx): 
@@ -100,6 +101,10 @@ def main(program=None, test=0, time_interval=100, sw=10, fish_id=None):
     elif program == TURNING_ANGLE:
         results = turning_angle_per_interval(**kwargs_metrics)
         plotting_odd_even(**results, ylabel="turning angle", baseline=0, **kwargs_plotting)
+
+    elif program == ABS_ANGLE:
+        results = absolute_angle_per_interval(**kwargs_metrics)
+        plotting_odd_even(**results, ylabel="absolute angle", **kwargs_plotting)
 
     elif program == ENTROPY:
         results = entropy_per_interval(**kwargs_metrics)

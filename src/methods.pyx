@@ -1,3 +1,4 @@
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 import cython
 # tag: numpy
 # You can ignore the previous line.
@@ -141,39 +142,32 @@ cpdef np.ndarray[float, ndim=1] turning_directions(np.ndarray[double, ndim=2] da
     results[indices] = d_angles
     return results[:-1]
 
-cpdef np.ndarray[double, ndim=1] abs_angles(np.ndarray[double, ndim=2] data):
-    return np.abs(turning_directions(data))
-
 cpdef np.ndarray[np.npy_bool, ndim=1] get_spikes_filter(np.ndarray[double, ndim=1]  steps):
     return (steps > 15)
 
+cpdef np.ndarray[double, ndim=1] absolute_angles(np.ndarray[double, ndim=2] data, int frame_interval, np.ndarray[np.npy_bool, ndim=1] filter_index):
+    filter_index = ( filter_index[:-1] | filter_index[1:] | get_spikes_filter(calc_steps(data)))
+    filter_index = ~ (filter_index[:-1] | filter_index[1:])
+    return mean_std_for_interval(np.abs(turning_directions(data)), frame_interval, filter_index)
+
 cpdef np.ndarray[double, ndim=2] activity(np.ndarray[double, ndim=2] data, int frame_interval, np.ndarray[np.npy_bool, ndim=1] filter_index):
-    cdef int len_out, i, s
     cdef np.ndarray[double, ndim=1] steps
-    cdef double SIZE = data.shape[0]
-    len_out = int(ceil(SIZE/frame_interval))
-    cdef np.ndarray mu_sd = np.zeros([len_out,2], dtype=float)
     steps = calc_steps(data)
     filter_index = ~ ( filter_index[:-1] | filter_index[1:] | get_spikes_filter(steps) )
-
-    cdef np.ndarray[double, ndim=1] chunk
-    for i,s in enumerate(range(0, steps.shape[0], frame_interval)):
-        chunk = steps[s:s+frame_interval][filter_index[s:s+frame_interval]] # select chunk and filter it
-        mu_sd[i,:]=mean_std(chunk)
-    return mu_sd
+    return mean_std_for_interval(steps, frame_interval, filter_index)
 
 cpdef np.ndarray[double, ndim=2] turning_angle(np.ndarray[double, ndim=2] data, int frame_interval, np.ndarray[np.npy_bool, ndim=1] filter_index):
-    cdef int len_out, i, s
-    cdef np.ndarray[double, ndim=1] angles
-    angles = turning_directions(data)
-    filter_index = ( filter_index[:-1] | filter_index[1:] | get_spikes_filter(calc_steps(data)) )
+    filter_index = ( filter_index[:-1] | filter_index[1:] | get_spikes_filter(calc_steps(data)))
     filter_index = ~ (filter_index[:-1] | filter_index[1:])
+    return mean_std_for_interval(turning_directions(data), frame_interval, filter_index)
 
-    len_out = int(ceil(angles.size/frame_interval))
+cpdef np.ndarray[double, ndim=2] mean_std_for_interval(np.ndarray[double, ndim=1] results, int frame_interval, np.ndarray[np.npy_bool, ndim=1] filtered):
+    cdef int len_out, i, s
+    len_out = int(ceil(results.size/frame_interval))
     cdef np.ndarray mu_sd = np.zeros([len_out,2], dtype=float)
     cdef np.ndarray[double, ndim=1] chunk
-    for i,s in enumerate(range(0, angles.size, frame_interval)):
-        chunk = angles[s:s+frame_interval][filter_index[s:s+frame_interval]] # select chunk and filter it
+    for i,s in enumerate(range(0, results.size, frame_interval)):
+        chunk = results[s:s+frame_interval][filtered[s:s+frame_interval]] # select chunk and filter it
         mu_sd[i,:]=mean_std(chunk)
     return mu_sd
 

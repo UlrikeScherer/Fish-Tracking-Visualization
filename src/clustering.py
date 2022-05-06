@@ -1,6 +1,8 @@
 from src.transformation import rotation, px2cm
-from methods import turning_directions, calc_steps, tortuosity_of_chunk 
-from src.metrics import entropy_for_chunk
+from methods import turning_directions, calc_steps, tortuosity_of_chunk, activity, turning_angle, absolute_angles
+from src.metrics import entropy_for_chunk, entropy_for_data, tortuosity, distance_to_wall
+from itertools import product
+from scipy.spatial import ConvexHull
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -14,7 +16,7 @@ def transfrom_to_traces(batch, trace_size):
     setX = batch[["xpx", "ypx"]].to_numpy()
     setX = setX[1:]-setX[:-1]
     lenX = setX.shape[0]
-    sizeSet = int(lenX/trace_size)
+    sizeSet = int(np.ceil(lenX/trace_size))
     newSet = np.zeros((sizeSet,trace_size,2))
     for i in range(sizeSet-1):
         newSet[i,:,:] = rotate_trace(setX[i*trace_size:(i+1)*trace_size])
@@ -25,7 +27,7 @@ def transfrom_to_traces2(batch, trace_size):
     setX = batch[["xpx", "ypx"]].to_numpy()
     #setX = setX[1:]-setX[:-1]
     steps = calc_steps(setX)
-    angels = turning_directions(setX)
+    angels = turning_directions(setX) 
     #print(len(steps), len(angels))
     lenX = setX.shape[0]
     sizeSet = int(lenX/trace_size)
@@ -37,36 +39,27 @@ def transfrom_to_traces2(batch, trace_size):
     X = np.reshape(newSet, (sizeSet, trace_size*2))
     return X, transfrom_to_traces(batch, trace_size)[1]
 
-def transfrom_to_traces_metric_based(batch, trace_size):
-    setX = batch[["xpx", "ypx"]].to_numpy()
-    steps = calc_steps(setX)
-    angels = turning_directions(setX)
-    
-    lenX = setX.shape[0]
-    sizeSet = int(lenX/trace_size)
-    newSet = np.zeros((sizeSet,4))
-    traceSet = np.zeros((sizeSet,trace_size,2))
-    
-    for i in range(sizeSet):
-        newSet[i,0] = np.mean(steps[i*trace_size:(i+1)*trace_size])
-        if len(angels)>i:
-            newSet[i,1] = sum(angels[i*trace_size:(i+1)*trace_size])/len(angels)
-        newSet[i,2] = np.mean(tortuosity_of_chunk(setX[i*trace_size:(i+1)*trace_size]))
-        newSet[i,3], _ = entropy_for_chunk(setX[i*trace_size:(i+1)*trace_size])
-        if np.isnan(newSet[i,3]): newSet[i,3] = 0.0
-    return newSet, transfrom_to_traces(batch, trace_size)[1]
+def get_metrics_for_traces():
+    metrics_f = [activity, turning_angle, absolute_angles, entropy_for_data, tortuosity, distance_to_wall] 
+    names = ["%s_%s"%(m,s) for m,s in product(map(lambda m: m.__name__, metrics_f), ["mu", "sd"])]
+    return metrics_f, names
 
-def transfrom_to_traces_seq_metrics(batch, trace_size, step):
+def transfrom_to_traces_metric_based(batch, trace_size, filter_index, area):
     setX = batch[["xpx", "ypx"]].to_numpy()
-    steps = calc_steps(setX)
-    angels = turning_directions(setX)
-    
     lenX = setX.shape[0]
-    setSize = int(lenX/step)
-    newSet = np.zeros(())
-    
-    #for i in enumerate(range(0,setSize,step)):
-        
+    sizeSet = int(np.ceil(lenX/trace_size))
+    metric_functions, _ = get_metrics_for_traces() #
+    newSet = np.zeros((sizeSet,len(metric_functions)*2))
+    for i, f in enumerate(metric_functions):
+        idx = i*2
+        if f.__name__ == distance_to_wall.__name__:
+            newSet[:,idx:idx+2] = f(setX, trace_size, filter_index, area)
+        else:
+            newSet[:,idx:idx+2] = f(setX, trace_size, filter_index)
+
+    np.nan_to_num(newSet, copy=False, nan=0.0)
+
+    return newSet, transfrom_to_traces(batch, trace_size)[1]
         
 def normalize_data(traces):
     d_std, d_mean = np.std(traces[:,0::2]), np.mean(traces[:,0::2])
@@ -89,7 +82,13 @@ def TSNE_vis(X_embedded):
     plt.savefig("TSNE.pdf")
     return p
 
-def TSNE_vis_2(X_embedded, centers=None, clusters=None, fig_name="TSNE_vis"):
+def get_convex_hull(points): 
+    hull = ConvexHull(points)
+    cycle = points[hull.vertices]
+    cycle = np.concatenate([cycle, cycle[:1]])
+    return cycle
+
+def TSNE_vis_2(X_embedded, centers=None, clusters=None, scatter=True, fig_name="TSNE_vis"):
     x = X_embedded[:,0]
     y = X_embedded[:,1]
     res = go.Histogram2dContour(x = x, y = y, colorscale = 'Blues')
@@ -105,24 +104,24 @@ def TSNE_vis_2(X_embedded, centers=None, clusters=None, fig_name="TSNE_vis"):
             ),
             text=["cluster %d, n: %d"%(i,n) for (i,n) in enumerate(centers[:,2])]
         ))
-        
-    fig.add_trace(go.Scatter(
-        x = x, y = y,
-        xaxis = 'x', yaxis = 'y',
-        mode = 'markers',
-        marker = dict(
-            cmax=clusters.max(),
-            cmin=0,
-            color=clusters,
-            colorbar=dict(
-                title="Clusters"
-            ),
-            colorscale="Viridis",
-            #color = 'rgba(0,0,0,0.1)',
-            size = 3,
-            opacity=0.5
-        )
-    ))
+    if scatter: 
+        fig.add_trace(go.Scatter(
+            x = x, y = y,
+            xaxis = 'x', yaxis = 'y',
+            mode = 'markers',
+            marker = dict(
+                cmax=clusters.max(),
+                cmin=0,
+                color=clusters,
+                colorbar=dict(
+                    title="Clusters"
+                ),
+                colorscale="Viridis",
+                #color = 'rgba(0,0,0,0.1)',
+                size = 3,
+                opacity=0.5
+            )
+        ))
     
     fig.update_layout( height = 600, width = 600 )
     fig.write_image("%s.pdf"%fig_name)

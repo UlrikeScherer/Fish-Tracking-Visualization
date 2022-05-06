@@ -3,7 +3,7 @@ from scipy.stats import entropy
 from src.utile import *
 from src.tank_area_config import read_area_data_from_json
 from src.transformation import pixel_to_cm, px2cm
-from methods import activity, calc_steps, turning_angle, tortuosity_of_chunk, distance_to_wall_chunk, mean_std #cython
+from methods import activity, calc_steps, turning_angle, tortuosity_of_chunk, distance_to_wall_chunk, mean_std, absolute_angles #cython
 import pandas as pd
 import os
 from itertools import product
@@ -192,6 +192,9 @@ def activity_per_interval(*args, **kwargs):
 
 def turning_angle_per_interval(*args, **kwargs):
     return metric_per_interval(*args, **kwargs, metric=turning_angle)
+
+def absolute_angle_per_interval(*args, **kwargs):
+    return metric_per_interval(*args, **kwargs, metric=absolute_angles)
 
 def tortuosity_per_interval(*args, **kwargs):
     return metric_per_interval(*args, **kwargs, metric=tortuosity)
