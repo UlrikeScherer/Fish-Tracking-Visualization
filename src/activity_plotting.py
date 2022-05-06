@@ -19,7 +19,7 @@ colors=np.array([
 (177,89,40)])/255
 
 # color map for each of the 24 fishes 
-color_map = [colors[int(k/2)] for k in range(colors.shape[0]*2)]
+color_map = colors#[colors[int(k/2)] for k in range(colors.shape[0]*2)]
 
 def plot_activity(data, time_interval):
     """ Plots the average activity my mean and vaiance over time
@@ -35,14 +35,15 @@ def plot_activity(data, time_interval):
     ax.set_xlabel("seconds")
     return fig
 
-def sliding_window_figures_for_tex(dataset, *args, name="methode", set_title=False, set_legend=False, **kwargs):
+def sliding_window_figures_for_tex(dataset, *args, fish_keys=None, day_keys=None, name="methode", set_title=False, set_legend=False, **kwargs):
     ncols=6
+    if day_keys is None: day_keys = list(dataset[fish_keys[0]].keys())
     for i in range(0,29,ncols):
-        f = sliding_window([d[i:i+ncols] for d in dataset], *args, name="%s_%02d-%02d"%(name, i, i+ncols-1), set_title=set_title, set_legend=set_legend, first_day=i, **kwargs)
+        f = sliding_window(dataset, fish_keys=fish_keys, day_keys=day_keys[i:i+ncols], *args, name="%s_%02d-%02d"%(name, i, i+ncols-1), set_title=set_title, set_legend=set_legend, first_day=i, **kwargs)
         plt.close(f)
     return None
 
-def sliding_window(dataset, time_interval, sw, fish_ids=[0], fish_labels=None, xlabel="seconds", ylabel="average cm/Frame", name="methode", write_fig=False, logscale=False, baseline=None, set_title=True, set_legend=True, first_day=0):
+def sliding_window(dataset, time_interval, sw, fish_keys=None, day_keys=None, fish_labels=None, xlabel="seconds", ylabel="average cm/Frame", name="methode", write_fig=False, logscale=False, baseline=None, set_title=True, set_legend=True, first_day=0):
     """Summerizes the data for a sliding window and plots a continuous line over time """
     mpl.rcParams['axes.spines.left'] = False
     mpl.rcParams['axes.spines.right'] = False
@@ -53,10 +54,10 @@ def sliding_window(dataset, time_interval, sw, fish_ids=[0], fish_labels=None, x
     x_max = offset
     if isinstance(dataset, np.ndarray):
         dataset = [[dataset]]
-    if isinstance(dataset[0], np.ndarray):
-        dataset = [[d] for d in dataset]
-    n_fishes = len(fish_ids)
-    n_days = len(dataset[0])
+    n_fishes = len(fish_keys)
+    if day_keys is None:
+        day_keys = list(dataset[fish_keys[0]].keys())
+    n_days = len(day_keys)
     print("Number of fishes:",n_fishes," Number of days: ", n_days)
     ncols=6
     nrows=int(np.ceil(n_days/ncols))
@@ -67,15 +68,14 @@ def sliding_window(dataset, time_interval, sw, fish_ids=[0], fish_labels=None, x
     fig.tight_layout()
     #color_map = plt.get_cmap('tab20b').colors + plt.get_cmap('tab20b').colors[:4]
     
-    for f_idx in range(n_fishes):
-        n_days = len(dataset[f_idx])
-        for d_idx in range(n_days):
-            data = dataset[f_idx][d_idx]
-            slide_data = [np.mean(data[i:i+sw,0]) for i in range(0, data.shape[0]-sw)]
-            x_end = offset + (len(data)-sw)*time_interval
+    for i, f_key in enumerate(fish_keys):
+        for d_idx, d_key in enumerate(day_keys):
+            data = dataset[f_key][d_key]
+            slide_data = [np.mean(data[i:i+sw,0]) for i in range(0, data.shape[0]-sw+1)]
+            x_end = offset + (len(data)-sw+1)*time_interval
             x_max = max(x_max, x_end) # x_max update to draw the dashed baseline
-            axes[d_idx].plot(range(offset, x_end, time_interval), slide_data,'-', label=fish_labels[f_idx], color=color_map[fish_ids[f_idx]], linewidth=2)
-            if f_idx == 0:
+            axes[d_idx].plot(range(offset, x_end, time_interval), slide_data,'-', label=fish_labels[i], color=color_map[i], linewidth=2)
+            if i == 0:
                 if set_title:
                     axes[d_idx].set_title("Date %s"%days_date[d_idx], y=0.95, pad=4)
                 if logscale:
@@ -87,7 +87,7 @@ def sliding_window(dataset, time_interval, sw, fish_ids=[0], fish_labels=None, x
                     axes[d_idx].set_ylabel(ylabel, fontsize=20)
     if baseline != None:
         for i in range(n_days):
-            axes[i].plot((offset, x_max), (baseline, baseline), ":", color="black")
+            axes[i].plot((offset, time_interval*((x_max//time_interval)-1)), (baseline, baseline), ":", color="black")
                 
     for i in range(n_days, len(axes)):
         axes[i].axis('off')

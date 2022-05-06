@@ -12,28 +12,42 @@ root_local="/Users/rike/Desktop" # ".."
 path_recordings="$rootserver/FE_recordings/FE_recordings_$BLOCK/FE_${BLOCK}_recordings_*" # path to the recordings, will allway be on the server
 path="FE_${BLOCK}_${STIME}_retracks_final"
 #path_original="FE_tracks_original/FE_tracks_${STIME}/FE_tracks_${STIME}_$BLOCK"
-path_csv="$rootserver/$path"
 
+# TRAJECTORY PATHS
+path_csv="$rootserver/$path"
 path_csv_local="$root_local/$path"
+<<<<<<< HEAD
 POSITION_STR_FRONT="FE_${BLOCK}_${STIME}_front_final"
 POSITION_STR_BACK="FE_${BLOCK}_${STIME}_front_final"
+=======
+POSITION_STR_FRONT="FE_${STIME}_tracks_${BLOCK}_front_retracked"
+POSITION_STR_BACK="FE_${STIME}_tracks_${BLOCK}_back_retracked"
+dir_front=$path_csv_local/$POSITION_STR_FRONT
+dir_back=$path_csv_local/$POSITION_STR_BACK
+>>>>>>> ac25d936595755595f00f322a26be15122814fe9
 
+# FEEDING PATHS
 path_csv_feeding="$rootserver/FE_tracks_original/FE_tracks_${FEEDINGTIME}/FE_tracks_${FEEDINGTIME}_$BLOCK"
 path_csv_feeding_local="$root_local/FE_tracks_original/FE_tracks_${FEEDINGTIME}/FE_tracks_${FEEDINGTIME}_$BLOCK"
-dir_feeding_front="${path_csv_feeding_local}/FE_${FEEDINGTIME}_tracks_${BLOCK}_front"
-dir_feeding_back="${path_csv_feeding_local}/FE_${FEEDINGTIME}_tracks_${BLOCK}_back"
+POSITION_STR_FRONT_FEEDING="FE_${FEEDINGTIME}_tracks_${BLOCK}_front"
+POSITION_STR_BACK_FEEDING="FE_${FEEDINGTIME}_tracks_${BLOCK}_back"
 
-NUM_OF_BATCHES=14
+dir_feeding_front="${path_csv_feeding_local}/$POSITION_STR_FRONT_FEEDING"
+dir_feeding_back="${path_csv_feeding_local}/$POSITION_STR_BACK_FEEDING"
 
 export BLOCK
 export STIME
 export FEEDINGTIME
 export rootserver
+export root_local
 export path_csv
 export path_csv_local
 export path_recordings
-export NUM_OF_BATCHES
 export POSITION_STR_BACK
 export POSITION_STR_FRONT
+export POSITION_STR_FRONT_FEEDING
+export POSITION_STR_BACK_FEEDING
+export dir_back
+export dir_front
 export dir_feeding_back
 export dir_feeding_front

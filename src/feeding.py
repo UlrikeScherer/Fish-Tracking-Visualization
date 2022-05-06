@@ -13,8 +13,8 @@ class FeedingTrajectory(Trajectory):
     dir_data_feeding = "%s/%s/feeding"%(DATA_results,BLOCK)
     fir_tex_feeding = "tex/files"
 
-    def __init__(self, y_max = 54, **kwargs):
-        super().__init__(y_max=y_max, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.PATCHES = self.get_feeding_patches()
         self.set_feeding_box(is_back=False)
         self.set_feeding_box(is_back=True)
@@ -27,18 +27,19 @@ class FeedingTrajectory(Trajectory):
         self.visits = [dict() for i in range(self.N_fishes)]
 
     def set_feeding_box(self, is_back=False):
-        (fig, ax, line) = self.fig_obj_back if is_back else self.fig_obj_front
-        box_line = ax.plot([0,0], [0,0], "y--")
-        return (fig, ax, line)
+        F = self.fig_back if is_back else self.fig_front
+        box_line = F.ax.plot([0,0], [0,0], "y--")
 
     def subplot_function(self, batch, date, directory, name, fish_id, time_span="batch: 1,   00:00:00 - 00:30:00", is_back=False):
-        (fig, ax, line) = self.fig_obj_back if is_back else self.fig_obj_front
-        ax.set_title(time_span,fontsize=10)
+        F = self.fig_back if is_back else self.fig_front
+
+        F.ax.set_title(time_span,fontsize=10)
 
         if batch.x.array[-1] <= -1:
             batch.drop(batch.tail(1).index)
+
         batchxy = pixel_to_cm(batch[["xpx", "ypx"]].to_numpy())
-        line.set_data(*batchxy.T)
+        F.line.set_data(*batchxy.T)
 
         feeding_b, box = self.feeding_data(batch, fish_id)
         feeding_size = feeding_b.shape[0]
@@ -46,7 +47,7 @@ class FeedingTrajectory(Trajectory):
         index_visits = [0, *(index_swim_in+1), feeding_size-1]
         entries = len(index_visits)
         fb = pixel_to_cm(feeding_b[["xpx", "ypx"]].to_numpy()).T   
-        lines = ax.get_lines()
+        lines = F.ax.get_lines()
         # UPDATE BOX
         box_cm = pixel_to_cm(box)
         lines[1].set_data(*box_cm.T)
@@ -61,19 +62,19 @@ class FeedingTrajectory(Trajectory):
                 l.remove()
         for i in range(len(lines),entries-1):
             s,e = index_visits[i], index_visits[i+1]
-            line_feed = ax.plot(*fb[:,s:e], "r-", alpha=0.7, solid_capstyle="projecting", markersize=0.2)
+            line_feed = F.ax.plot(*fb[:,s:e], "r-", alpha=0.7, solid_capstyle="projecting", markersize=0.2)
         
         text_l = [" ","#Visits: %s"%(entries-1), r"$\Delta$ Feeding: %s"%(strftime("%M:%S", gmtime(feeding_size/5)))]
-        remove_text = self.meta_text_for_plot(ax, text_l=text_l, is_back=is_back)
+        remove_text = F.meta_text_for_plot(text_l=text_l)
         
         #ax.draw_artist(ax.patch)
         #ax.draw_artist(line)
         self.update_feeding_and_visits(fish_id, date, feeding_size, entries-1)
 
         if self.write_fig:
-            self.write_figure(fig, directory, name)
+            F.write_figure(directory, name)
         remove_text()
-        return fig
+        return F.fig
 
     def update_feeding_and_visits(self,fish_id, date, feeding_size, visits):
         if date not in self.feeding_times[fish_id]: 

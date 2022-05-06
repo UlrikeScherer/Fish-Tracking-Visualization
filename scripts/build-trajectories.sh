@@ -5,6 +5,7 @@ source scripts/env.sh # get the following variables
 cd tex
 cameras=('23520289' '23484201' '23520258' '23442333' '23520268' '23520257' '23520266' '23484204' '23520278' '23520276' '23520270' '23520264')
 position=("front" "back")
+POS_STRINGS=($POSITION_STR_FRONT $POSITION_STR_BACK)
 PREFIX="file://" #run:
 
 
@@ -21,12 +22,14 @@ while [[ "$#" -gt 0 ]]; do
         #-b|--block) block="$2"; shift ;;
         -t|--test) test=1 ;;
         -f|--feeding) feeding=1;;
+        -l|--local) local=1;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
     shift
 done
 if [ $feeding ]; then
     STARTTIME=$FEEDINGTIME
+    POS_STRINGS=($POSITION_STR_FRONT_FEEDING $POSITION_STR_BACK_FEEDING)
     CSV_DIR=$path_csv_feeding
     MAX_IDX_OF_DAY=7
     SUBFIGURE_WIDTH="0.33\textwidth"
@@ -36,6 +39,13 @@ if [ $test ]; then
     cameras=('23442333') 
     position=("front")
     echo "Testrun using $cameras, position: $position";
+fi
+if [ $local ]; then
+    if [ $feeding ]; then
+        CSV_DIR=$path_csv_feeding_local
+    else
+        CSV_DIR=$path_csv_local
+    fi
 fi
 echo "
 -------------------------
@@ -51,9 +61,17 @@ mkdir -p trajectory/$STARTTIME/$BLOCK
 
 for b in ${!position[@]}; do
     echo -e "pdf for ${position[$b]} \n"
-    POSITION_STR="FE_${STARTTIME}_tracks_${BLOCK}_${position[$b]}*"
+    POSITION_STR=${POS_STRINGS[$b]}
+    if [ $test ]; then 
+        echo "TEST" 
+    else
+        cameras="$(ls -d $CSV_DIR/$POSITION_STR/[0-9]*[0-9]/ | sort -V )"
+    fi
+
     for i in ${!cameras[@]}; do
-        secff="$(ls -d $CSV_DIR/$POSITION_STR/${cameras[$i]}/*.${cameras[$i]}/ | sort -V | head -1 | sed 's/.*1550\([^.]*\).*/\1/')"
+        camera=$(basename ${cameras[$i]})
+        echo $camera
+        secff="$(ls -d $CSV_DIR/$POSITION_STR/${camera}/*.${camera}/ | sort -V | head -1 | sed 's/.*1550\([^.]*\).*/\1/')"
         
         texheader="%\usepackage{etoolbox}
                     %% root folders: ---------------------
@@ -98,16 +116,16 @@ for b in ${!position[@]}; do
                         "
 
         daysarray="$LEGEND"
-        days="$(ls -d $CSV_DIR/$POSITION_STR/${cameras[$i]}/*${STARTTIME}.${cameras[$i]}*/ | sort -V )"
+        days="$(ls -d $CSV_DIR/$POSITION_STR/${camera}/*${STARTTIME}.${camera}*/ | sort -V )"
 
         for d in $days; do 
             d=$(basename $d)
             day=${d: : 24}
-            day_id=${day: : 13}
-            daysarray="$daysarray\plotdayupdate{${day: : 13}}
+            day_id=${day: : 15}
+            daysarray="$daysarray\plotdayupdate{${day_id}}
             "
 
-            filescsv="$(ls $CSV_DIR/$POSITION_STR/${cameras[$i]}/*${STARTTIME}.${cameras[$i]}*/${cameras[$i]}_$day*.csv | sort -V)"
+            filescsv="$(ls $CSV_DIR/$POSITION_STR/${camera}/*${STARTTIME}.${camera}*/${camera}_$day*.csv | sort -V)"
             C_i=0
             for f in $filescsv; do 
                 texheader="$texheader \setcsv{${day_id}$C_i}{\href{${PREFIX}${f}}{csv}}
@@ -115,7 +133,7 @@ for b in ${!position[@]}; do
                 let C_i++
             done
 
-            foldermp4="$(ls -d $path_recordings/${cameras[$i]}/${day}*/ | head )"
+            foldermp4="$(ls -d $path_recordings/${camera}/${day}*/ | head )"
             texheader="$texheader \addtext{$PREFIX$foldermp4}
             "
             filesmp4="$(ls $foldermp4/*.mp4 | sort -V)"
@@ -129,17 +147,16 @@ for b in ${!position[@]}; do
         # daysarray=${daysarray%?}
         echo "${daysarray}" > $FILES/days_array.tex
         echo "$texheader" > $FILES/arrayoflinks.tex
-        if [ "$feeding" -eq 1 ]; then 
+        if [ $feeding ]; then 
             echo "\input{$FILES/${BLOCK}_feedingtime.tex}" >> $FILES/arrayoflinks.tex
         fi
         END=2
         for k in $(seq 1 $END); do 
-            #pdflatex "\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${cameras[$i]}}\input{main}"
-            pdflatex --interaction=nonstopmode "\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${cameras[$i]}}\input{main}"
+            #pdflatex "\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}"
+            pdflatex --interaction=nonstopmode "\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}"
         done
-        mv main.pdf trajectory/$STARTTIME/$BLOCK/${STARTTIME}_${BLOCK}_${cameras[$i]}_${position[$b]}.pdf
+        mv main.pdf trajectory/$STARTTIME/$BLOCK/${STARTTIME}_${BLOCK}_${camera}_${position[$b]}.pdf
     done
 done
-
 
 echo "Execution time: $SECONDS "

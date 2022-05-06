@@ -5,43 +5,57 @@ import numpy as np
 import os
 import re
 import glob
+import json
 from itertools import product
 from envbash import load_envbash
+from path_validation import filter_files
 load_envbash('scripts/env.sh')
 
 # Calculated MEAN and SD for the data set filtered for erroneous frames 
 MEAN_GLOBAL = 0.22746102241709162
 SD_GLOBAL = 1.0044248513034164
-S_LIMIT = 6 #MEAN_GLOBAL + 3 * SD_GLOBAL
+S_LIMIT = 15 #MEAN_GLOBAL + 3 * SD_GLOBAL
 BATCH_SIZE = 9999
+FRAMES_PER_SECOND = 5
 ROOT=os.environ["rootserver"]
+ROOT_LOCAL=os.environ["root_local"]
 DIR_CSV=os.environ["path_csv"] # 
+DIR_CSV_LOCAL=os.environ["path_csv_local"] # 
 BLOCK = os.environ["BLOCK"] # block1 or block2
-DIR_CSV_LOCAL = os.environ["path_csv_local"] # 
-POS_STR_FRONT = os.environ["POSITION_STR_FRONT"]
-POS_STR_BACK = os.environ["POSITION_STR_BACK"]
+
+# TRAJECTORY 
+dir_front = os.environ["dir_front"]
+dir_back = os.environ["dir_back"]
 STIME = os.environ["STIME"]
-FEEDINGTIME = os.environ["FEEDINGTIME"]
-dir_front = "%s/%s"%(DIR_CSV_LOCAL, POS_STR_FRONT)
-dir_back  = "%s/%s"%(DIR_CSV_LOCAL, POS_STR_BACK)
-FRONT, BACK = "front", "back"
-ROOT_img = "plots"
 
 # FEEDING 
 dir_feeding_front = os.environ["dir_feeding_front"]
 dir_feeding_back = os.environ["dir_feeding_back"]
+FEEDINGTIME = os.environ["FEEDINGTIME"]
+
+FRONT, BACK = "front", "back"
+ROOT_img = "plots"
+DATA_DIR = "data"
+
+N_BATCHES=15
+N_BATCHES_FEEDING=8
 
 N_FISHES = 24
-N_SECONDS_OF_DAY = 24*3600
+N_DAYS = 28
+HOURS_PER_DAY = 8
+N_SECONDS_PER_HOUR = 3600
+N_SECONDS_OF_DAY = 24*N_SECONDS_PER_HOUR
 
 def get_directory(is_feeding=False, is_back=False):
     if is_feeding:
-        if is_back:return dir_back
-        else: return dir_front
-    else: 
         if is_back: return dir_feeding_back
         else: return dir_feeding_front
-
+    else:
+        if is_back:return dir_back
+        else: return dir_front
+    
+def get_number_of_batches(is_feeding=False):
+    return N_BATCHES_FEEDING if is_feeding else N_BATCHES
 
 def get_camera_names(is_feeding=False, is_back=False):
     dir_ = get_directory(is_feeding, is_back)
@@ -52,12 +66,16 @@ def get_fish2camera_map(is_feeding=False):
     l_back = list(product(get_camera_names(is_feeding, is_back=BACK==BACK), [BACK]))
     return np.array([j for i in zip(l_front,l_back) for j in i])
 
+def get_camera_pos_keys(is_feeding=False):
+    m = get_fish2camera_map(is_feeding=is_feeding)
+    return ["%s_%s"%(c,p) for (c,p) in m]
+
 def get_fish_ids():
     """
     Return the fish ids defined in ...livehistory.csv corresponding to the indices in fish2camera
     """
     # %ROOT
-    info_df = pd.read_csv("data/DevEx_fingerprint_activity_lifehistory.csv", delimiter=";")
+    info_df = pd.read_csv("{}/DevEx_fingerprint_activity_lifehistory.csv".format(DATA_DIR), delimiter=";")
     #info_df = pd.read_csv("data/DevEx_fingerprint_activity_lifehistory.csv", delimiter=";")
     info_df1=info_df[info_df["block"]==int(BLOCK[-1])]
     info_df1[["fish_id", "camera", "block", "tank"]],
@@ -92,7 +110,7 @@ def get_days_in_order(interval=None, is_feeding=False, camera=None):
     """
     if camera is None: camera = get_camera_names(is_feeding)[0]
     dir_ = dir_feeding_front if is_feeding else dir_front
-    days = [name[:13] for name in os.listdir(dir_+"/"+camera) if name[:8].isnumeric()]
+    days = [name[:15] for name in os.listdir(dir_+"/"+camera) if name[:8].isnumeric()]
     days.sort()
     if interval:
         return days[interval[0]: interval[1]]
@@ -126,13 +144,24 @@ def get_position_string(is_back):
         return FRONT
     
 def read_batch_csv(filename, drop_errors):
-    df = pd.read_csv(filename,skiprows=3, delimiter=';', error_bad_lines=False, usecols=["x", "y", "FRAME", "time", "xpx", "ypx"])
+    df = pd.read_csv(filename,skiprows=3, delimiter=';', error_bad_lines=False, usecols=["x", "y", "FRAME", "time", "xpx", "ypx"], 
+                     dtype={"xpx": np.float64, "ypx": np.float64, "time":np.float64})
     df.dropna(axis="rows", how="any", inplace=True)
     if drop_errors:
-        indexNames = df[:-1][ df[:-1].x.array <= -1].index # except the last index for time recording
-        df = df.drop(index=indexNames)
+        err_filter = get_error_indices(df[:-1])
+        df = df.drop(index=df[:-1][err_filter].index)
     df.reset_index(drop=True, inplace=True)
     return df
+
+def get_error_indices(dataframe):
+    """
+   @params: dataframe
+   returns a boolean pandas array with all indices to filter set to True
+    """
+    x = dataframe.xpx
+    y = dataframe.ypx
+    indexNames = ((x == -1) & (y == -1)) | ((x == 0) & (y == 0)) # except the last index for time recording
+    return indexNames
 
 def merge_files(filenames, drop_errors):
     batches = []
@@ -141,8 +170,7 @@ def merge_files(filenames, drop_errors):
         batches.append(df)
     return batches
 
-
-def csv_of_the_day(camera, day, is_back=False, drop_out_of_scope=False, is_feeding=False):
+def csv_of_the_day(camera, day, is_back=False, drop_out_of_scope=False, is_feeding=False, print_log=False):
     """
     @params: camera, day, is_back, drop_out_of_scope
     returns csv of the day for camera: front or back
@@ -153,20 +181,12 @@ def csv_of_the_day(camera, day, is_back=False, drop_out_of_scope=False, is_feedi
 
     filenames_f = [f for f in glob.glob("{}/{}/{}*/{}_{}*.csv".format(dir_, camera, day, camera, day), recursive=True) if re.search(r'[0-9].*\.csv$', f[-6:])]
     
-    filtered_files = filter_filenames(filenames_f) # filters for dublicates in the batches for a day. It takes the FIRST one!!!
-
-    return merge_files(filtered_files, drop_out_of_scope)
-
-def filter_filenames(filenames_f):
-    filenames_f.sort()
-    i = 0 #"{:02d}".format(number)
-    filtered_files = list()
-    while len(filenames_f)!=0:
-        f = filenames_f.pop(0)
-        if "{:06d}".format(i) in f:
-            filtered_files.append(f)
-            i=i+1
-    return filtered_files      
+    LOG, _, filtered_files = filter_files(camera,day,filenames_f, get_number_of_batches(is_feeding)) # filters for duplicates in the batches for a day. It takes the LAST one!!!
+    file_keys = list(filtered_files.keys())
+    correct_files = list(filtered_files.values())
+    if print_log and len(LOG)>0:
+        print("\n {}/{}/{}*: \n".format(dir_, camera, day),"\n".join(LOG))
+    return file_keys, merge_files(correct_files, drop_out_of_scope)     
     
 def activity_for_day_hist(fish_id, day_idx=1):
     fish2camera=get_fish2camera_map()
@@ -174,7 +194,8 @@ def activity_for_day_hist(fish_id, day_idx=1):
     mu_sd = list()
     all_days = get_days_in_order()
     day = all_days[day_idx]
-    df = pd.concat(csv_of_the_day(camera_id, day, is_back=is_back, drop_out_of_scope=True))
+    keys, csv_by_day = csv_of_the_day(camera_id, day, is_back=is_back, drop_out_of_scope=True)
+    df = pd.concat(csv_by_day)
     c = calc_steps(df[["x", "y"]].to_numpy())
     p = plt.hist(c, bins=50,range=[0, 5], density=True, alpha=0.75)
     plt.ylim(0, 3)

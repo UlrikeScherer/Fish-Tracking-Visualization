@@ -3,8 +3,8 @@ import numpy as np
 def rotation(t):
     return np.array([[np.cos(t), -np.sin(t)], [np.sin(t), np.cos(t)]])
 
-def px2cm():
-    return 0.02326606
+def px2cm(a):
+    return a * 0.02326606
 
 def pixel_to_cm(pixels): 
     """

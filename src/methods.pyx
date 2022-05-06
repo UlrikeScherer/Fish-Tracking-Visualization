@@ -1,3 +1,4 @@
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 import cython
 # tag: numpy
 # You can ignore the previous line.
@@ -76,9 +77,9 @@ cpdef (double, double) avg_and_sum_angles(np.ndarray[double, ndim=2] data):
     vecs = vecs[np.all(vecs!=0, axis=1)]
     cdef double sum_avg, sum_ang
     cdef int N_alpha
-    sum_avg, sum_ang, N_alpha = 0.,0.,(len(vecs)-1)
+    sum_avg, sum_ang, N_alpha = 0.,0.,len(vecs)
 
-    if N_alpha <= 0: 
+    if N_alpha <= 1: 
         return (sum_avg, sum_ang)
     
     (u0, u1) = unit_vector(vecs[0,0], vecs[0,1])
@@ -88,7 +89,7 @@ cpdef (double, double) avg_and_sum_angles(np.ndarray[double, ndim=2] data):
         sum_avg += angle(u0,u1,v0,v1)
         sum_ang += direction_angle(u0,u1,v0,v1)
         u0, u1 = v0, v1
-    return (sum_avg/N_alpha, sum_ang)
+    return (sum_avg/(N_alpha-1), sum_ang)
 
 cpdef np.ndarray[double, ndim=1] calc_steps(np.ndarray[double, ndim=2] data):
     sq = (data[1:] - data[:-1])**2
@@ -99,7 +100,6 @@ cpdef np.ndarray[double, ndim=1] tortuosity_of_chunk(np.ndarray[double, ndim=2] 
     cdef int dist_length = 10 # normed by 10cm of distance traveled
     cdef np.ndarray[double, ndim=1] steps = calc_steps(data)
     cdef np.ndarray[double, ndim=1] c_steps = np.cumsum(steps)  # cumulative sum
-    cdef int length = int(c_steps[-1]/dist_length)
     cdef list t_result = []
     cdef double L, C, curr_c
     cdef int i = 0
@@ -121,55 +121,98 @@ cpdef np.ndarray[double, ndim=1] tortuosity_of_chunk(np.ndarray[double, ndim=2] 
 
     return np.array(t_result, dtype=float)
 
-cpdef np.ndarray[float, ndim=1] avg_turning_direction(np.ndarray[double, ndim=2] data):
+cpdef np.ndarray[float, ndim=1] turning_directions(np.ndarray[double, ndim=2] data):
     cdef np.ndarray[double, ndim=2] vecs
     cdef double v0, v1, u0, u1
     vecs_in = data[1:]-data[:-1]
-    indices = np.all(vecs_in!=0, axis=1)
+    indices = np.any(vecs_in!=0, axis=1) # remove all vectors where both dimentions are 0
     vecs = vecs_in[indices]
-    cdef int N_alpha
-    N_alpha = len(vecs)
-    cdef np.ndarray sum_ang = np.zeros([N_alpha], dtype=float)
-    if N_alpha == 0: 
-        return sum_ang
+    cdef int N_alpha = len(vecs)
+    cdef np.ndarray d_angles = np.zeros([N_alpha], dtype=float) # one point smaller then vecs and two points smaller
+    if N_alpha <= 1: 
+        return d_angles
     (u0, u1) = unit_vector(vecs[0,0], vecs[0,1])
     cdef int i
     for i in range(1,N_alpha):
         (v0, v1) = unit_vector(vecs[i,0], vecs[i,1])
-        sum_ang[i-1] = direction_angle(u0,u1,v0,v1)
+        d_angles[i-1] = direction_angle(u0,u1,v0,v1)
         u0, u1 = v0, v1
 
-    results = np.zeros(len(vecs_in), dtype=float)
-    results[indices] = sum_ang
-    return results
+    results = np.zeros([len(vecs_in)], dtype=float) 
+    results[indices] = d_angles
+    return results[:-1]
 
+cpdef np.ndarray[np.npy_bool, ndim=1] get_spikes_filter(np.ndarray[double, ndim=1]  steps):
+    return (steps > 15)
 
-cpdef np.ndarray[double, ndim=2] activity(np.ndarray[double, ndim=2] data, int frame_interval):
-    cdef int len_out, i, s
-    cdef np.ndarray[double, ndim=2] chunk
+cpdef np.ndarray[double, ndim=1] absolute_angles(np.ndarray[double, ndim=2] data, int frame_interval, np.ndarray[np.npy_bool, ndim=1] filter_index):
+    filter_index = ( filter_index[:-1] | filter_index[1:] | get_spikes_filter(calc_steps(data)))
+    filter_index = ~ (filter_index[:-1] | filter_index[1:])
+    return mean_std_for_interval(np.abs(turning_directions(data)), frame_interval, filter_index)
+
+cpdef np.ndarray[double, ndim=2] activity(np.ndarray[double, ndim=2] data, int frame_interval, np.ndarray[np.npy_bool, ndim=1] filter_index):
     cdef np.ndarray[double, ndim=1] steps
-    cdef double SIZE = data.shape[0]
-    len_out = int(ceil(SIZE/frame_interval))
+    steps = calc_steps(data)
+    filter_index = ~ ( filter_index[:-1] | filter_index[1:] | get_spikes_filter(steps) )
+    return mean_std_for_interval(steps, frame_interval, filter_index)
+
+cpdef np.ndarray[double, ndim=2] turning_angle(np.ndarray[double, ndim=2] data, int frame_interval, np.ndarray[np.npy_bool, ndim=1] filter_index):
+    filter_index = ( filter_index[:-1] | filter_index[1:] | get_spikes_filter(calc_steps(data)))
+    filter_index = ~ (filter_index[:-1] | filter_index[1:])
+    return mean_std_for_interval(turning_directions(data), frame_interval, filter_index)
+
+cpdef np.ndarray[double, ndim=2] mean_std_for_interval(np.ndarray[double, ndim=1] results, int frame_interval, np.ndarray[np.npy_bool, ndim=1] filtered):
+    cdef int len_out, i, s
+    len_out = int(ceil(results.size/frame_interval))
     cdef np.ndarray mu_sd = np.zeros([len_out,2], dtype=float)
-    for i,s in enumerate(range(0, data.shape[0], frame_interval)):
-        chunk = data[s:s+frame_interval]
-        chunk = chunk[chunk[:,0] > -1]
-        steps = calc_steps(chunk)
-        mu_sd[i, 0] = sum(steps)/frame_interval
-        mu_sd[i, 1] = sqrt(sum((steps-mu_sd[i, 0])**2)/frame_interval)
+    cdef np.ndarray[double, ndim=1] chunk
+    for i,s in enumerate(range(0, results.size, frame_interval)):
+        chunk = results[s:s+frame_interval][filtered[s:s+frame_interval]] # select chunk and filter it
+        mu_sd[i,:]=mean_std(chunk)
     return mu_sd
 
-cpdef np.ndarray[double, ndim=2] turning_angle(np.ndarray[double, ndim=2] data, int frame_interval):
-    cdef int len_out, i, s
-    cdef np.ndarray[double, ndim=2] chunk
-    cdef np.ndarray[double, ndim=1] avg_turning
-    cdef double SIZE = data.shape[0]
-    len_out = int(ceil(SIZE/frame_interval))
-    cdef np.ndarray mu_sd = np.zeros([len_out,2], dtype=float)
-    for i,s in enumerate(range(0, data.shape[0], frame_interval)):
-        chunk = data[s:s+frame_interval+1]
-        chunk = chunk[chunk[:,0] > -1]
-        avg_turning = avg_turning_direction(chunk)
-        mu_sd[i, 0] = sum(avg_turning)/frame_interval
-        mu_sd[i, 1] = sqrt(sum((avg_turning-mu_sd[i, 0])**2)/frame_interval)
-    return mu_sd
+cpdef (double, double) mean_std(np.ndarray[double, ndim=1] data):
+    if data.size == 0:
+        return (np.nan, np.nan)
+    cdef double mean, std
+    mean = data.sum()/data.size
+    std = sqrt(((data-mean)**2).sum()/data.size)
+    return (mean, std)
+
+#### DINSTANCE TO THE WALL --------------
+
+cpdef np.ndarray[double, ndim=1] distance_to_wall_chunk(np.ndarray[double, ndim=2] data, np.ndarray[double, ndim=2] area):
+    cdef int size 
+    size = data.shape[0]
+    cdef np.ndarray[double, ndim=1] dists
+    cdef np.ndarray[double, ndim=2] abcn = calc_wall_lines(area)
+    #for i in range(size):
+    dists = min_distance(data, abcn)
+    return dists
+
+cdef np.ndarray[double, ndim=2] calc_wall_lines(np.ndarray[double, ndim=2] area):
+    cdef np.ndarray[double, ndim=2] abcn = np.zeros((area.shape[0], 4))
+    cdef int i
+    cdef int size = area.shape[0]
+    cdef double v1, v2, x, y
+    for i in range(size):
+        v1,v2 = area[(i+1) % size]-area[i]
+        abcn[i,0] = v2 # a
+        abcn[i,1] = -v1 # b 
+        x,y = area[i]
+        abcn[i,2] = y*v1-v2*x # c
+        abcn[i,3]=norm(v2,v1) # norm(a,b)
+    return abcn
+
+cdef np.ndarray[double, ndim=1] min_distance(np.ndarray[double, ndim=2] data, np.ndarray[double, ndim=2] abcn):
+    cdef np.ndarray[double, ndim=2] min_dists
+    min_dists = distance_to_line(data[:,0], data[:,1], abcn[:,0], abcn[:,1], abcn[:,2], abcn[:,3])
+    return np.min(min_dists, axis=0)
+
+cdef np.ndarray[double, ndim=2] distance_to_line(
+    np.ndarray[double, ndim=1] x, 
+    np.ndarray[double, ndim=1] y, 
+    np.ndarray[double, ndim=1] a, 
+    np.ndarray[double, ndim=1] b, np.ndarray[double, ndim=1] c,
+    np.ndarray[double, ndim=1] n):
+    return np.abs(a[:,np.newaxis]*x+b[:,np.newaxis]*y+c[:,np.newaxis])/n[:,np.newaxis]

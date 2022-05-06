@@ -33,7 +33,7 @@ def check_foldersystem(path, n_files = 15, delete=0):
                     LOG_msg.append("In folder %s the number of csv files is unequal the expected number 15, it is %d instead"%(
                         "{}/{}/{}".format(path, c, d), len(files))
                                 )
-                msg, duplicate_f = filter_files(c,d,files, n_files)
+                msg, duplicate_f, correct_f = filter_files(c,d,files, n_files)
 
             # if the are any complains add the to the LOG list 
             if len(msg)>0:
@@ -50,21 +50,35 @@ def check_foldersystem(path, n_files = 15, delete=0):
     return LOG_msg
 
 def filter_files(c, d, files, n_files):
+    """
+    @params:
+    c: camera_id
+    d: folder name of a day
+    files: list of files that are to be filtered
+    n_files: number of files to expect. 
+    @Returns: LOG, duplicate_f, correct_f
+    LOG: a list of LOG messages
+    duplicate_f: a list of all duplicates occurring 
+    correct_f: dict of the correct files for keys i in 0,...,n_files-1 
+    """
     LOG = []
     missing_numbers = []
     duplicate_f = []
-    correct_f = []
+    correct_f = dict()
     for i in range(n_files): 
-        pattern = re.compile("{}_{}.{}_{:06d}_\d*-\d*-\d*T\d*_\d*_\d*_\d*.csv".format(c,d[:15],c,i))
+        key_i = "{:06d}".format(i)
+        pattern = re.compile(".*{}_{}.{}_{}_\d*-\d*-\d*T\d*_\d*_\d*_\d*.csv".format(c,d[:15],c,key_i))
         i_f = [f for f in files if pattern.match(f) is not None]
         if len(i_f)>1:
             i_f.sort()
             duplicate_f.extend(i_f[:-1])
-            correct_f.append(i_f[-1])
+            correct_f[key_i]=i_f[-1]
         elif len(i_f)==0:
-            missing_numbers.append(" {:06d}".format(i))
+            missing_numbers.append(key_i)
+        else:
+            correct_f[key_i]=i_f[-1]
 
-    pattern_general = re.compile("{}_{}.{}_\d*_\d*-\d*-\d*T\d*_\d*_\d*_\d*.csv".format(c,d[:15],c)) 
+    pattern_general = re.compile(".*{}_{}.{}_\d*_\d*-\d*-\d*T\d*_\d*_\d*_\d*.csv".format(c,d[:15],c)) 
     corrupted_f = [f for f in files if pattern_general.match(f) is None]  
 
     if len(missing_numbers)>0:
@@ -73,7 +87,7 @@ def filter_files(c, d, files, n_files):
         LOG.append("The following files are duplicates: \n\t{}".format("\n\t".join(duplicate_f)))
     if len(corrupted_f)>0:
         LOG.append("The following file names are corrupted, maybe wrong folder: \n\t{}".format("\n\t".join(corrupted_f)))
-    return LOG, duplicate_f
+    return LOG, duplicate_f, correct_f
 
 def main(delete=0, n_files=15):
     """
@@ -86,7 +100,7 @@ def main(delete=0, n_files=15):
     path2 = '/Volumes/data/loopbio_data/FE_(fingerprint_experiment)_SepDec2021/FE_tracks_retracked/FE_tracks_060000_block1_retracked/FE_060000_tracks_block1_%s_retracked'
 
     # select the path here and use the %s to replace "front" or "back"
-    PATH=path1 
+    PATH=path2
     position = ["front", "back"]
     LOG = list()
     for p in position: # validating files for front and back position

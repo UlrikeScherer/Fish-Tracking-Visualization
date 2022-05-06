@@ -21,13 +21,16 @@ To generate the trajectory visualizations, run:
 + `python3 main.py program={trajectory, feeding}` 
 + optional arguments: `fish_id=id one of {0,...,24}`, `test={0,1}`
 and then run the `bash`-script:
-+ `bash scripts/build-trajectories.sh` or with optional argument `--feeding` or `-f` for the feeding trajectories. `--test`, `-t` is used to test the script, to generate only the fist pdf. 
++ `bash scripts/build-trajectories.sh` or with optional argument
+    -  `--feeding` or `-f` for the feeding trajectories.
+    -  `--test`, `-t` is used to test the script, to generate only the fist pdf. 
+    - `--local`, `-l` to use the paths of the local hard drive to link the csv file in the pdf. 
 **Remark:** For the bash-script you can not build feeding and non feeding trajectories in parallel as they use the same files. 
 
 #### Activity metrics
 * run: `python3 main.py program={metric} <<optional>> time_interval=<<default>>100`
 For the metric argument use one out of `{activity, angle, tortuosity, entropy, all}`.
-
+* run `python3 main.py program={metric} time_interval=hour` to record mean and standard derivation per fish per hour in one csv-file.
 * run: `bash scripts/build_analytics.sh` to generate the pdfs. 
 
 #### Metrics: 
@@ -46,8 +49,7 @@ Compute: `function(fish_id, time_interval in sec)`
 + `entropy_per_interval`
 
 #### Next Steps 
-+ t-sne or pca with activity, tortuosity, entrophy, avg, truning angle. 
-+ t-sne with lines (distance, direction angle).
++ t-sne or pca with step-length (mean, std), turning angle (mean, std), absolute turning angle, distance wall (mean, std), entropy. 
 
 #### Open TODOs
 + pdfs for windows -- adapted the root to `C:\data\...`. (Not needed for now)

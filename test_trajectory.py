@@ -8,7 +8,7 @@ from src.metrics import metric_per_interval
 
 class TestTrajectory(unittest.TestCase):
     camera_id="23520289"
-    day= "20210912_0600"
+    day= "20210912_060000"
     is_back=False 
 
     def test_trajectory_plot(self):
@@ -16,7 +16,7 @@ class TestTrajectory(unittest.TestCase):
         img2 = "./output/test.pdf"
 
         tstart = time.time()
-        day_df = csv_of_the_day(self.camera_id, self.day, is_back=self.is_back, drop_out_of_scope=True)
+        keys, day_df = csv_of_the_day(self.camera_id, self.day, is_back=self.is_back, drop_out_of_scope=True)
         tmid = time.time()
         print("Reading %d CSVs of %s at day %s CTIME:\t %f"%(len(day_df), self.camera_id, self.day, tmid-tstart))
         T = Trajectory()
@@ -31,7 +31,6 @@ class TestTrajectory(unittest.TestCase):
         img2_size = os.path.getsize(img2)
         print("IMG Size is :", img2_size, "bytes")
         self.assertTrue( (img2_size) < 70000)  
-
 
     def test_metric(self):
         metric_per_interval(fish_ids=[1,3], day_interval=[0,4])
