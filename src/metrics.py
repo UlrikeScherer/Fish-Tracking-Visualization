@@ -82,6 +82,8 @@ def sum_of_angles(df):
         u = v
     return sum_alpha
 
+from numpy.lib.stride_tricks import sliding_window_view
+
 def entropy_for_chunk(chunk, area_tuple):
     """
     Args: chunk,
@@ -93,22 +95,16 @@ def entropy_for_chunk(chunk, area_tuple):
     fish_key, area = area_tuple
     xmin, xmax = min(area[:,0]), max(area[:,0])
     ymin, ymax = min(area[:,1]), max(area[:,1])
-    hist = np.histogram2d(chunk[:,0],chunk[:,1], bins=(40, 20), density=False, range=[[xmin, xmax], [ymin, ymax]])[0]
-    prob = list()
+    hist = np.histogram2d(chunk[:,0],chunk[:,1], bins=(20, 20), density=False, range=[[xmin, xmax], [ymin, ymax]])[0]
+
     l_x,l_y = hist.shape
-    if BACK in fish_key:
+    if BACK in fish_key: # if back use take the upper triangle -3
         tri = np.triu_indices(l_y, k=-3)
-    else:
+    else: # if front the lower triangle +3
          tri = np.tril_indices(l_y, k=3)
-    #indi_1 = np.tril_indices(l_y,k=1)
-    #indi_1 = indi_1[0],  (l_y-1) - indi_1[1]
-    #indi_2 = np.triu_indices(l_y, k=-2)
-    #indi_2 = indi_2[0]+l_y, indi_2[1]
-    prob.extend(hist[::2][tri])
-    prob.extend(hist[1::2][tri])
-    if np.sum(hist) > sum(prob):
+    if np.sum(hist) > 1.05 * np.sum(hist[tri]):
         print("Warning the selected area for entropy has lost some points: ", "sum hist: ",np.sum(hist),  "sum selection: ", sum(prob), "\n", fish_key)
-    return entropy(prob),np.std(prob)*100
+    return entropy(hist[tri]),np.std(hist[tri])*100
 
 def average_by_metric(data, frame_interval, avg_metric_f, error_index):
     SIZE = data.shape[0]

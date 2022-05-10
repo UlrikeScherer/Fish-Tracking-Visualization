@@ -52,7 +52,7 @@ def transfrom_to_traces_metric_based(batch, trace_size, filter_index, area):
     newSet = np.zeros((sizeSet,len(metric_functions)*2))
     for i, f in enumerate(metric_functions):
         idx = i*2
-        if f.__name__ == distance_to_wall.__name__:
+        if f.__name__ == distance_to_wall.__name__ or f.__name__ == entropy_for_data.__name__:
             newSet[:,idx:idx+2] = f(setX, trace_size, filter_index, area)
         else:
             newSet[:,idx:idx+2] = f(setX, trace_size, filter_index)
