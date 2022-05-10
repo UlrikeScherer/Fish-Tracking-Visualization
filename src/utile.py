@@ -11,7 +11,7 @@ from envbash import load_envbash
 from path_validation import filter_files
 load_envbash('scripts/env.sh')
 
-# Calculated MEAN and SD for the data set filtered for erroneous frames 
+# Calculated MEAN and SD for the data set filtered for erroneous frames
 MEAN_GLOBAL = 0.22746102241709162
 SD_GLOBAL = 1.0044248513034164
 S_LIMIT = 15 #MEAN_GLOBAL + 3 * SD_GLOBAL
@@ -19,16 +19,16 @@ BATCH_SIZE = 9999
 FRAMES_PER_SECOND = 5
 ROOT=os.environ["rootserver"]
 ROOT_LOCAL=os.environ["root_local"]
-DIR_CSV=os.environ["path_csv"] # 
-DIR_CSV_LOCAL=os.environ["path_csv_local"] # 
+DIR_CSV=os.environ["path_csv"] #
+DIR_CSV_LOCAL=os.environ["path_csv_local"] #
 BLOCK = os.environ["BLOCK"] # block1 or block2
 
-# TRAJECTORY 
+# TRAJECTORY
 dir_front = os.environ["dir_front"]
 dir_back = os.environ["dir_back"]
 STIME = os.environ["STIME"]
 
-# FEEDING 
+# FEEDING
 dir_feeding_front = os.environ["dir_feeding_front"]
 dir_feeding_back = os.environ["dir_feeding_back"]
 FEEDINGTIME = os.environ["FEEDINGTIME"]
@@ -53,7 +53,7 @@ def get_directory(is_feeding=False, is_back=False):
     else:
         if is_back:return dir_back
         else: return dir_front
-    
+
 def get_number_of_batches(is_feeding=False):
     return N_BATCHES_FEEDING if is_feeding else N_BATCHES
 
@@ -87,7 +87,7 @@ def get_fish_ids():
         f2 = FB_char == p[0].upper()
         ids = info_df1[f1 & f2]["fish_id"].array
         fishIDs_order.append(ids[0])
-        
+
     return np.array(fishIDs_order)
 
 def print_tex_table(fish_ids, filename):
@@ -105,8 +105,8 @@ def get_days_in_order(interval=None, is_feeding=False, camera=None):
     """
     @params
     interval tuple (int i,int j) i<j, to return only days from i to j
-    is_feeding: select feeding directory if True, default False. 
-    camera: concider days of the cameras folder, default: first camera, that expects all cameras to have the same number of cameras. 
+    is_feeding: select feeding directory if True, default False.
+    camera: concider days of the cameras folder, default: first camera, that expects all cameras to have the same number of cameras.
     """
     if camera is None: camera = get_camera_names(is_feeding)[0]
     dir_ = dir_feeding_front if is_feeding else dir_front
@@ -136,15 +136,15 @@ def get_date_string(day):
 def get_full_date(day):
     dateiso = "{}-{}-{}T{}:{}:{}+00:00".format(day[:4],day[4:6],day[6:8],day[9:11],day[11:13], day[13:15])
     return datetime.fromisoformat(dateiso).strftime("%A, %B %d, %Y %H:%M")
-    
+
 def get_position_string(is_back):
     if is_back:
         return BACK
     else:
         return FRONT
-    
+
 def read_batch_csv(filename, drop_errors):
-    df = pd.read_csv(filename,skiprows=3, delimiter=';', error_bad_lines=False, usecols=["x", "y", "FRAME", "time", "xpx", "ypx"], 
+    df = pd.read_csv(filename,skiprows=3, delimiter=';', error_bad_lines=False, usecols=["x", "y", "FRAME", "time", "xpx", "ypx"],
                      dtype={"xpx": np.float64, "ypx": np.float64, "time":np.float64})
     df.dropna(axis="rows", how="any", inplace=True)
     if drop_errors:
@@ -180,14 +180,14 @@ def csv_of_the_day(camera, day, is_back=False, drop_out_of_scope=False, is_feedi
         dir_ = dir_feeding_back if is_back else dir_feeding_front
 
     filenames_f = [f for f in glob.glob("{}/{}/{}*/{}_{}*.csv".format(dir_, camera, day, camera, day), recursive=True) if re.search(r'[0-9].*\.csv$', f[-6:])]
-    
+
     LOG, _, filtered_files = filter_files(camera,day,filenames_f, get_number_of_batches(is_feeding)) # filters for duplicates in the batches for a day. It takes the LAST one!!!
     file_keys = list(filtered_files.keys())
     correct_files = list(filtered_files.values())
     if print_log and len(LOG)>0:
         print("\n {}/{}/{}*: \n".format(dir_, camera, day),"\n".join(LOG))
-    return file_keys, merge_files(correct_files, drop_out_of_scope)     
-    
+    return file_keys, merge_files(correct_files, drop_out_of_scope)
+
 def activity_for_day_hist(fish_id, day_idx=1):
     fish2camera=get_fish2camera_map()
     camera_id, is_back = fish2camera[fish_id,0], fish2camera[fish_id,1]=="back"

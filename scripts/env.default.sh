@@ -5,7 +5,7 @@ BLOCK="block1" # SPICIFY THE BLOCK TO RUN THE SCRIPT ON (block1, block2,...)
 # -----------------
 RECORDINGTIME="060000" # START TIME FOR THE EXPERIMENT
 FEEDINGTIME="140000" # START TIME FOR THE FEEDING SETUP
-STIME=$RECORDINGTIME
+STIME=$RECORDINGTIME   
 rootserver="/Volumes/data/loopbio_data/FE_(fingerprint_experiment)_SepDec2021"  # On MocOS the path to the root of the data
 path_recordings="$rootserver/FE_recordings/FE_recordings_$BLOCK/FE_${BLOCK}_recordings_*" # path to the recordings, will allway be on the server
 

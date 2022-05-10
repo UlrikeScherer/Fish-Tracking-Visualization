@@ -49,7 +49,8 @@ Compute: `function(fish_id, time_interval in sec)`
 + `entropy_per_interval`
 
 #### Start on the GPU
-+ `srun --pty --partition=scioi_gpu --gres=gpu:tesla:1 --time=0-02:00 bash -i`
++ conda activate rapids-22.04
++ srun --pty --partition=scioi_gpu --gres=gpu:tesla:1 --time=0-02:00 bash -i
 + Type `ifconfig` and get the `inet` entry for `eth0`, i.e. the IP address of the node
 + `ssh -L localhost:5000:localhost:5000 [your username]@[IP address you've found out]`
 + On the compute node, start your notebook with `jupyter-lab --no-browser --port=5000`
