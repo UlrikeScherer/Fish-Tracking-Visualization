@@ -103,7 +103,7 @@ def entropy_for_chunk(chunk, area_tuple):
     else: # if front the lower triangle +3
          tri = np.tril_indices(l_y, k=3)
     if np.sum(hist) > 1.05 * np.sum(hist[tri]):
-        print("Warning the selected area for entropy has lost some points: ", "sum hist: ",np.sum(hist),  "sum selection: ", sum(prob), "\n", fish_key)
+        print("Warning the selected area for entropy has lost some points: ", "sum hist: ",np.sum(hist),  "sum selection: ", sum(hist[tri]), "\n", fish_key)
     return entropy(hist[tri]),np.std(hist[tri])*100
 
 def average_by_metric(data, frame_interval, avg_metric_f, error_index):
