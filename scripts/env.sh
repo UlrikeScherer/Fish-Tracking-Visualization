@@ -1,14 +1,19 @@
 #!/bin/bash
 # src/utile.py imports the paths of this file and the bash scripts in tex/ to generate the pdfs do the same
+# --- BLOCK -------
 BLOCK="block1" # SPICIFY THE BLOCK TO RUN THE SCRIPT ON (block1, block2,...)
+# -----------------
 RECORDINGTIME="060000" # START TIME FOR THE EXPERIMENT
 FEEDINGTIME="140000" # START TIME FOR THE FEEDING SETUP
 STIME=$RECORDINGTIME   
 rootserver="/Volumes/data/loopbio_data/FE_(fingerprint_experiment)_SepDec2021"  # On MocOS the path to the root of the data
-root_local="/Volumes/Extreme_SSD" # ".."
 path_recordings="$rootserver/FE_recordings/FE_recordings_$BLOCK/FE_${BLOCK}_recordings_*" # path to the recordings, will allway be on the server
+
+# --- The Path to the local data------------
+root_local="/Volumes/Extreme_SSD" # ".."
 path="FE_tracks_retracked/FE_tracks_${STIME}_${BLOCK}_retracked"
 #path_original="FE_tracks_original/FE_tracks_${STIME}/FE_tracks_${STIME}_$BLOCK"
+# --------------------------------------
 
 # TRAJECTORY PATHS
 path_csv="$rootserver/$path"

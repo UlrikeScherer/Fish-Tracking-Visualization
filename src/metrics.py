@@ -54,11 +54,11 @@ def direction_angle(v,w):
     cos = np.dot(v,w)
     r = np.arccos(np.clip(cos, -1, 1))
     det = determinant(v,w)
-    if det < 0: 
+    if det < 0:
         return r
     else:
         return -r
-    
+
 def angle(v,w):
     cos = np.dot(v,w)
     return np.arccos(np.clip(cos, -1, 1))
@@ -82,18 +82,32 @@ def sum_of_angles(df):
         u = v
     return sum_alpha
 
-def entropy_for_chunk(chunk):
+def entropy_for_chunk(chunk, area_tuple):
+    """
+    Args: chunk,
+    area = tuple(fish_key, data)
+    retrun entropy, std * 100
+    """
     if chunk.shape[0]==0:
         return np.nan, np.nan
-    hist = np.histogram2d(chunk[:,0],chunk[:,1], bins=(40, 20), density=True)[0]
+    fish_key, area = area_tuple
+    xmin, xmax = min(area[:,0]), max(area[:,0])
+    ymin, ymax = min(area[:,1]), max(area[:,1])
+    hist = np.histogram2d(chunk[:,0],chunk[:,1], bins=(40, 20), density=False, range=[[xmin, xmax], [ymin, ymax]])[0]
     prob = list()
     l_x,l_y = hist.shape
-    indi_1 = np.tril_indices(l_y,k=1)
-    indi_1 = indi_1[0],  (l_y-1) - indi_1[1]
-    indi_2 = np.triu_indices(l_y, k=-2)
-    indi_2 = indi_2[0]+l_y, indi_2[1] 
-    prob.extend(hist[indi_1])
-    prob.extend(hist[indi_2])
+    if BACK in fish_key:
+        tri = np.triu_indices(l_y, k=-3)
+    else:
+         tri = np.tril_indices(l_y, k=3)
+    #indi_1 = np.tril_indices(l_y,k=1)
+    #indi_1 = indi_1[0],  (l_y-1) - indi_1[1]
+    #indi_2 = np.triu_indices(l_y, k=-2)
+    #indi_2 = indi_2[0]+l_y, indi_2[1]
+    prob.extend(hist[::2][tri])
+    prob.extend(hist[1::2][tri])
+    if np.sum(hist) > sum(prob):
+        print("Warning the selected area for entropy has lost some points: ", "sum hist: ",np.sum(hist),  "sum selection: ", sum(prob), "\n", fish_key)
     return entropy(prob),np.std(prob)*100
 
 def average_by_metric(data, frame_interval, avg_metric_f, error_index):
@@ -105,11 +119,11 @@ def average_by_metric(data, frame_interval, avg_metric_f, error_index):
         mu_sd[i,:] = avg_metric_f(chunk)
     return mu_sd
 
-def entropy_for_data(data, frame_interval, error_index):
-    return average_by_metric(data, frame_interval, entropy_for_chunk, error_index)
+def entropy_for_data(data, frame_interval, error_index, area):
+    return average_by_metric(data, frame_interval, lambda chunk: entropy_for_chunk(chunk, area), error_index)
 
 def distance_to_wall(data, frame_interval, error_index, area):
-    return average_by_metric(data, frame_interval, lambda chunk: mean_std(px2cm(distance_to_wall_chunk(chunk, area))), error_index)
+    return average_by_metric(data, frame_interval, lambda chunk: mean_std(px2cm(distance_to_wall_chunk(chunk, area[1]))), error_index)
 
 def tortuosity(data, frame_interval, error_index):
     return average_by_metric(data, frame_interval, lambda chunk: mean_std(tortuosity_of_chunk(chunk)), error_index)
@@ -120,10 +134,10 @@ def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100
     Args:
         fish_ids(list, int):    List of fish ids
         time_interval(int):     Time Interval to apply the metric to
-        day_interval(Tuple):    Tuple of the first day to the last day, out of 0 to 29. 
+        day_interval(Tuple):    Tuple of the first day to the last day, out of 0 to 29.
         metric(function):       A function to apply to the data, {activity, tortuosity, turning_angle,...}
         write_to_csv(bool):     Indicate weather the results should be written to a csv
-    Returns: 
+    Returns:
         package:                dict of computed results, and meta information
     """
     if isinstance(fish_ids, int):
@@ -143,7 +157,7 @@ def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100
                 err_filter = get_error_indices(df).to_numpy()
                 if area_data is not None:
                     data = df[["xpx", "ypx"]].to_numpy()                          # DISTANCE TO WALL METRIC
-                    result = metric(data,time_interval*FRAMES_PER_SECOND, err_filter, area_data[fish_key])
+                    result = metric(data,time_interval*FRAMES_PER_SECOND, err_filter, (fish_key, area_data[fish_key]))
                 else:
                     data = pixel_to_cm(df[["xpx", "ypx"]].to_numpy())
                     result = metric(data,time_interval*FRAMES_PER_SECOND, err_filter)
@@ -162,7 +176,7 @@ def metric_data_to_csv(results=None, metric_name=None, time_interval=None):
         time_np = np.array(time)
         concat_r = np.concatenate(list(days.values()))
         data = np.concatenate((time_np, concat_r), axis=1)
-        
+
         df = pd.DataFrame(data, columns=["day", "time", "mean", "std"])
         directory="%s/%s/%s/"%(DATA_results, BLOCK,metric_name)
         os.makedirs(directory, exist_ok=True)
@@ -172,7 +186,7 @@ def metric_per_hour_csv(results=None, metric_name=None, time_interval=None):
     data_idx = np.array(list(product(results.keys(), range(HOURS_PER_DAY))))
     # initialize table of nan
     data = np.empty((data_idx.shape[0], N_DAYS))
-    data.fill(np.nan) 
+    data.fill(np.nan)
     days = get_days_in_order()
     df = pd.DataFrame(data=data_idx, columns=["CAMERA_POSITION","HOUR"])
     df_d = pd.DataFrame(data=data,columns=days)
@@ -199,9 +213,13 @@ def absolute_angle_per_interval(*args, **kwargs):
 def tortuosity_per_interval(*args, **kwargs):
     return metric_per_interval(*args, **kwargs, metric=tortuosity)
 
-def entropy_per_interval(*args, **kwargs): 
-    return metric_per_interval(*args, **kwargs, metric=entropy_for_data)
+def entropy_per_interval(*args, **kwargs):
+    area_data = read_area_data_from_json()
+    return metric_per_interval(*args, **kwargs, metric=entropy_for_data, area_data=area_data)
 
 def distance_to_wall_per_interval(*args, **kwargs):
     area_data = read_area_data_from_json()
     return metric_per_interval(*args, **kwargs, metric=distance_to_wall, area_data=area_data)
+
+# function that returns a boolean deciding if it is odd or even
+# python loop
