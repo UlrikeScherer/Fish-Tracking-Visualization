@@ -32,7 +32,7 @@ and then run the `bash`-script:
 For the metric argument use one out of `{activity, angle, tortuosity, entropy, all}`.
 * run `python3 main.py program={metric} time_interval=hour` to record mean and standard derivation per fish per hour in one csv-file.
 * run: `bash scripts/build_analytics.sh` to generate the pdfs. 
-
+q
 #### Metrics: 
 + step length is the length of the vector drawn between to consecutive data frames. 
 + the mean and standard derivation illustrated in the visualization is computed from filtered data frames, removing obvious error point and normed by the distance between data frame when erroneous data point where removed. 
