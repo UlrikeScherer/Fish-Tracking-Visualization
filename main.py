@@ -73,7 +73,7 @@ def main(program=None, test=0, time_interval=100, sw=10, fish_id=None):
         elif fish_id in fish_keys:
             fish_ids=np.array([fish_keys.index(fish_id)])
         else:
-            raise ValueError("fish_id does not appear in the data, please provid the fish_id as camera_position or index integer in 0 to %s. \n\n The following ids are valid: %s"%(N_FISHES, fish_keys))
+            raise ValueError("fish_id=%s does not appear in the data, please provid the fish_id as camera_position or index integer in [0 to %s]. \n\n The following ids are valid: %s"%(fish_id, N_FISHES-1, fish_keys))
 
     if int(test) == 1:
         print("Test RUN ", program)

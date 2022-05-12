@@ -60,8 +60,7 @@ def get_number_of_batches(is_feeding=False):
 def get_camera_names(is_feeding=False, is_back=False):
     dir_ = get_directory(is_feeding, is_back)
     return sorted([name for name in os.listdir(dir_)
-    if #len(name)==8 and
-     name[:8].isnumeric()])
+        if len(name)==8 and name.isnumeric()])
 
 def get_fish2camera_map(is_feeding=False):
     l_front = list(product(get_camera_names(is_feeding, is_back=BACK==FRONT), [FRONT]))
