@@ -59,12 +59,15 @@ def get_number_of_batches(is_feeding=False):
 
 def get_camera_names(is_feeding=False, is_back=False):
     dir_ = get_directory(is_feeding, is_back)
-    return sorted([name for name in os.listdir(dir_) if len(name)==8 and name.isnumeric()])
+    return sorted([name for name in os.listdir(dir_)
+    if #len(name)==8 and
+     name[:8].isnumeric()])
 
 def get_fish2camera_map(is_feeding=False):
     l_front = list(product(get_camera_names(is_feeding, is_back=BACK==FRONT), [FRONT]))
     l_back = list(product(get_camera_names(is_feeding, is_back=BACK==BACK), [BACK]))
-    return np.array([j for i in zip(l_front,l_back) for j in i])
+    return np.array(l_back + l_front)
+    #return np.array([j for i in zip(l_front,l_back) for j in i])
 
 def get_camera_pos_keys(is_feeding=False):
     m = get_fish2camera_map(is_feeding=is_feeding)
@@ -83,7 +86,7 @@ def get_fish_ids():
     FB_char = np.array(list(map(lambda x: str(x[-1]),info_df1["tank"])))
     fish2camera = get_fish2camera_map()
     for i, (c,p) in enumerate(fish2camera):
-        f1 = info_df1["camera"] == int(c[-2:])
+        f1 = info_df1["camera"] == int(c[6:8])
         f2 = FB_char == p[0].upper()
         ids = info_df1[f1 & f2]["fish_id"].array
         fishIDs_order.append(ids[0])
@@ -101,20 +104,31 @@ def print_tex_table(fish_ids, filename):
         f.write("%d & %s & %s & %s\\\ \n"%(fid, camera, position, fids[fid].replace("_","\_")))
     f.close()
 
-def get_days_in_order(interval=None, is_feeding=False, camera=None):
+def get_days_in_order(interval=None, is_feeding=False, is_back=None, camera=None):
     """
     @params
-    interval tuple (int i,int j) i<j, to return only days from i to j
+    interval tuple (int i,int j) i < j, to return only days from i to j
     is_feeding: select feeding directory if True, default False.
     camera: concider days of the cameras folder, default: first camera, that expects all cameras to have the same number of cameras.
     """
-    if camera is None: camera = get_camera_names(is_feeding)[0]
-    dir_ = dir_feeding_front if is_feeding else dir_front
+    if camera is None or is_back is None:
+        raise ValueError("provid kwargs is_back and camera")
+        #camera = get_camera_names(is_feeding=is_feeding, is_back=is_back)[0]
+    dir_ = get_directory(is_feeding, is_back)
     days = [name[:15] for name in os.listdir(dir_+"/"+camera) if name[:8].isnumeric()]
     days.sort()
     if interval:
         return days[interval[0]: interval[1]]
     return days
+
+def get_all_days_of_context(is_feeding=False):
+    days = list()
+    for p in [BACK, FRONT]:
+        is_back = (p==BACK)
+        cameras = get_camera_names(is_feeding=is_feeding, is_back=is_back)
+        for c in cameras:
+            days.extend([d for d in get_days_in_order(is_feeding=is_feeding, is_back=is_back, camera=c) if d not in days])
+    return sorted(days)
 
 def get_time_for_day(day, nrF):
     # dateiso = "{}-{}-{}T{}:{}:{}+02:00".format(day[:4],day[4:6],day[6:8],day[9:11],day[11:13],day[13:15])
@@ -192,7 +206,7 @@ def activity_for_day_hist(fish_id, day_idx=1):
     fish2camera=get_fish2camera_map()
     camera_id, is_back = fish2camera[fish_id,0], fish2camera[fish_id,1]=="back"
     mu_sd = list()
-    all_days = get_days_in_order()
+    all_days = get_days_in_order(camera=camera_id, is_back=is_back)
     day = all_days[day_idx]
     keys, csv_by_day = csv_of_the_day(camera_id, day, is_back=is_back, drop_out_of_scope=True)
     df = pd.concat(csv_by_day)
