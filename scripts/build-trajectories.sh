@@ -8,7 +8,6 @@ position=("front" "back")
 POS_STRINGS=($POSITION_STR_FRONT $POSITION_STR_BACK)
 PREFIX="file://" #run:
 
-
 STARTTIME=$RECORDINGTIME
 CSV_DIR=$path_csv
 MAX_IDX_OF_DAY=14
@@ -70,8 +69,8 @@ for b in ${!position[@]}; do
         cameras="$(ls -d $CSV_DIR/$POSITION_STR/[0-9]*[0-9]/ | sort -V )"
     fi
 
-    for i in ${!cameras[@]}; do
-        camera=$(basename ${cameras[$i]})
+    for cam in $cameras; do
+        camera=$(basename ${cam})
         echo $camera
         secff="$(ls -d $CSV_DIR/$POSITION_STR/${camera}/*.${camera}/ | sort -V | head -1 | sed 's/.*1550\([^.]*\).*/\1/')"
 
@@ -153,6 +152,7 @@ for b in ${!position[@]}; do
         if [ $feeding ]; then
             echo "\input{$FILES/${BLOCK}_feedingtime.tex}" >> $FILES/arrayoflinks.tex
         fi
+        # run pdflatex two times
         END=2
         for k in $(seq 1 $END); do
             #pdflatex "\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}"
