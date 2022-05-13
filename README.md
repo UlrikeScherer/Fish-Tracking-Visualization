@@ -69,7 +69,8 @@ metrics -> pca -> TSNE
 1. create tSNE space w | clustered PC scores on all individuals/days.
 2. PC loadings of metrics. PC loads
 3. Clusters, how many, on PCA, carecterize/description of the clusters in terms of variation.
-4. k clusters, sequence length parameters. 
+4. k clusters, sequence length parameters.
+5. Repeat 1-3 but with different timesscale. ()
 
 #### Open TODOs
 + pdfs for windows -- adapted the root to `C:\data\...`. (Not needed for now)
