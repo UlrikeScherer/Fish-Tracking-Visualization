@@ -82,6 +82,8 @@ def sum_of_angles(df):
         u = v
     return sum_alpha
 
+from numpy.lib.stride_tricks import sliding_window_view
+
 def entropy_for_chunk(chunk, area_tuple):
     """
     Args: chunk,
@@ -93,22 +95,16 @@ def entropy_for_chunk(chunk, area_tuple):
     fish_key, area = area_tuple
     xmin, xmax = min(area[:,0]), max(area[:,0])
     ymin, ymax = min(area[:,1]), max(area[:,1])
-    hist = np.histogram2d(chunk[:,0],chunk[:,1], bins=(40, 20), density=False, range=[[xmin, xmax], [ymin, ymax]])[0]
-    prob = list()
+    hist = np.histogram2d(chunk[:,0],chunk[:,1], bins=(20, 20), density=False, range=[[xmin, xmax], [ymin, ymax]])[0]
+
     l_x,l_y = hist.shape
-    if BACK in fish_key:
+    if BACK in fish_key: # if back use take the upper triangle -3
         tri = np.triu_indices(l_y, k=-3)
-    else:
+    else: # if front the lower triangle +3
          tri = np.tril_indices(l_y, k=3)
-    #indi_1 = np.tril_indices(l_y,k=1)
-    #indi_1 = indi_1[0],  (l_y-1) - indi_1[1]
-    #indi_2 = np.triu_indices(l_y, k=-2)
-    #indi_2 = indi_2[0]+l_y, indi_2[1]
-    prob.extend(hist[::2][tri])
-    prob.extend(hist[1::2][tri])
-    if np.sum(hist) > sum(prob):
-        print("Warning the selected area for entropy has lost some points: ", "sum hist: ",np.sum(hist),  "sum selection: ", sum(prob), "\n", fish_key)
-    return entropy(prob),np.std(prob)*100
+    if np.sum(hist) > 1.05 * np.sum(hist[tri]):
+        print("Warning the selected area for entropy has lost some points: ", "sum hist: ",np.sum(hist),  "sum selection: ", sum(hist[tri]), "\n", fish_key)
+    return entropy(hist[tri]),np.std(hist[tri])*100
 
 def average_by_metric(data, frame_interval, avg_metric_f, error_index):
     SIZE = data.shape[0]
@@ -142,7 +138,6 @@ def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100
     """
     if isinstance(fish_ids, int):
         fish_ids = [fish_ids]
-    days = get_days_in_order(interval=day_interval)
     fish2camera = get_fish2camera_map()
     results = dict()
     package = dict(metric_name=metric.__name__, time_interval=time_interval, results=results)
@@ -150,6 +145,7 @@ def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100
         camera_id, is_back = fish2camera[fish,0], fish2camera[fish,1]==BACK
         fish_key = "%s_%s"%(camera_id, fish2camera[fish,1])
         day_dict = dict()
+        days = get_days_in_order(interval=day_interval,is_feeding=False, camera=camera_id,is_back=is_back)
         for j,day in enumerate(days):
             keys, df_day = csv_of_the_day(camera_id, day, is_back=is_back, drop_out_of_scope=drop_out_of_scope) ## True or False testing needed
             if len(df_day)>0:
@@ -172,11 +168,15 @@ def metric_data_to_csv(results=None, metric_name=None, time_interval=None):
     for i, (cam_pos, days) in enumerate(results.items()):
         time = list()
         for j,(day, value) in enumerate(days.items()):
-            time.extend([(day,t*time_interval+j*N_SECONDS_OF_DAY+get_seconds_from_day(day)) for t in range(1,value.shape[0]+1)])
+            sec_day = get_seconds_from_day(day)
+            time.extend([(day,t*time_interval+j*N_SECONDS_OF_DAY+sec_day) for t in range(1,value.shape[0]+1)])
+
         time_np = np.array(time)
         concat_r = np.concatenate(list(days.values()))
+        if time_np.ndim != concat_r.ndim: # if data for day is empty dont write an csv-entry
+            print("# WARNING: for %s time and results have unequal dimentions: time: %s results: %s "%(cam_pos, time_np,concat_r))
+            continue
         data = np.concatenate((time_np, concat_r), axis=1)
-
         df = pd.DataFrame(data, columns=["day", "time", "mean", "std"])
         directory="%s/%s/%s/"%(DATA_results, BLOCK,metric_name)
         os.makedirs(directory, exist_ok=True)
@@ -187,7 +187,7 @@ def metric_per_hour_csv(results=None, metric_name=None, time_interval=None):
     # initialize table of nan
     data = np.empty((data_idx.shape[0], N_DAYS))
     data.fill(np.nan)
-    days = get_days_in_order()
+    days = get_all_days_of_context()
     df = pd.DataFrame(data=data_idx, columns=["CAMERA_POSITION","HOUR"])
     df_d = pd.DataFrame(data=data,columns=days)
     df_mean = pd.concat((df,df_d),axis=1)

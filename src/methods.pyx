@@ -50,7 +50,7 @@ cdef (double, double) unit_vector(v0, v1):
     if n == 0:
         return (v0, v1)
     return (v0/n, v1/n)
-    
+
 cdef double determinant(double v0, double v1, double w0, double w1):
     """ Determinant of two vectors. """
     return v0*w1-v1*w0
@@ -61,11 +61,11 @@ cdef double direction_angle(double v0, double v1, double w0, double w1):
     cos = dot(v0,v1,w0,w1)
     r = arccos(clip(cos, -1, 1))
     det = determinant(v0,v1,w0,w1)
-    if det < 0: 
+    if det < 0:
         return r
     else:
         return -r
-    
+
 cdef double angle(double v0, double v1, double w0, double w1):
     cos = dot(v0,v1,w0,w1)
     return arccos(clip(cos, -1, 1))
@@ -79,9 +79,9 @@ cpdef (double, double) avg_and_sum_angles(np.ndarray[double, ndim=2] data):
     cdef int N_alpha
     sum_avg, sum_ang, N_alpha = 0.,0.,len(vecs)
 
-    if N_alpha <= 1: 
+    if N_alpha <= 1:
         return (sum_avg, sum_ang)
-    
+
     (u0, u1) = unit_vector(vecs[0,0], vecs[0,1])
     cdef int i
     for i in range(1,N_alpha):
@@ -129,7 +129,7 @@ cpdef np.ndarray[float, ndim=1] turning_directions(np.ndarray[double, ndim=2] da
     vecs = vecs_in[indices]
     cdef int N_alpha = len(vecs)
     cdef np.ndarray d_angles = np.zeros([N_alpha], dtype=float) # one point smaller then vecs and two points smaller
-    if N_alpha <= 1: 
+    if N_alpha <= 1:
         return d_angles
     (u0, u1) = unit_vector(vecs[0,0], vecs[0,1])
     cdef int i
@@ -138,7 +138,7 @@ cpdef np.ndarray[float, ndim=1] turning_directions(np.ndarray[double, ndim=2] da
         d_angles[i-1] = direction_angle(u0,u1,v0,v1)
         u0, u1 = v0, v1
 
-    results = np.zeros([len(vecs_in)], dtype=float) 
+    results = np.zeros([len(vecs_in)], dtype=float)
     results[indices] = d_angles
     return results[:-1]
 
@@ -154,6 +154,7 @@ cpdef np.ndarray[double, ndim=2] activity(np.ndarray[double, ndim=2] data, int f
     cdef np.ndarray[double, ndim=1] steps
     steps = calc_steps(data)
     filter_index = ~ ( filter_index[:-1] | filter_index[1:] | get_spikes_filter(steps) )
+
     return mean_std_for_interval(steps, frame_interval, filter_index)
 
 cpdef np.ndarray[double, ndim=2] turning_angle(np.ndarray[double, ndim=2] data, int frame_interval, np.ndarray[np.npy_bool, ndim=1] filter_index):
@@ -182,7 +183,7 @@ cpdef (double, double) mean_std(np.ndarray[double, ndim=1] data):
 #### DINSTANCE TO THE WALL --------------
 
 cpdef np.ndarray[double, ndim=1] distance_to_wall_chunk(np.ndarray[double, ndim=2] data, np.ndarray[double, ndim=2] area):
-    cdef int size 
+    cdef int size
     size = data.shape[0]
     cdef np.ndarray[double, ndim=1] dists
     cdef np.ndarray[double, ndim=2] abcn = calc_wall_lines(area)
@@ -198,7 +199,7 @@ cdef np.ndarray[double, ndim=2] calc_wall_lines(np.ndarray[double, ndim=2] area)
     for i in range(size):
         v1,v2 = area[(i+1) % size]-area[i]
         abcn[i,0] = v2 # a
-        abcn[i,1] = -v1 # b 
+        abcn[i,1] = -v1 # b
         x,y = area[i]
         abcn[i,2] = y*v1-v2*x # c
         abcn[i,3]=norm(v2,v1) # norm(a,b)
@@ -210,9 +211,9 @@ cdef np.ndarray[double, ndim=1] min_distance(np.ndarray[double, ndim=2] data, np
     return np.min(min_dists, axis=0)
 
 cdef np.ndarray[double, ndim=2] distance_to_line(
-    np.ndarray[double, ndim=1] x, 
-    np.ndarray[double, ndim=1] y, 
-    np.ndarray[double, ndim=1] a, 
+    np.ndarray[double, ndim=1] x,
+    np.ndarray[double, ndim=1] y,
+    np.ndarray[double, ndim=1] a,
     np.ndarray[double, ndim=1] b, np.ndarray[double, ndim=1] c,
     np.ndarray[double, ndim=1] n):
     return np.abs(a[:,np.newaxis]*x+b[:,np.newaxis]*y+c[:,np.newaxis])/n[:,np.newaxis]

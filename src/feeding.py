@@ -2,7 +2,7 @@ import pandas as pd
 import os
 import numpy as np
 from time import gmtime, strftime
-from src.utile import BACK, FRONT, get_days_in_order, get_fish_ids, BLOCK
+from src.utile import BACK, FRONT, get_days_in_order,get_all_days_of_context, get_camera_pos_keys, BLOCK
 from src.metrics import DATA_results
 from src.visualisation import Trajectory
 from src.transformation import pixel_to_cm
@@ -46,7 +46,7 @@ class FeedingTrajectory(Trajectory):
         index_swim_in = np.where(feeding_b.FRAME[1:].array-feeding_b.FRAME[:-1].array != 1)[0]
         index_visits = [0, *(index_swim_in+1), feeding_size-1]
         entries = len(index_visits)
-        fb = pixel_to_cm(feeding_b[["xpx", "ypx"]].to_numpy()).T   
+        fb = pixel_to_cm(feeding_b[["xpx", "ypx"]].to_numpy()).T
         lines = F.ax.get_lines()
         # UPDATE BOX
         box_cm = pixel_to_cm(box)
@@ -63,10 +63,10 @@ class FeedingTrajectory(Trajectory):
         for i in range(len(lines),entries-1):
             s,e = index_visits[i], index_visits[i+1]
             line_feed = F.ax.plot(*fb[:,s:e], "r-", alpha=0.7, solid_capstyle="projecting", markersize=0.2)
-        
+
         text_l = [" ","#Visits: %s"%(entries-1), r"$\Delta$ Feeding: %s"%(strftime("%M:%S", gmtime(feeding_size/5)))]
         remove_text = F.meta_text_for_plot(text_l=text_l)
-        
+
         #ax.draw_artist(ax.patch)
         #ax.draw_artist(line)
         self.update_feeding_and_visits(fish_id, date, feeding_size, entries-1)
@@ -77,15 +77,15 @@ class FeedingTrajectory(Trajectory):
         return F.fig
 
     def update_feeding_and_visits(self,fish_id, date, feeding_size, visits):
-        if date not in self.feeding_times[fish_id]: 
+        if date not in self.feeding_times[fish_id]:
             self.feeding_times[fish_id][date] = 0
             self.visits[fish_id][date] = 0
         self.feeding_times[fish_id][date] += feeding_size
         self.visits[fish_id][date] += visits
 
     def feeding_data_to_csv(self):
-        fish_names = get_fish_ids()
-        days = get_days_in_order(is_feeding=self.is_feeding)
+        fish_names = get_camera_pos_keys(is_feeding=self.is_feeding)
+        days = get_all_days_of_context(is_feeding=self.is_feeding)
         df_feeding = pd.DataFrame(columns=[fish_names], index=days)
         df_visits = pd.DataFrame(columns=[fish_names], index=days)
         for i, fn in enumerate(fish_names):
@@ -93,7 +93,7 @@ class FeedingTrajectory(Trajectory):
                 if d in self.feeding_times[i]:
                     df_feeding.loc[d, fn]=self.feeding_times[i][d]
                     df_visits.loc[d, fn]=self.visits[i][d]
-                    
+
         os.makedirs(self.dir_data_feeding, exist_ok=True)
         df_feeding.to_csv("%s/%s.csv"%(self.dir_data_feeding, "feeding_times"))
         df_visits.to_csv("%s/%s.csv"%(self.dir_data_feeding, "visits"))
@@ -101,9 +101,8 @@ class FeedingTrajectory(Trajectory):
     def feeding_data_to_tex(self):
         text = '''\newcommand\ftlist{}\newcommand\setft[2]{\csdef{ft#1}{#2}}\newcommand\getft[1]{\csuse{ft#1}}'''.replace('\n', '\\n').replace('\f', '\\f')
 
-        days = get_days_in_order(is_feeding=self.is_feeding)
-
         for i, (c,p) in enumerate(self.fish2camera):
+            days = get_days_in_order(is_feeding=self.is_feeding, camera=c, is_back=p==BACK)
             for d in days:
                 if d in self.feeding_times[i]:
                     text += "\setft{%s%s%s}{%s}"%(c,p,d,strftime("%H:%M:%S", gmtime(self.feeding_times[i][d]/5)))
@@ -135,7 +134,7 @@ def get_feeding_cords(data,camera_id, is_back):
 def get_feeding_box(data, TL_x, TL_y, TR_x, TR_y):
     scale = 2
     if abs(TL_x - TR_x) < abs(TL_y - TR_y):
-        # FRONT 
+        # FRONT
         p_len = abs(TL_y - TR_y)*scale
         f1 = data["xpx"] > TL_x - p_len
         f2 = data["ypx"] < TL_y + p_len
@@ -143,8 +142,8 @@ def get_feeding_box(data, TL_x, TL_y, TR_x, TR_y):
         TL_y+=p_len
         TR_y-=p_len
         box = np.array([(TL_x, TL_y), (TL_x-p_len, TL_y), (TR_x-p_len, TR_y), (TR_x, TR_y), (TL_x, TL_y)])
-    else: 
-        # BACK 
+    else:
+        # BACK
         p_len = abs(TL_x - TR_x)*scale
         f1 = data["ypx"] > TR_y - p_len
         f2 = data["xpx"] > TL_x - p_len
@@ -152,6 +151,6 @@ def get_feeding_box(data, TL_x, TL_y, TR_x, TR_y):
         TL_x-=p_len
         TR_x+=p_len
         box = np.array([(TL_x, TL_y), (TL_x, TL_y-p_len), (TR_x, TR_y-p_len), (TR_x, TR_y), (TL_x, TL_y)])
-        
+
     feeding = data[f1 & f2 & f3]
     return feeding, box

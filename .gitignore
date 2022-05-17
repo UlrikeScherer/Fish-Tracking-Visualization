@@ -1,12 +1,13 @@
-# speacial files 
+# speacial files
 log-path-validation.txt
 **/methods.html
 **/methods.c
-Metrics.ipynb 
+Metrics.ipynb
 *.pdf
 # MacOS
 .DS_Store
 **/.vscode
+scripts/env.sh
 
 # ignore FOLDERS
 /plots

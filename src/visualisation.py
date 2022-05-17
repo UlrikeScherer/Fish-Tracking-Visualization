@@ -5,7 +5,7 @@ import sys
 from src.utile import csv_of_the_day, get_position_string, get_time_for_day,BLOCK, ROOT_img, get_fish2camera_map, get_days_in_order, BACK, STIME, FEEDINGTIME
 from src.metrics import num_of_spikes, calc_step_per_frame, calc_length_of_steps, mean_std, get_gaps_in_dataframes, activity_mean_sd
 from src.transformation import pixel_to_cm
-from methods import avg_and_sum_angles # import cython functions for faster for-loops. 
+from methods import avg_and_sum_angles # import cython functions for faster for-loops.
 
 
 mpl.rcParams['lines.linewidth'] = 0.5
@@ -26,7 +26,7 @@ class Figure:
 
     def set_figure(self):
         """
-        is_back:  
+        is_back:
         marker_char: default "" no marker, optional maker_char = [o,*,+....]
         return: a figure triple (fig, ax, line)
         """
@@ -51,7 +51,7 @@ class Figure:
     def meta_text_for_plot(self, text_l=[], text_r=[]):
         """
         Optimal for 3 entries lext_l and 2 entries text_r
-        Returns a callback function to remove the text from ax 
+        Returns a callback function to remove the text from ax
         """
         pos_x1, pos_x2, pos_y = self.get_text_positions()
         if self.is_back:
@@ -63,13 +63,13 @@ class Figure:
 
     def get_text_positions(self):
         x_lim, y_lim = self.ax.get_xlim(), self.ax.get_ylim()
-        pos_y = y_lim[0] + (y_lim[1] - y_lim[0]) * 0.05 
+        pos_y = y_lim[0] + (y_lim[1] - y_lim[0]) * 0.05
         pos_x1 = x_lim[0] + (x_lim[1] - x_lim[0]) * 0.01
         pos_x2 = x_lim[0] + (x_lim[1] - x_lim[0]) * 0.7
-        if self.is_back: 
+        if self.is_back:
             pos_y = y_lim[1] - ((y_lim[1] - y_lim[0]) * 0.35)
         return pos_x1, pos_x2, pos_y
-    
+
     def remove_extra_lines(self,index=1):
         lines = self.ax.get_lines()
         for l in lines[index:]:
@@ -81,7 +81,7 @@ class Trajectory:
 
     def __init__(self, marker_char="", write_fig=True):
         self.write_fig = write_fig
-        self.fish2camera=get_fish2camera_map()
+        self.fish2camera=get_fish2camera_map(is_feeding = self.is_feeding)
         self.N_fishes = self.fish2camera.shape[0]
         self.fig_front = Figure(is_back=False, marker_char=marker_char)
         self.fig_back = Figure(is_back=True, marker_char=marker_char)
@@ -91,7 +91,7 @@ class Trajectory:
 
     def subplot_function(self, batch, date, directory, name, fish_id, time_span="batch: 1,   00:00:00 - 00:30:00", is_back=False):
         F = self.fig_back if is_back else self.fig_front
-        
+
         F.ax.set_title(time_span,fontsize=10)
         last_frame = batch.FRAME.array[-1]
         if (batch.xpx.array[-1] == -1 and batch.ypx.array[-1] == -1) or (batch.xpx.array[-1] == 0 and batch.ypx.array[-1] == 0): # remove error point, only need to carry it to this point to record the last frame number
@@ -116,7 +116,7 @@ class Trajectory:
         N = len(steps)
         misses = last_frame-N
         remove_text = F.meta_text_for_trajectory(mean, sd, avg_alpha, sum_alpha,spikes, misses, N)
-        
+
         if self.write_fig:
             F.write_figure(directory, name)
         remove_text()
@@ -128,32 +128,32 @@ class Trajectory:
         for i, fish_idx in enumerate(fish_ids):
             camera_id,pos = self.fish2camera[fish_idx]
             is_back = pos==BACK
-            day_list = get_days_in_order(is_feeding=self.is_feeding, camera=camera_id)
+            day_list = get_days_in_order(is_feeding=self.is_feeding, camera=camera_id, is_back=is_back)
             N_days = len(day_list)
             for j, day in enumerate(day_list):
                 sys.stdout.write('\r')
-                # write the progress to stdout 
+                # write the progress to stdout
                 progress = (i/N+j/(N*N_days))
                 sys.stdout.write("[%-20s] %d%%" % ('='*int(20*progress), 100*progress))
                 sys.stdout.flush()
-        
+
                 keys, day_df = csv_of_the_day(camera_id, day, is_back=is_back, drop_out_of_scope=True, is_feeding=self.is_feeding)
                 self.plot_day_camera_fast(day_df, keys, camera_id, day, fish_idx, is_back=is_back)
-        
-    def plot_day_camera_fast(self, data, keys, camera_id, date, fish_id, is_back=False):
+
+    def plot_day_camera_fast(self, data, keys, camera_id, date, fish_id, is_back):
         position = get_position_string(is_back)
         time_dir = FEEDINGTIME if self.is_feeding else STIME
         data_dir = "{}/{}/{}/{}/{}/{}".format(ROOT_img,time_dir, BLOCK, position, camera_id, date)
-        
+
         if len(data)==0:
             return None
-        
+
         nr_of_frames = 0
-        for idx in range(len(data)):       
+        for idx in range(len(data)):
                 batch = data[idx]
                 up = len(batch.x)-1
                 time_span="batch: {},    {} - {}".format(keys[idx],get_time_for_day(date,nr_of_frames),get_time_for_day(date, nr_of_frames+batch.FRAME[up]))
-                
+
                 fig = self.subplot_function(batch, date, data_dir, keys[idx], fish_id, time_span=time_span, is_back=is_back) # plot ij.pdf
                 nr_of_frames+=batch.FRAME[up]
         return None

@@ -13,6 +13,7 @@ STARTTIME=$RECORDINGTIME
 CSV_DIR=$path_csv
 MAX_IDX_OF_DAY=14
 SUBFIGURE_WIDTH="0.24\textwidth"
+SUBFIGURE_HEIGHT="0.24\textheight"
 LEGEND="\trajectorylegend"
 FILES="files"
 mkdir $FILES
@@ -33,10 +34,11 @@ if [ $feeding ]; then
     CSV_DIR=$path_csv_feeding
     MAX_IDX_OF_DAY=7
     SUBFIGURE_WIDTH="0.33\textwidth"
+    SUBFIGURE_HEIGHT="0.33\textheight"
     LEGEND="\feedinglegend"
 fi
 if [ $test ]; then
-    cameras=('23442333') 
+    cameras=('23442333')
     position=("front")
     echo "Testrun using $cameras, position: $position";
 fi
@@ -49,7 +51,7 @@ if [ $local ]; then
 fi
 echo "
 -------------------------
-START generating PDFs for: 
+START generating PDFs for:
 $BLOCK,
 $rootserver,
 $path_recordings,
@@ -62,8 +64,8 @@ mkdir -p trajectory/$STARTTIME/$BLOCK
 for b in ${!position[@]}; do
     echo -e "pdf for ${position[$b]} \n"
     POSITION_STR=${POS_STRINGS[$b]}
-    if [ $test ]; then 
-        echo "TEST" 
+    if [ $test ]; then
+        echo "TEST"
     else
         cameras="$(ls -d $CSV_DIR/$POSITION_STR/[0-9]*[0-9]/ | sort -V )"
     fi
@@ -72,7 +74,7 @@ for b in ${!position[@]}; do
         camera=$(basename ${cameras[$i]})
         echo $camera
         secff="$(ls -d $CSV_DIR/$POSITION_STR/${camera}/*.${camera}/ | sort -V | head -1 | sed 's/.*1550\([^.]*\).*/\1/')"
-        
+
         texheader="%\usepackage{etoolbox}
                     %% root folders: ---------------------
                     \newcommand\rootserver{$rootserver}
@@ -83,6 +85,7 @@ for b in ${!position[@]}; do
                     \newcommand\starttime{$STARTTIME}
                     \newcommand\maxindex{$MAX_IDX_OF_DAY}
                     \newcommand\subfigwidth{$SUBFIGURE_WIDTH}
+                    \newcommand\subfigheight{$SUBFIGURE_HEIGHT}
                     % ---------------------------------------
                     \newcounter{cnt}
                     \newcommand\textlist{}
@@ -93,7 +96,7 @@ for b in ${!position[@]}; do
                         \stepcounter{cnt}}
                     \newcommand\gettext[1]{%
                         \csuse{text#1}}
-                    % for subplots -------------- 
+                    % for subplots --------------
                     \newcounter{cntsub}
                     \newcommand\sublist{}
                     \newcommand\setsub[2]{%
@@ -118,7 +121,7 @@ for b in ${!position[@]}; do
         daysarray="$LEGEND"
         days="$(ls -d $CSV_DIR/$POSITION_STR/${camera}/*${STARTTIME}.${camera}*/ | sort -V )"
 
-        for d in $days; do 
+        for d in $days; do
             d=$(basename $d)
             day=${d: : 24}
             day_id=${day: : 15}
@@ -127,7 +130,7 @@ for b in ${!position[@]}; do
 
             filescsv="$(ls $CSV_DIR/$POSITION_STR/${camera}/*${STARTTIME}.${camera}*/${camera}_$day*.csv | sort -V)"
             C_i=0
-            for f in $filescsv; do 
+            for f in $filescsv; do
                 texheader="$texheader \setcsv{${day_id}$C_i}{\href{${PREFIX}${f}}{csv}}
                 "
                 let C_i++
@@ -138,7 +141,7 @@ for b in ${!position[@]}; do
             "
             filesmp4="$(ls $foldermp4/*.mp4 | sort -V)"
             C_i=0
-            for f in $filesmp4; do 
+            for f in $filesmp4; do
                 texheader="$texheader \setsub{${day_id}$C_i}{\href{$PREFIX$f}{mp4}}
                 "
                 let C_i++
@@ -147,11 +150,11 @@ for b in ${!position[@]}; do
         # daysarray=${daysarray%?}
         echo "${daysarray}" > $FILES/days_array.tex
         echo "$texheader" > $FILES/arrayoflinks.tex
-        if [ $feeding ]; then 
+        if [ $feeding ]; then
             echo "\input{$FILES/${BLOCK}_feedingtime.tex}" >> $FILES/arrayoflinks.tex
         fi
         END=2
-        for k in $(seq 1 $END); do 
+        for k in $(seq 1 $END); do
             #pdflatex "\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}"
             pdflatex --interaction=nonstopmode "\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}"
         done
