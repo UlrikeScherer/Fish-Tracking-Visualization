@@ -61,6 +61,17 @@ Compute: `function(fish_id, time_interval in sec)`
 
 #### Next Steps
 + t-sne or pca with step-length (mean, std), turning angle (mean, std), absolute turning angle, distance wall (mean, std), entropy.
++ TSNE for all the data
++ visualisation of stereotypical clusters
++ k-means refined  
+metrics -> pca -> TSNE
+
+
+1. create tSNE space w | clustered PC scores on all individuals/days.
+2. PC loadings of metrics. PC loads
+3. Clusters, how many, on PCA, carecterize/description of the clusters in terms of variation.
+4. k clusters, sequence length parameters.
+5. Repeat 1-3 but with different timesscale. ()
 
 #### Open TODOs
 + pdfs for windows -- adapted the root to `C:\data\...`. (Not needed for now)

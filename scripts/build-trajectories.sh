@@ -2,12 +2,11 @@
 
 source scripts/env.sh # get the following variables
 
+# continue inside the tex directory
 cd tex
-cameras=('23520289' '23484201' '23520258' '23442333' '23520268' '23520257' '23520266' '23484204' '23520278' '23520276' '23520270' '23520264')
 position=("front" "back")
 POS_STRINGS=($POSITION_STR_FRONT $POSITION_STR_BACK)
 PREFIX="file://" #run:
-
 
 STARTTIME=$RECORDINGTIME
 CSV_DIR=$path_csv
@@ -70,8 +69,8 @@ for b in ${!position[@]}; do
         cameras="$(ls -d $CSV_DIR/$POSITION_STR/[0-9]*[0-9]/ | sort -V )"
     fi
 
-    for i in ${!cameras[@]}; do
-        camera=$(basename ${cameras[$i]})
+    for cam in $cameras; do
+        camera=$(basename ${cam})
         echo $camera
         secff="$(ls -d $CSV_DIR/$POSITION_STR/${camera}/*.${camera}/ | sort -V | head -1 | sed 's/.*1550\([^.]*\).*/\1/')"
 
@@ -127,7 +126,9 @@ for b in ${!position[@]}; do
             day_id=${day: : 15}
             daysarray="$daysarray\plotdayupdate{${day_id}}
             "
-
+            # -----------
+            # CSV Files
+            # -----------
             filescsv="$(ls $CSV_DIR/$POSITION_STR/${camera}/*${STARTTIME}.${camera}*/${camera}_$day*.csv | sort -V)"
             C_i=0
             for f in $filescsv; do
@@ -135,17 +136,23 @@ for b in ${!position[@]}; do
                 "
                 let C_i++
             done
-
-            foldermp4="$(ls -d $path_recordings/${camera}/${day}*/ | head )"
-            texheader="$texheader \addtext{$PREFIX$foldermp4}
-            "
-            filesmp4="$(ls $foldermp4/*.mp4 | sort -V)"
-            C_i=0
-            for f in $filesmp4; do
-                texheader="$texheader \setsub{${day_id}$C_i}{\href{$PREFIX$f}{mp4}}
-                "
-                let C_i++
-            done
+            # ---------
+            # MP4 video files
+            # ---------
+            if [ $local ]; then
+              echo "--local is not reading mp4 file paths \n"
+            else
+              foldermp4="$(ls -d $path_recordings/${camera}/${day}*/ | head )"
+              texheader="$texheader \addtext{$PREFIX$foldermp4}
+              "
+              filesmp4="$(ls $foldermp4/*.mp4 | sort -V)"
+              C_i=0
+              for f in $filesmp4; do
+                  texheader="$texheader \setsub{${day_id}$C_i}{\href{$PREFIX$f}{mp4}}
+                  "
+                  let C_i++
+              done
+            fi
         done
         # daysarray=${daysarray%?}
         echo "${daysarray}" > $FILES/days_array.tex
@@ -153,6 +160,7 @@ for b in ${!position[@]}; do
         if [ $feeding ]; then
             echo "\input{$FILES/${BLOCK}_feedingtime.tex}" >> $FILES/arrayoflinks.tex
         fi
+        # run pdflatex two times
         END=2
         for k in $(seq 1 $END); do
             #pdflatex "\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}"
