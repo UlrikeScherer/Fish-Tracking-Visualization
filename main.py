@@ -2,7 +2,7 @@ import time
 import sys, os, inspect
 import matplotlib.pyplot as plt
 import numpy as np
-from src.utile import get_camera_names, DIR_CSV_LOCAL, MEAN_GLOBAL, print_tex_table, get_fish2camera_map,get_camera_pos_keys, N_FISHES, get_fish_ids, N_SECONDS_PER_HOUR
+from src.utile import get_camera_names, DIR_CSV_LOCAL, MEAN_GLOBAL, get_fish_ids, print_tex_table, get_fish2camera_map,get_camera_pos_keys, N_FISHES, N_SECONDS_PER_HOUR
 from src.visualisation import Trajectory
 from src.metrics import activity_per_interval, turning_angle_per_interval, tortuosity_per_interval, entropy_per_interval, metric_per_hour_csv, distance_to_wall_per_interval, absolute_angle_per_interval
 from src.activity_plotting import sliding_window, sliding_window_figures_for_tex
@@ -123,9 +123,12 @@ def main(program=None, test=0, time_interval=100, sw=10, fish_id=None):
     else:
         print("Please provide the program name which you want to run. One of: ", programs)
 
-    if program in ALL_METRICS and time_interval == N_SECONDS_PER_HOUR:
-        metric_per_hour_csv(**results)
 
+    if program in metric_names and time_interval == N_SECONDS_PER_HOUR:
+        metric_per_hour_csv(**results)
+        print("wrote hourly metrics to CSV file")
+    print("Done!")
+    return None 
 
 if __name__ == '__main__':
     tstart = time.time()
