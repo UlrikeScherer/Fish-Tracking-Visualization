@@ -96,11 +96,13 @@ def main(delete=0, n_files=15):
     n_files: defines how many files to expect in each folder, default is 15, for feeding use 8, for a log file that is more clear.
     """
     # past your path here as pathx
-    path1 = '/Volumes/Extreme_SSD/FE_tracks_retracked/FE_tracks_060000_block1_retracked_2/FE_060000_tracks_block1_%s_retracked_final'
-    path2 = '/Volumes/data/loopbio_data/FE_(fingerprint_experiment)_SepDec2021/FE_tracks_retracked/FE_tracks_060000_block1_retracked/FE_060000_tracks_block1_%s_retracked'
+    path1 = '/Volumes/Extreme_SSD/FE_block2_060000_retracks_final/FE_block2_060000_%s_final'
+    path2 = '/Volumes/Extreme_SSD/FE_block2_060000_retracks_final/FE_block2_060000_%s_final'
+
+  #  path2 = '/Volumes/data/loopbio_data/FE_(fingerprint_experiment)_SepDec2021/FE_tracks_retracked/FE_tracks_060000_block1_retracked/FE_060000_tracks_block1_%s_retracked'
 
     # select the path here and use the %s to replace "front" or "back"
-    PATH=path2
+    PATH=path1
     position = ["front", "back"]
     LOG = list()
     for p in position: # validating files for front and back position
