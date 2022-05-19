@@ -1,12 +1,52 @@
-from src.transformation import rotation, px2cm
+from re import L, T
+from src.transformation import rotation, px2cm, pixel_to_cm
 from methods import turning_directions, calc_steps, tortuosity_of_chunk, activity, turning_angle, absolute_angles
 from src.metrics import entropy_for_chunk, entropy_for_data, tortuosity, distance_to_wall
+from src.utile import get_error_indices, get_fish2camera_map, csv_of_the_day, BACK
+from src.tank_area_config import read_area_data_from_json
 from itertools import product
+import pandas as pd
 from scipy.spatial import ConvexHull
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
+
+MU_STR, SD_STR = "mu", "sd"
+
+def get_traces(fish_indices, days, trace_size):
+    fish2cams = get_fish2camera_map()
+    Xs, nSs = list(), list()
+    area_data = read_area_data_from_json()
+    
+    for i in fish_indices:
+        cam, is_back = fish2cams[i][0], fish2cams[i][1]==BACK
+        fish_key = "%s_%s"%(cam, fish2cams[i,1])
+        for d in days:
+            keys, batches = csv_of_the_day(cam, d, is_back=is_back)
+            if len(batches) == 0: continue
+            b = pd.concat(batches)
+            fit_len = fit_data_to_trace_size(len(b), trace_size) 
+            data = b[["xpx", "ypx"]].to_numpy()[:fit_len]
+            filter_index = get_error_indices(b).to_numpy()[:fit_len]
+
+            X=transfrom_to_traces_metric_based(data, trace_size, filter_index, (fish_key,area_data[fish_key]))
+            Xs.append(X)
+            nSs.append(trajectory_snippets(data, trace_size))
+    traces = np.concatenate(Xs)
+    traces = normalize_data_metrics(traces)
+    nSs = np.concatenate(nSs)
+    return traces, nSs
+
+def fit_data_to_trace_size(size1, trace_size):
+    n_snippets = size1 // trace_size
+    length = n_snippets * trace_size
+    return length
+
+def trajectory_snippets(data, trace_size):
+    size1, size2 = data.shape
+    n_snippets = size1 // trace_size
+    return np.reshape(data,(n_snippets,trace_size, size2))
 
 def rotate_trace(trace):
     alph = np.arctan2(*trace[0])
@@ -23,43 +63,25 @@ def transfrom_to_traces(batch, trace_size):
     X = np.reshape(newSet, (sizeSet, trace_size*2))
     return X, newSet
 
-def transfrom_to_traces2(batch, trace_size):
-    setX = batch[["xpx", "ypx"]].to_numpy()
-    #setX = setX[1:]-setX[:-1]
-    steps = calc_steps(setX)
-    angels = turning_directions(setX) 
-    #print(len(steps), len(angels))
-    lenX = setX.shape[0]
-    sizeSet = int(lenX/trace_size)
-    newSet = np.zeros((sizeSet,trace_size,2))
-    for i in range(sizeSet):
-        newSet[i,:,0] = steps[i*trace_size:(i+1)*trace_size]
-        if len(angels)<=i: continue
-        newSet[i,:,1] = angels[i*trace_size:(i+1)*trace_size]
-    X = np.reshape(newSet, (sizeSet, trace_size*2))
-    return X, transfrom_to_traces(batch, trace_size)[1]
-
 def get_metrics_for_traces():
-    metrics_f = [activity, turning_angle, absolute_angles, entropy_for_data, tortuosity, distance_to_wall] 
-    names = ["%s_%s"%(m,s) for m,s in product(map(lambda m: m.__name__, metrics_f), ["mu", "sd"])]
+    metrics_f = [activity, turning_angle, absolute_angles, entropy_for_data, distance_to_wall] 
+    names = ["%s_%s"%(m,s) for m,s in product(map(lambda m: m.__name__, metrics_f), [MU_STR, SD_STR])]
     return metrics_f, names
 
-def transfrom_to_traces_metric_based(batch, trace_size, filter_index, area):
-    setX = batch[["xpx", "ypx"]].to_numpy()
-    lenX = setX.shape[0]
-    sizeSet = int(np.ceil(lenX/trace_size))
-    metric_functions, _ = get_metrics_for_traces() #
+def transfrom_to_traces_metric_based(data, trace_size, filter_index, area):
+    lenX = data.shape[0]
+    sizeSet = lenX//trace_size
+    metric_functions, names = get_metrics_for_traces() #
     newSet = np.zeros((sizeSet,len(metric_functions)*2))
     for i, f in enumerate(metric_functions):
         idx = i*2
         if f.__name__ == distance_to_wall.__name__ or f.__name__ == entropy_for_data.__name__:
-            newSet[:,idx:idx+2] = f(setX, trace_size, filter_index, area)
+            newSet[:,idx:idx+2] = f(data, trace_size, filter_index, area)
         else:
-            newSet[:,idx:idx+2] = f(setX, trace_size, filter_index)
-
+            newSet[:,idx:idx+2] = f(pixel_to_cm(data), trace_size, filter_index)
+    remove_7 = np.array(names) != "%s_%s" % (entropy_for_data.__name__, SD_STR)
     np.nan_to_num(newSet, copy=False, nan=0.0)
-
-    return newSet, transfrom_to_traces(batch, trace_size)[1]
+    return newSet[:, remove_7]
         
 def normalize_data(traces):
     d_std, d_mean = np.std(traces[:,0::2]), np.mean(traces[:,0::2])
@@ -164,4 +186,17 @@ def plot_lines_cumsum(lines_to_plot, limit=20, ax=None, title="x:, y: "):
             ax.plot(line[:,0], line[:,1])
             
     plt.savefig("lines_exp.pdf")
-    
+
+def plot_lines(lines_to_plot, ax=None, title="x:, y: "):
+    if ax is not None: ax.set_title(title)
+    for line in lines_to_plot:
+        if ax is None:
+            plt.plot(line[:,0], line[:,1])
+        else: 
+            ax.plot(line[:,0], line[:,1])
+
+def boxplot_characteristics_of_cluster(traces_c, ax):
+    _, metric_names = get_metrics_for_traces()
+    metric_names.remove("%s_%s"%(entropy_for_data.__name__, SD_STR))
+    ax.boxplot([*traces_c.T], labels=metric_names, showfliers=False)
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right")

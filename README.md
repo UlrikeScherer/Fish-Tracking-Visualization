@@ -52,9 +52,9 @@ Compute: `function(fish_id, time_interval in sec)`
 
 #### Start on the GPU
 + conda activate rapids-22.04
-+ srun --pty --partition=scioi_gpu --gres=gpu:tesla:1 --time=0-02:00 bash -i
++ srun --pty --partition=ex_scioi_gpu --gres=gpu:1 --time=0-02:00 bash -i
 + Type `ifconfig` and get the `inet` entry for `eth0`, i.e. the IP address of the node
-+ `ssh -L localhost:5000:localhost:5000 [your username]@[IP address you've found out]`
++ `ssh -L localhost:5000:localhost:5000 luka.staerk@[IP address you've found out]`
 + On the compute node, start your notebook with `jupyter-lab --no-browser --port=5000`
 + In your browser go to localhost:5000
 

@@ -109,10 +109,11 @@ def entropy_for_chunk(chunk, area_tuple):
 def average_by_metric(data, frame_interval, avg_metric_f, error_index):
     SIZE = data.shape[0]
     len_out = int(np.ceil(SIZE/frame_interval))
-    mu_sd = np.zeros([len_out,2], dtype=float)
+    mu_sd = np.zeros([len_out,3], dtype=float)
     for i,s in enumerate(range(frame_interval, data.shape[0]+frame_interval, frame_interval)):
         chunk = data[s-frame_interval:s][~ error_index[s-frame_interval:s]]
-        mu_sd[i,:] = avg_metric_f(chunk)
+        mu_sd[i,:2] = avg_metric_f(chunk)
+        mu_sd[i,2] = len(chunk)
     return mu_sd
 
 def entropy_for_data(data, frame_interval, error_index, area):
@@ -158,7 +159,7 @@ def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100
                     data = pixel_to_cm(df[["xpx", "ypx"]].to_numpy())
                     result = metric(data,time_interval*FRAMES_PER_SECOND, err_filter)
                 day_dict[day]=result
-            else: day_dict[day]=np.empty([0, 2])
+            else: day_dict[day]=np.empty([0, 3])
         results[fish_key]=day_dict
     if write_to_csv:
         metric_data_to_csv(**package)
@@ -177,7 +178,7 @@ def metric_data_to_csv(results=None, metric_name=None, time_interval=None):
             print("# WARNING: for %s time and results have unequal dimentions: time: %s results: %s "%(cam_pos, time_np,concat_r))
             continue
         data = np.concatenate((time_np, concat_r), axis=1)
-        df = pd.DataFrame(data, columns=["day", "time", "mean", "std"])
+        df = pd.DataFrame(data, columns=["day", "time", "mean", "std", "number_of_valid_data_points"])
         directory="%s/%s/%s/"%(DATA_results, BLOCK,metric_name)
         os.makedirs(directory, exist_ok=True)
         df.to_csv("%s/%s_%s.csv"%(directory,time_interval,cam_pos),sep=sep, float_format=float_format)
@@ -192,14 +193,17 @@ def metric_per_hour_csv(results=None, metric_name=None, time_interval=None):
     df_d = pd.DataFrame(data=data,columns=days)
     df_mean = pd.concat((df,df_d),axis=1)
     df_std = df_mean.copy()
+    df_n_valid = df_mean.copy()
     for i,(cam_pos, fish) in enumerate(results.items()):
         for j,(day,day_data) in enumerate(fish.items()):
             idx = i*HOURS_PER_DAY
             k = idx + day_data.shape[0]-1
             df_mean.loc[idx:k, day] = day_data[:,0]
             df_std.loc[idx:k, day] = day_data[:,1]
+            df_n_valid.loc[idx:k, day] = day_data[:,2]
     df_mean.to_csv("%s/%s/%s_mean.csv"%(DATA_results, BLOCK, metric_name),sep=sep, float_format=float_format)
     df_std.to_csv("%s/%s/%s_std.csv"%(DATA_results, BLOCK, metric_name),sep=sep, float_format=float_format)
+    df_n_valid.to_csv("%s/%s/%s_num_valid_datapoints.csv"%(DATA_results, BLOCK, metric_name),sep=sep)
 
 def activity_per_interval(*args, **kwargs):
     return metric_per_interval(*args, **kwargs, metric=activity)
@@ -220,6 +224,8 @@ def entropy_per_interval(*args, **kwargs):
 def distance_to_wall_per_interval(*args, **kwargs):
     area_data = read_area_data_from_json()
     return metric_per_interval(*args, **kwargs, metric=distance_to_wall, area_data=area_data)
+
+
 
 # function that returns a boolean deciding if it is odd or even
 # python loop
