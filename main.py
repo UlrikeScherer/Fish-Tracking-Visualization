@@ -23,7 +23,10 @@ metric_names = [ACTIVITY, TURNING_ANGLE, ABS_ANGLE, TORTUOSITY, ENTROPY, WALL_DI
 def map_r_to_idx(results, fish_idx):
     return [results[i] for i in fish_idx]
 
-def plotting_odd_even(results, time_interval=None, metric_name=None, name=None, ylabel=None, sw=10, **kwargs):
+def plotting_odd_even(results, time_interval=None, metric_name=None, name=None, ylabel=None, sw=10, visualize=None, **kwargs):
+    ###
+    if visualize is None:
+        return None
     fish_keys = list(results.keys())
     fk_len = len(fish_keys)
     batch_size = 6
@@ -46,7 +49,7 @@ def plotting_odd_even(results, time_interval=None, metric_name=None, name=None, 
         plt.close(f_)
         sliding_window_figures_for_tex(results, time_interval, sw=sw, fish_keys=batch_keys, fish_labels=fish_labels[batch], ylabel=ylabel, name=names[i], **kwargs)
 
-def main(program=None, test=0, time_interval=100, sw=10, fish_id=None):
+def main(program=None, test=0, time_interval=100, sw=10, fish_id=None, visualize=None):
     """param:   test, 0,1 when test==1 run test mode
                 program: trajectory, activity, turning_angle
                 time_interval: kwarg for the programs activity, turning_angle
@@ -81,7 +84,7 @@ def main(program=None, test=0, time_interval=100, sw=10, fish_id=None):
         print("For fish indices: %s"%(fish_ids))
 
     kwargs_metrics=dict(fish_ids=fish_ids, time_interval=time_interval, write_to_csv=True)
-    kwargs_plotting=dict(name=file_name, sw=sw)
+    kwargs_plotting=dict(name=file_name, sw=sw, visualize=visualize)
 
     if program == TRAJECTORY:
         T = Trajectory()
@@ -128,7 +131,7 @@ def main(program=None, test=0, time_interval=100, sw=10, fish_id=None):
         metric_per_hour_csv(**results)
         print("wrote hourly metrics to CSV file")
     print("Done!")
-    return None 
+    return None
 
 if __name__ == '__main__':
     tstart = time.time()
