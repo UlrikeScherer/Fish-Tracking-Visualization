@@ -76,9 +76,9 @@ def transfrom_to_traces_metric_based(data, trace_size, filter_index, area):
     for i, f in enumerate(metric_functions):
         idx = i*2
         if f.__name__ == distance_to_wall.__name__ or f.__name__ == entropy_for_data.__name__:
-            newSet[:,idx:idx+2] = f(data, trace_size, filter_index, area)
+            newSet[:,idx:idx+2] = f(data, trace_size, filter_index, area)[:,:2]
         else:
-            newSet[:,idx:idx+2] = f(pixel_to_cm(data), trace_size, filter_index)
+            newSet[:,idx:idx+2] = f(pixel_to_cm(data), trace_size, filter_index)[:,:2]
     remove_7 = np.array(names) != "%s_%s" % (entropy_for_data.__name__, SD_STR)
     np.nan_to_num(newSet, copy=False, nan=0.0)
     return newSet[:, remove_7]
