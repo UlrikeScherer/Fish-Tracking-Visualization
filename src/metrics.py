@@ -178,7 +178,7 @@ def metric_data_to_csv(results=None, metric_name=None, time_interval=None):
             print("# WARNING: for %s time and results have unequal dimentions: time: %s results: %s "%(cam_pos, time_np,concat_r))
             continue
         data = np.concatenate((time_np, concat_r), axis=1)
-        df = pd.DataFrame(data, columns=["day", "time", "mean", "std", "#valid"])
+        df = pd.DataFrame(data, columns=["day", "time", "mean", "std", "number_of_valid_data_points"])
         directory="%s/%s/%s/"%(DATA_results, BLOCK,metric_name)
         os.makedirs(directory, exist_ok=True)
         df.to_csv("%s/%s_%s.csv"%(directory,time_interval,cam_pos),sep=sep, float_format=float_format)
@@ -203,7 +203,7 @@ def metric_per_hour_csv(results=None, metric_name=None, time_interval=None):
             df_n_valid.loc[idx:k, day] = day_data[:,2]
     df_mean.to_csv("%s/%s/%s_mean.csv"%(DATA_results, BLOCK, metric_name),sep=sep, float_format=float_format)
     df_std.to_csv("%s/%s/%s_std.csv"%(DATA_results, BLOCK, metric_name),sep=sep, float_format=float_format)
-    df_n_valid.to_csv("%s/%s/%s_num_valid_frames.csv"%(DATA_results, BLOCK, metric_name),sep=sep)
+    df_n_valid.to_csv("%s/%s/%s_num_valid_datapoints.csv"%(DATA_results, BLOCK, metric_name),sep=sep)
 
 def activity_per_interval(*args, **kwargs):
     return metric_per_interval(*args, **kwargs, metric=activity)
