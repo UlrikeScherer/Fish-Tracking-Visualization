@@ -2,7 +2,7 @@ from re import L, T
 from src.transformation import rotation, px2cm, pixel_to_cm
 from methods import turning_directions, calc_steps, tortuosity_of_chunk, activity, turning_angle, absolute_angles
 from src.metrics import entropy_for_chunk, entropy_for_data, tortuosity, distance_to_wall
-from src.utile import get_error_indices, get_fish2camera_map, csv_of_the_day, BACK
+from src.utile import get_error_indices,error_points_out_of_area, get_fish2camera_map, csv_of_the_day, BACK
 from src.tank_area_config import read_area_data_from_json
 from itertools import product
 import pandas as pd
@@ -28,9 +28,11 @@ def get_traces(fish_indices, days, trace_size):
             b = pd.concat(batches)
             fit_len = fit_data_to_trace_size(len(b), trace_size) 
             data = b[["xpx", "ypx"]].to_numpy()[:fit_len]
-            filter_index = get_error_indices(b).to_numpy()[:fit_len]
+            area_tuple = (fish_key,area_data[fish_key])
+            ## filter for errorouse datapoints 
+            filter_index = get_error_indices(b).to_numpy()[:fit_len] | error_points_out_of_area(data, area_tuple, day=d)[:fit_len]
 
-            X=transfrom_to_traces_metric_based(data, trace_size, filter_index, (fish_key,area_data[fish_key]))
+            X=transfrom_to_traces_metric_based(data, trace_size, filter_index, area_tuple)
             Xs.append(X)
             nSs.append(trajectory_snippets(data, trace_size))
     traces = np.concatenate(Xs)

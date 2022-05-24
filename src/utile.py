@@ -176,6 +176,18 @@ def get_error_indices(dataframe):
     indexNames = ((x == -1) & (y == -1)) | ((x == 0) & (y == 0)) # except the last index for time recording
     return indexNames
 
+def error_points_out_of_area(data, area_tuple, day=""):
+    """ returns a boolean np.array, where true indecates weather the corresponding datapoint is on the wrong side of the tank"""
+    key, area = area_tuple
+    is_back = BACK in key
+    AB = area[2]-area[1]
+    AP = data - area[1]
+    error_filter = (AP[:,1]*AB[0] - AP[:,0]*AB[1] < 0)==is_back # cross product (a1b2−a2b1) 
+    #if np.any(error_filter):
+        #print("For id: %s, %s %d dataframes out of %d where on the otherside of the tank. They are beeing filtered out." % (key,day, error_filter.sum(), data.shape[0]))
+    return error_filter             
+
+
 def merge_files(filenames, drop_errors):
     batches = []
     for f in filenames:
