@@ -9,6 +9,7 @@ import json
 from itertools import product
 from envbash import load_envbash
 from path_validation import filter_files
+from methods import distance_to_wall_chunk
 load_envbash('scripts/env.sh')
 
 # Calculated MEAN and SD for the data set filtered for erroneous frames
@@ -22,6 +23,8 @@ ROOT_LOCAL=os.environ["root_local"]
 DIR_CSV=os.environ["path_csv"] #
 DIR_CSV_LOCAL=os.environ["path_csv_local"] #
 BLOCK = os.environ["BLOCK"] # block1 or block2
+BLOCK1 = "block1"
+BLOCK2 = "block2"
 
 # TRAJECTORY
 dir_front = os.environ["dir_front"]
@@ -46,7 +49,9 @@ HOURS_PER_DAY = 8
 N_SECONDS_PER_HOUR = 3600
 N_SECONDS_OF_DAY = 24*N_SECONDS_PER_HOUR
 
-def get_directory(is_feeding=False, is_back=False):
+def get_directory(is_feeding=None, is_back=None):
+    if is_feeding is None or is_back is None:
+        raise Exception("define kwargs")
     if is_feeding:
         if is_back: return dir_feeding_back
         else: return dir_feeding_front
@@ -176,6 +181,9 @@ def get_error_indices(dataframe):
     indexNames = ((x == -1) & (y == -1)) | ((x == 0) & (y == 0)) # except the last index for time recording
     return indexNames
 
+def error_default_points(x,y):
+    return  ((x == -1) & (y == -1)) | ((x == 0) & (y == 0))
+
 def error_points_out_of_area(data, area_tuple, day=""):
     """ returns a boolean np.array, where true indecates weather the corresponding datapoint is on the wrong side of the tank"""
     key, area = area_tuple
@@ -183,9 +191,12 @@ def error_points_out_of_area(data, area_tuple, day=""):
     AB = area[2]-area[1]
     AP = data - area[1]
     error_filter = (AP[:,1]*AB[0] - AP[:,0]*AB[1] < 0)==is_back # cross product (a1b2−a2b1) 
-    #if np.any(error_filter):
-        #print("For id: %s, %s %d dataframes out of %d where on the otherside of the tank. They are beeing filtered out." % (key,day, error_filter.sum(), data.shape[0]))
-    return error_filter             
+    err_default = error_default_points(data[:,0], data[:,1]) 
+    error_non_default = error_filter & ~ err_default
+    error_non_default[error_non_default] = distance_to_wall_chunk(data[error_non_default], area) > 60 # in pixels 
+    if np.any(error_non_default): # ef and not ed 
+        print("For id: %s, %s %d dataframes out of %d where on the other side of the tank. They are beeing filtered out." % (key,day, error_non_default.sum(), data.shape[0]))
+    return error_non_default             
 
 
 def merge_files(filenames, drop_errors):
@@ -200,9 +211,8 @@ def csv_of_the_day(camera, day, is_back=False, drop_out_of_scope=False, is_feedi
     @params: camera, day, is_back, drop_out_of_scope
     returns csv of the day for camera: front or back
     """
-    dir_ = dir_back if is_back else dir_front
-    if is_feeding:
-        dir_ = dir_feeding_back if is_back else dir_feeding_front
+
+    dir_ = get_directory(is_feeding=is_feeding, is_back=is_back)
 
     filenames_f = [f for f in glob.glob("{}/{}/{}*/{}_{}*.csv".format(dir_, camera, day, camera, day), recursive=True) if re.search(r'[0-9].*\.csv$', f[-6:])]
 

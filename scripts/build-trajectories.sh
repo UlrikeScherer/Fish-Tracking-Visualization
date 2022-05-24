@@ -18,14 +18,22 @@ FILES="files"
 mkdir $FILES
 
 while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        #-b|--block) block="$2"; shift ;;
-        -t|--test) test=1 ;;
-        -f|--feeding) feeding=1;;
-        -l|--local) local=1;;
-        *) echo "Unknown parameter passed: $1"; exit 1 ;;
-    esac
+    if [[ "$set_cam" == "1" ]]; then
+        cameras=("$1")
+        set_cam=2
+        echo "cam is $cameras"
+    else
+        case $1 in
+            #-b|--block) block="$2"; shift ;;
+            -t|--test) test=1 ;;
+            -f|--feeding) feeding=1;;
+            -l|--local) local=1;;
+            -cam|--cam-id) set_cam=1;;
+            *) echo "Unknown parameter passed: $1"; exit 1 ;;
+        esac
+    fi
     shift
+    
 done
 if [ $feeding ]; then
     STARTTIME=$FEEDINGTIME
@@ -63,7 +71,7 @@ mkdir -p trajectory/$STARTTIME/$BLOCK
 for b in ${!position[@]}; do
     echo -e "pdf for ${position[$b]} \n"
     POSITION_STR=${POS_STRINGS[$b]}
-    if [ $test ]; then
+    if [[ $test || "$set_cam" == "2" ]]; then
         echo "TEST"
     else
         cameras="$(ls -d $CSV_DIR/$POSITION_STR/[0-9]*[0-9]/ | sort -V )"

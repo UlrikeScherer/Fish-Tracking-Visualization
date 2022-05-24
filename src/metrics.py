@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.stats import entropy
 from src.utile import *
-from src.tank_area_config import read_area_data_from_json
+from src.tank_area_config import get_area_functions, get_area_functions
 from src.transformation import pixel_to_cm, px2cm
 from methods import activity, calc_steps, turning_angle, tortuosity_of_chunk, distance_to_wall_chunk, mean_std, absolute_angles #cython
 import pandas as pd
@@ -146,7 +146,7 @@ def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100
     if isinstance(fish_ids, int):
         fish_ids = [fish_ids]
     fish2camera = get_fish2camera_map()
-    area_data = read_area_data_from_json()
+    area_func = get_area_functions()
     results = dict()
     package = dict(metric_name=metric.__name__, time_interval=time_interval, results=results)
     for i,fish in enumerate(fish_ids):
@@ -159,7 +159,7 @@ def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100
             if len(df_day)>0:
                 df = pd.concat(df_day)
                 data = df[["xpx", "ypx"]].to_numpy()  
-                area_tuple = (fish_key, area_data[fish_key])
+                area_tuple = (fish_key, area_func(fish_key, day=day))
                 err_filter = get_error_indices(df).to_numpy() | error_points_out_of_area(data, area_tuple)
                 if metric.__name__ in [entropy_for_data.__name__, distance_to_wall.__name__]:
                                            # DISTANCE TO WALL METRIC

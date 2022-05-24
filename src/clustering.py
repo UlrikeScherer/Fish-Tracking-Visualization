@@ -3,7 +3,7 @@ from src.transformation import rotation, px2cm, pixel_to_cm
 from methods import turning_directions, calc_steps, tortuosity_of_chunk, activity, turning_angle, absolute_angles
 from src.metrics import entropy_for_chunk, entropy_for_data, tortuosity, distance_to_wall
 from src.utile import get_error_indices,error_points_out_of_area, get_fish2camera_map, csv_of_the_day, BACK
-from src.tank_area_config import read_area_data_from_json
+from src.tank_area_config import get_area_functions
 from itertools import product
 import pandas as pd
 from scipy.spatial import ConvexHull
@@ -17,7 +17,7 @@ MU_STR, SD_STR = "mu", "sd"
 def get_traces(fish_indices, days, trace_size):
     fish2cams = get_fish2camera_map()
     Xs, nSs = list(), list()
-    area_data = read_area_data_from_json()
+    area_func = get_area_functions()
     
     for i in fish_indices:
         cam, is_back = fish2cams[i][0], fish2cams[i][1]==BACK
@@ -28,7 +28,7 @@ def get_traces(fish_indices, days, trace_size):
             b = pd.concat(batches)
             fit_len = fit_data_to_trace_size(len(b), trace_size) 
             data = b[["xpx", "ypx"]].to_numpy()[:fit_len]
-            area_tuple = (fish_key,area_data[fish_key])
+            area_tuple = (fish_key,area_func(fish_key, day=d))
             ## filter for errorouse datapoints 
             filter_index = get_error_indices(b).to_numpy()[:fit_len] | error_points_out_of_area(data, area_tuple, day=d)[:fit_len]
 
