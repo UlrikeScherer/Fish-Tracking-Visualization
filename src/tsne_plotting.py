@@ -1,6 +1,8 @@
 import plotly.express as px
-from scipy.spatial import ConvexHull, convex_hull_plot_2d
+from scipy.spatial import ConvexHull
 import plotly.graph_objects as go
+import numpy as np
+from clustering import *
 
 def get_convex_hull(points): 
     hull = ConvexHull(points)
@@ -74,15 +76,15 @@ def draw_raw_density_TSNE(X_embedded, fig_name="raw_density_TSNE"):
     fig.write_image("%s.pdf"%fig_name)
     return fig
 
-    def plot_lines_from_locations(X_embedded, samples, radius=2, bins=10, limit=10, fig_name="line_clusters.pdf"):
-        set_N, centers = set_of_neighbourhoods(X_embedded, samples, radius=radius, bins=bins)
-        nrows=2
-        len_N = int(len(set_N)/nrows)
+def plot_lines_from_locations(X_embedded, samples, radius=2, bins=10, limit=10, fig_name="line_clusters.pdf"):
+    set_N, centers = set_of_neighbourhoods(X_embedded, samples, radius=radius, bins=bins)
+    nrows=2
+    len_N = int(len(set_N)/nrows)
 
-        fig, axs = plt.subplots(nrows=nrows,ncols=len_N, figsize=(len_N*4,nrows*4),sharex=True, sharey=True)
-        c_i=0
-        for l_key, ax in zip(set_N.keys(),np.concatenate(axs)):
-            plot_lines_cumsum(set_N[l_key], ax=ax, title="cluster: %d, %s"%(c_i,l_key), limit=limit)
-            c_i+=1
-        fig.savefig(fig_name)
-        return np.array(centers)
+    fig, axs = plt.subplots(nrows=nrows,ncols=len_N, figsize=(len_N*4,nrows*4),sharex=True, sharey=True)
+    c_i=0
+    for l_key, ax in zip(set_N.keys(),np.concatenate(axs)):
+        plot_lines_cumsum(set_N[l_key], ax=ax, title="cluster: %d, %s"%(c_i,l_key), limit=limit)
+        c_i+=1
+    fig.savefig(fig_name)
+    return np.array(centers)
