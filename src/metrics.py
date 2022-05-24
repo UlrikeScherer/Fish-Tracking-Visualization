@@ -92,11 +92,12 @@ def entropy_for_chunk(chunk, area_tuple):
     area = tuple(fish_key, data)
     retrun entropy, std * 100
     """
-    if chunk.shape[0] == 0.0:
+    if chunk.shape[0] == 0:
         return np.nan, np.nan
     fish_key, area = area_tuple
-    xmin, xmax = min(area[:,0]), max(area[:,0])
-    ymin, ymax = min(area[:,1]), max(area[:,1])
+    th = 60
+    xmin, xmax = min(area[:,0])-th, max(area[:,0])+th
+    ymin, ymax = min(area[:,1])-th, max(area[:,1])+th
     
     hist = np.histogram2d(chunk[:,0],chunk[:,1], bins=(18, 18), density=False, range=[[xmin, xmax], [ymin, ymax]])[0]
 
@@ -105,8 +106,14 @@ def entropy_for_chunk(chunk, area_tuple):
         tri = np.triu_indices(l_y, k=-3)
     else: # if front the lower triangle +3
         tri = np.tril_indices(l_y, k=3)
-    if np.sum(hist) > 1.0 * np.sum(hist[tri]):
-        print("Warning the selected area for entropy has lost some points: ", "sum hist: ",np.sum(hist),  "sum selection: ", sum(hist[tri]), "\n", fish_key)
+    sum_hist = np.sum(hist)
+    if sum_hist == 0: #
+        print("Warning for %s all %d data points where not in der range of histogram and removed"%(fish_key, chunk.shape[0]))
+        return np.nan, np.nan
+    if chunk.shape[0] > sum_hist:
+        print("Warning for %s %d out of %d data points where not in der range of histogram and removed"%(fish_key, chunk.shape[0]-sum_hist, chunk.shape[0]))
+    if sum_hist > np.sum(hist[tri]):
+        print("Warning for %s the selected area for entropy has lost some points: "%fish_key, "sum hist: ",np.sum(hist),  "sum selection: ", sum(hist[tri]), "\n", fish_key)
         print("entropy: ", entropy(hist[tri]))
         plt.plot(*area.T)
         plt.plot(*chunk.T, "*")

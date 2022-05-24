@@ -190,10 +190,13 @@ def error_points_out_of_area(data, area_tuple, day=""):
     is_back = BACK in key
     AB = area[2]-area[1]
     AP = data - area[1]
-    error_filter = (AP[:,1]*AB[0] - AP[:,0]*AB[1] < 0)==is_back # cross product (a1b2−a2b1) 
+    if is_back:
+        error_filter = (AP[:,1]*AB[0] - AP[:,0]*AB[1] <= 0) # cross product (a1b2−a2b1) 
+    else: 
+        error_filter = (AP[:,1]*AB[0] - AP[:,0]*AB[1] >= 0) # cross product (a1b2−a2b1) 
     err_default = error_default_points(data[:,0], data[:,1]) 
     error_non_default = error_filter & ~ err_default
-    error_non_default[error_non_default] = distance_to_wall_chunk(data[error_non_default], area) > 60 # in pixels 
+    #error_non_default[error_non_default] = distance_to_wall_chunk(data[error_non_default], area) > 30 # in pixels 
     if np.any(error_non_default): # ef and not ed 
         print("For id: %s, %s %d dataframes out of %d where on the other side of the tank. They are beeing filtered out." % (key,day, error_non_default.sum(), data.shape[0]))
     return error_non_default             
