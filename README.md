@@ -26,6 +26,7 @@ and then run the `bash`-script:
     -  `--feeding` or `-f` for the feeding trajectories.
     -  `--test`, `-t` is used to test the script, to generate only the fist pdf.
     - `--local`, `-l` to use the paths of the local hard drive to link the csv file in the pdf.
+    - `--cam-id cameraID, -cam cameraID_position`, to create only the pdf for the given camera. 
 **Remark:** For the bash-script you can not build feeding and non feeding trajectories in parallel as they use the same files.
 
 #### Activity metrics
