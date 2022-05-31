@@ -1,8 +1,9 @@
+import os
 from re import L, T
 from src.transformation import rotation, px2cm, pixel_to_cm
-from methods import turning_directions, calc_steps, tortuosity_of_chunk, activity, turning_angle, absolute_angles
-from src.metrics import entropy_for_chunk, entropy_for_data, tortuosity, distance_to_wall
-from src.utile import get_error_indices,error_points_out_of_area, get_fish2camera_map, csv_of_the_day, BACK
+from methods import activity, turning_angle, absolute_angles
+from src.metrics import entropy_for_data, distance_to_wall, sep
+from src.utile import BATCH_SIZE, BLOCK, STIME, get_error_indices,error_points_out_of_area, get_fish2camera_map, csv_of_the_day, BACK
 from src.tank_area_config import get_area_functions
 from itertools import product
 import pandas as pd
@@ -13,8 +14,27 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 
 MU_STR, SD_STR = "mu", "sd"
+DIR_TRACES = "%s/%s/%s"%("results",BLOCK,"traces")
 
-def get_traces(fish_indices, days, trace_size):
+def get_traces_type():
+    _, names = get_metrics_for_traces()
+    traces_type = np.dtype({
+        'names': ["CAMERA_POSITION","DAY", "BATCH", "DATAFRAME"]+names,
+        'formats': ["str"]*4 + ["f4"]*len(names)
+    })
+    return traces_type
+
+def get_trace_file_path(trace_size):
+    return "%s/traces_%s_%s_%s.csv"%(DIR_TRACES, BLOCK, STIME, trace_size)
+    
+def load_traces(trace_size):
+    trace_path = get_trace_file_path(trace_size)
+    if not os.path.exists(trace_path):
+        raise Exception("Trace for path %s does not exist"%trace_path)
+    traces = pd.read_csv(trace_path, delimiter=sep)
+    return traces
+
+def calculate_traces(fish_indices, days, trace_size, write_to_file=False):
     fish2cams = get_fish2camera_map()
     Xs, nSs = list(), list()
     area_func = get_area_functions()
@@ -23,7 +43,8 @@ def get_traces(fish_indices, days, trace_size):
         cam, is_back = fish2cams[i][0], fish2cams[i][1]==BACK
         fish_key = "%s_%s"%(cam, fish2cams[i,1])
         for d in days:
-            keys, batches = csv_of_the_day(cam, d, is_back=is_back)
+            batch_keys, batches = csv_of_the_day(cam, d, is_back=is_back)
+
             if len(batches) == 0: continue
             b = pd.concat(batches)
             fit_len = fit_data_to_trace_size(len(b), trace_size) 
@@ -32,13 +53,36 @@ def get_traces(fish_indices, days, trace_size):
             ## filter for errorouse datapoints 
             filter_index = get_error_indices(b).to_numpy()[:fit_len] | error_points_out_of_area(data, area_tuple, day=d)[:fit_len]
 
-            X=transfrom_to_traces_metric_based(data, trace_size, filter_index, area_tuple)
-            Xs.append(X)
+            X=transform_to_traces_metric_based(data, trace_size, filter_index, area_tuple)
+            X_df = table_factory(fish_key, d, batch_keys, X, trace_size)
+            Xs.append(X_df)
             nSs.append(trajectory_snippets(data, trace_size))
-    traces = np.concatenate(Xs)
-    traces = normalize_data_metrics(traces)
+    traces = pd.concat(Xs,ignore_index=True)
+    #traces = normalize_data_metrics(traces)
     nSs = np.concatenate(nSs)
+    if write_to_file:
+        os.makedirs(DIR_TRACES, exist_ok=True)
+        traces.to_csv(get_trace_file_path(trace_size), sep=sep)
     return traces, nSs
+
+def get_traces_columns():
+    _, names = get_metrics_for_traces()
+
+    return ["CAMERA_POSITION","DAY", "BATCH", "DATAFRAME"]+names
+
+def table_factory(key_c_p, day, batch_keys, traces_of_day, trace_size):
+    col = get_traces_columns()
+    traces_df = pd.DataFrame(columns=col, index=range(traces_of_day.shape[0]))
+    traces_df.loc[:,col[4:]] = traces_of_day
+
+    traces_df.loc[:, col[0:2]] = key_c_p, day
+    
+    dataframe_pointer = np.array(range(traces_of_day.shape[0]))*trace_size
+    traces_df.loc[:, col[3]] = dataframe_pointer
+    for i, b_key in enumerate(batch_keys):
+        mask = (dataframe_pointer >= (BATCH_SIZE * i)) & (dataframe_pointer < (BATCH_SIZE * (i+1)))
+        traces_df.loc[mask, col[2]] = b_key
+    return traces_df
 
 def fit_data_to_trace_size(size1, trace_size):
     n_snippets = size1 // trace_size
@@ -54,7 +98,7 @@ def rotate_trace(trace):
     alph = np.arctan2(*trace[0])
     return np.dot(trace,rotation(-alph))
 
-def transfrom_to_traces(batch, trace_size):
+def transform_to_traces(batch, trace_size):
     setX = batch[["xpx", "ypx"]].to_numpy()
     setX = setX[1:]-setX[:-1]
     lenX = setX.shape[0]
@@ -68,22 +112,26 @@ def transfrom_to_traces(batch, trace_size):
 def get_metrics_for_traces():
     metrics_f = [activity, turning_angle, absolute_angles, entropy_for_data, distance_to_wall] 
     names = ["%s_%s"%(m,s) for m,s in product(map(lambda m: m.__name__, metrics_f), [MU_STR, SD_STR])]
+    names.remove("%s_%s"%(entropy_for_data.__name__, SD_STR)) # remove entropy_sd
     return metrics_f, names
 
-def transfrom_to_traces_metric_based(data, trace_size, filter_index, area):
+def transform_to_traces_metric_based(data, trace_size, filter_index, area):
     lenX = data.shape[0]
     sizeSet = lenX//trace_size
-    metric_functions, names = get_metrics_for_traces() #
+    metric_functions, _ = get_metrics_for_traces() #
     newSet = np.zeros((sizeSet,len(metric_functions)*2))
     for i, f in enumerate(metric_functions):
         idx = i*2
-        if f.__name__ == distance_to_wall.__name__ or f.__name__ == entropy_for_data.__name__:
+        if f.__name__ == distance_to_wall.__name__:
             newSet[:,idx:idx+2] = f(data, trace_size, filter_index, area)[:,:2]
+        elif f.__name__ == entropy_for_data.__name__:
+            entropy_idx = i*2+1
+            newSet[:,idx:idx+2] = f(data, trace_size, filter_index, area)[:,:2] # only take entropy not std over hist. 
         else:
             newSet[:,idx:idx+2] = f(pixel_to_cm(data), trace_size, filter_index)[:,:2]
-    remove_7 = np.array(names) != "%s_%s" % (entropy_for_data.__name__, SD_STR)
-    np.nan_to_num(newSet, copy=False, nan=0.0)
-    return newSet[:, remove_7]
+    newSet = np.delete(newSet, entropy_idx, axis=1)
+    #np.nan_to_num(newSet, copy=False, nan=0.0)
+    return newSet
         
 def normalize_data(traces):
     d_std, d_mean = np.std(traces[:,0::2]), np.mean(traces[:,0::2])
@@ -199,6 +247,5 @@ def plot_lines(lines_to_plot, ax=None, title="x:, y: "):
 
 def boxplot_characteristics_of_cluster(traces_c, ax):
     _, metric_names = get_metrics_for_traces()
-    metric_names.remove("%s_%s"%(entropy_for_data.__name__, SD_STR))
     ax.boxplot([*traces_c.T], labels=metric_names, showfliers=False)
     plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
