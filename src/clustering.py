@@ -82,7 +82,6 @@ def traces_as_numpy(traces):
 
 def get_traces_columns():
     _, names = get_metrics_for_traces()
-
     return ["CAMERA_POSITION","DAY", "BATCH", "DATAFRAME"]+names
 
 def table_factory(key_c_p, day, batch_keys, traces_of_day, trace_size):

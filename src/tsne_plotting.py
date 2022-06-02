@@ -2,7 +2,7 @@ import plotly.express as px
 from scipy.spatial import ConvexHull
 import plotly.graph_objects as go
 import numpy as np
-from clustering import *
+from src.clustering import *
 
 def get_convex_hull(points): 
     hull = ConvexHull(points)
@@ -32,7 +32,8 @@ colorscales = [
                 [[0, 'rgb(200,0,0)'], [1, 'rgb(255,0,100)']],
                 [[0, 'rgb(235, 52, 232)'], [1, 'rgb(235, 52, 232)']],
                 [[0, 'rgb(235, 140, 52)'], [1, 'rgb(235, 140, 52)']],
-                [[0, 'rgb(128, 52, 235)'], [1, 'rgb(128, 52, 235)']]
+                [[0, 'rgb(128, 52, 235)'], [1, 'rgb(128, 52, 235)']],
+                [[0, 'rgb(143, 37, 123)'], [1, 'rgb(143, 37, 123)']]
               ]
 bg_color='rgba(255,255,255,1)'
 white2blue=[[0, bg_color], [1, 'rgb(32, 87, 179)']]
