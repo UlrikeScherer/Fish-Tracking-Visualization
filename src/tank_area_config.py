@@ -4,20 +4,20 @@ import numpy as np
 from src.config import FRONT, BACK, BLOCK, DATA_DIR, BLOCK1, BLOCK2
 from src.utile import get_camera_pos_keys
 # AREA
-area_block1_back = os.environ["area_block1_back"]
-area_block1_front = os.environ["area_block1_front"]
+area_block1_back = ""#os.environ["area_block1_back"]
+area_block1_front = ""#os.environ["area_block1_front"]
 
 # AREA
-area_block2_back_02nov= os.environ["area_block2_back_02nov"]
-area_block2_front_02nov = os.environ["area_block2_front_02nov"]
-area_block2_back_21nov= os.environ["area_block2_back_21nov"]
-area_block2_front_21nov = os.environ["area_block2_front_21nov"]
+area_block2_back_02nov= ""#os.environ["area_block2_back_02nov"]
+area_block2_front_02nov = ""#os.environ["area_block2_front_02nov"]
+area_block2_back_21nov= ""#os.environ["area_block2_back_21nov"]
+area_block2_front_21nov = ""#os.environ["area_block2_front_21nov"]
 
 nov21 = "20211121_060000"
 nov02 = "20211102_060000"
 
 def get_area_functions(): # retruns a function to deliver the area for key and day
-    if BLOCK == BLOCK1: 
+    if BLOCK == BLOCK1:
         area = read_area_data_from_json()
         return lambda key,day=None: area[key]
     elif BLOCK == BLOCK2:
@@ -46,7 +46,7 @@ def get_area_path(day=None): # TODO distinguish between different area configs f
             return {BACK:area_block2_back_02nov, FRONT:area_block2_front_02nov}
         elif day == nov21:
             return{BACK:area_block2_back_21nov, FRONT:area_block2_front_21nov}
-        else: 
+        else:
             raise Exception("invalide day")
     else: raise Exception("something super weird happened")
 
@@ -65,24 +65,24 @@ def get_areas(day=None):
                     if "Last" in l:
                         poly = [ll.split(",") for ll in l.split("#")[2].split(";")]
                         data_a = np.array(poly).astype(np.float64)
-                        if key not in area_data or area_data[key].size > data_a.size: 
+                        if key not in area_data or area_data[key].size > data_a.size:
                             area_data[key]=data_a
                             continue
                 if area_data[key].shape[0]==5 and len(example_dict[p])==0:
                     example_dict[p]=area_data[key]
-        
+
     for k,v in area_data.items():
         if v.shape[0]!=5:
             area_data[k] = update_area(example_dict[k.split("_")[1]], v)
-            if area_data[k] is None: 
+            if area_data[k] is None:
                 del area_data[k]
-            
+
     missing_areas = [c for c in get_camera_pos_keys() if c not in area_data.keys()]
     if len(missing_areas)>0:
         print("Missing Areas:", missing_areas)
     for m_k in missing_areas:
         area_data[m_k]=example_dict[m_k.split("_")[1]]
-        
+
     write_area_data_to_json(area_data, suffix=day)
     for k,v in list(area_data.items()):
         plt.plot(v[:,0], v[:,1], "-o")
@@ -104,4 +104,3 @@ def write_area_data_to_json(area_data, suffix=None):
     area_d = dict(zip(area_data.keys(), map(lambda v: v.tolist(),area_data.values())))
     with open("{}/{}_area_data{}.json".format(DATA_DIR,BLOCK, suffix), "w") as outfile:
         json.dump(area_d, outfile, indent=2)
-
