@@ -2,7 +2,8 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
 import os
-from src.utile import BLOCK, get_days_in_order, get_date_string
+from src.utile import get_date_string
+from src.config import BLOCK
 #########################
 colors=np.array([
 (166,206,227),

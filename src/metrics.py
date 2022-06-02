@@ -1,18 +1,15 @@
 import numpy as np
 from scipy.stats import entropy
-from src.utile import *
+from src.error_filter import all_error_filters
+from src.config import *
+from src.utile import csv_of_the_day, get_all_days_of_context, get_days_in_order, get_fish2camera_map, get_seconds_from_day
 from src.tank_area_config import get_area_functions, get_area_functions
 from src.transformation import pixel_to_cm, px2cm
-from methods import activity, calc_steps, turning_angle, tortuosity_of_chunk, distance_to_wall_chunk, mean_std, absolute_angles #cython
+from methods import activity, turning_angle, tortuosity_of_chunk, distance_to_wall_chunk, mean_std, absolute_angles #cython
 import pandas as pd
 import os
 from itertools import product
-# remove later TODO
 import matplotlib.pyplot as plt
-
-DATA_results = "results"
-float_format='%.10f'
-sep=";"
 
 def num_of_spikes(steps):
     spike_places = steps > S_LIMIT
@@ -106,7 +103,7 @@ def entropy_for_chunk(chunk, area_tuple):
         tri = np.tril_indices(l_y, k=3)
     sum_hist = np.sum(hist)
     if sum_hist == 0: #
-        #print(chunk[:10])
+        print(chunk[:10], xmin, ymin, xmax, ymax)
         print("Warning for %s all %d data points where not in der range of histogram and removed"%(fish_key, chunk.shape[0]))
         return np.nan, np.nan
     if chunk.shape[0] > sum_hist:
@@ -167,7 +164,7 @@ def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100
                 df = pd.concat(df_day)
                 data = df[["xpx", "ypx"]].to_numpy()  
                 area_tuple = (fish_key, area_func(fish_key, day=day))
-                err_filter = get_error_indices(df).to_numpy() | error_points_out_of_area(data, area_tuple)
+                err_filter = all_error_filters(data, area_tuple)
                 if metric.__name__ in [entropy_for_data.__name__, distance_to_wall.__name__]:
                                            # DISTANCE TO WALL METRIC
                     result = metric(data,time_interval*FRAMES_PER_SECOND, err_filter, area_tuple)

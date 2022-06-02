@@ -2,53 +2,12 @@ from datetime import datetime
 from time import gmtime, strftime
 import pandas as pd
 import numpy as np
-import os
 import re
 import glob
-import json
 from itertools import product
-from envbash import load_envbash
+from src.error_filter import get_error_indices
+from src.config import *
 from path_validation import filter_files
-from methods import distance_to_wall_chunk
-load_envbash('scripts/env.sh')
-
-# Calculated MEAN and SD for the data set filtered for erroneous frames
-MEAN_GLOBAL = 0.22746102241709162
-SD_GLOBAL = 1.0044248513034164
-S_LIMIT = 15 #MEAN_GLOBAL + 3 * SD_GLOBAL
-THRESHOLD_AREA_PX = 50 # The threshold for the exclusion of data points that are not within the area of the tank.
-BATCH_SIZE = 10000 #9999
-FRAMES_PER_SECOND = 5
-ROOT=os.environ["rootserver"]
-ROOT_LOCAL=os.environ["root_local"]
-DIR_CSV=os.environ["path_csv"] #
-DIR_CSV_LOCAL=os.environ["path_csv_local"] #
-BLOCK = os.environ["BLOCK"] # block1 or block2
-BLOCK1 = "block1"
-BLOCK2 = "block2"
-
-# TRAJECTORY
-dir_front = os.environ["dir_front"]
-dir_back = os.environ["dir_back"]
-STIME = os.environ["STIME"]
-
-# FEEDING
-dir_feeding_front = os.environ["dir_feeding_front"]
-dir_feeding_back = os.environ["dir_feeding_back"]
-FEEDINGTIME = os.environ["FEEDINGTIME"]
-
-FRONT, BACK = "front", "back"
-ROOT_img = "plots"
-DATA_DIR = "data"
-
-N_BATCHES=15
-N_BATCHES_FEEDING=8
-
-N_FISHES = 24
-N_DAYS = 28
-HOURS_PER_DAY = 8
-N_SECONDS_PER_HOUR = 3600
-N_SECONDS_OF_DAY = 24*N_SECONDS_PER_HOUR
 
 def get_directory(is_feeding=None, is_back=None):
     if is_feeding is None or is_back is None:
@@ -172,37 +131,6 @@ def read_batch_csv(filename, drop_errors):
     df.reset_index(drop=True, inplace=True)
     return df
 
-def get_error_indices(dataframe):
-    """
-   @params: dataframe
-   returns a boolean pandas array with all indices to filter set to True
-    """
-    x = dataframe.xpx
-    y = dataframe.ypx
-    indexNames = ((x == -1) & (y == -1)) | ((x == 0) & (y == 0)) # except the last index for time recording
-    return indexNames
-
-def error_default_points(x,y):
-    return  ((x == -1) & (y == -1)) | ((x == 0) & (y == 0))
-
-def error_points_out_of_area(data, area_tuple, day=""):
-    """ returns a boolean np.array, where true indecates weather the corresponding datapoint is on the wrong side of the tank"""
-    key, area = area_tuple
-    is_back = BACK in key
-    AB = area[2]-area[1]
-    AP = data - area[1]
-    if is_back:
-        error_filter = (AP[:,1]*AB[0] - AP[:,0]*AB[1] <= 0) # cross product (a1b2−a2b1) 
-    else: 
-        error_filter = (AP[:,1]*AB[0] - AP[:,0]*AB[1] >= 0) # cross product (a1b2−a2b1) 
-    err_default = error_default_points(data[:,0], data[:,1]) 
-    error_non_default = error_filter & ~ err_default
-    error_non_default[error_non_default] = distance_to_wall_chunk(data[error_non_default], area) > THRESHOLD_AREA_PX   # in pixels 
-    if np.any(error_non_default): # ef and not ed 
-        print("For id: %s, %s %d dataframes out of %d where on the other side of the tank. They are beeing filtered out." % (key,day, error_non_default.sum(), data.shape[0]))
-    return error_non_default             
-
-
 def merge_files(filenames, drop_errors):
     batches = []
     for f in filenames:
@@ -226,21 +154,3 @@ def csv_of_the_day(camera, day, is_back=False, drop_out_of_scope=False, is_feedi
     if print_log and len(LOG)>0:
         print("\n {}/{}/{}*: \n".format(dir_, camera, day),"\n".join(LOG))
     return file_keys, merge_files(correct_files, drop_out_of_scope)
-
-def activity_for_day_hist(fish_id, day_idx=1):
-    fish2camera=get_fish2camera_map()
-    camera_id, is_back = fish2camera[fish_id,0], fish2camera[fish_id,1]=="back"
-    mu_sd = list()
-    all_days = get_days_in_order(camera=camera_id, is_back=is_back)
-    day = all_days[day_idx]
-    keys, csv_by_day = csv_of_the_day(camera_id, day, is_back=is_back, drop_out_of_scope=True)
-    df = pd.concat(csv_by_day)
-    c = calc_steps(df[["x", "y"]].to_numpy())
-    p = plt.hist(c, bins=50,range=[0, 5], density=True, alpha=0.75)
-    plt.ylim(0, 3)
-    plt.xlabel('cm')
-    plt.ylabel('Probability')
-    plt.title('Histogram of step lengh per Frame')
-    mu, om = np.mean(c), np.std(c)
-    plt.text(mu, om, r'$\mu=\ $'+ "%.2f, "%mu + r'$\sigma=$'+"%.2f"%om)
-    plt.show()

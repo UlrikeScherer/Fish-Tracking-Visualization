@@ -1,9 +1,10 @@
 import os
-from re import L, T
-from src.transformation import rotation, px2cm, pixel_to_cm
+from src.config import BATCH_SIZE, BLOCK, STIME, BACK, sep
+from src.error_filter import all_error_filters, error_default_points
+from src.transformation import rotation, pixel_to_cm
 from methods import activity, turning_angle, absolute_angles
-from src.metrics import entropy_for_data, distance_to_wall, sep
-from src.utile import BATCH_SIZE, BLOCK, STIME, get_error_indices,error_points_out_of_area, get_fish2camera_map, csv_of_the_day, BACK
+from src.metrics import entropy_for_data, distance_to_wall
+from src.utile import  get_fish2camera_map, csv_of_the_day
 from src.tank_area_config import get_area_functions
 from itertools import product
 import pandas as pd
@@ -24,15 +25,21 @@ def get_traces_type():
     })
     return traces_type
 
-def get_trace_file_path(trace_size):
-    return "%s/traces_%s_%s_%s.csv"%(DIR_TRACES, BLOCK, STIME, trace_size)
+def get_trace_file_path(trace_size, format="csv"):
+    return "%s/traces_%s_%s_%s.%s"%(DIR_TRACES, BLOCK, STIME, trace_size, format)
     
 def load_traces(trace_size):
     trace_path = get_trace_file_path(trace_size)
-    if not os.path.exists(trace_path):
+    trace_path_npy = get_trace_file_path(trace_size, "npy")
+    if not os.path.exists(trace_path) or not os.path.exists(trace_path_npy):
         raise Exception("Trace for path %s does not exist"%trace_path)
-    traces = pd.read_csv(trace_path, delimiter=sep)
-    return traces
+    traces = pd.read_csv(trace_path, delimiter=sep, index_col=0)
+    with open(trace_path_npy,"rb") as f:
+        samples = np.load(f)
+    return traces, samples
+
+def get_trace_filter(traces):
+    return traces.isna().any(axis=1)
 
 def calculate_traces(fish_indices, days, trace_size, write_to_file=False):
     fish2cams = get_fish2camera_map()
@@ -50,20 +57,28 @@ def calculate_traces(fish_indices, days, trace_size, write_to_file=False):
             fit_len = fit_data_to_trace_size(len(b), trace_size) 
             data = b[["xpx", "ypx"]].to_numpy()[:fit_len]
             area_tuple = (fish_key,area_func(fish_key, day=d))
-            ## filter for errorouse datapoints 
-            filter_index = get_error_indices(b).to_numpy()[:fit_len] | error_points_out_of_area(data, area_tuple, day=d)[:fit_len]
+            # filter for errorouse data points 
+            filter_index = all_error_filters(data, area_tuple)[:fit_len]
 
             X=transform_to_traces_metric_based(data, trace_size, filter_index, area_tuple)
             X_df = table_factory(fish_key, d, batch_keys, X, trace_size)
             Xs.append(X_df)
             nSs.append(trajectory_snippets(data, trace_size))
-    traces = pd.concat(Xs,ignore_index=True)
+    traces = pd.concat(Xs)
+    tfilter = traces.isna().any(axis=1)
+    traces=traces[~tfilter]
+    traces.reset_index(drop=True, inplace=True)
     #traces = normalize_data_metrics(traces)
-    nSs = np.concatenate(nSs)
+    nSs = np.concatenate(nSs)[~tfilter]
     if write_to_file:
         os.makedirs(DIR_TRACES, exist_ok=True)
         traces.to_csv(get_trace_file_path(trace_size), sep=sep)
+        with open(get_trace_file_path(trace_size, format="npy"), 'wb') as f:
+            np.save(f, nSs)
     return traces, nSs
+
+def traces_as_numpy(traces):
+    return traces.to_numpy()[:,4:].astype(float)
 
 def get_traces_columns():
     _, names = get_metrics_for_traces()
@@ -132,13 +147,6 @@ def transform_to_traces_metric_based(data, trace_size, filter_index, area):
     newSet = np.delete(newSet, entropy_idx, axis=1)
     #np.nan_to_num(newSet, copy=False, nan=0.0)
     return newSet
-        
-def normalize_data(traces):
-    d_std, d_mean = np.std(traces[:,0::2]), np.mean(traces[:,0::2])
-    a_std, a_mean = np.std(traces[:,1::2]), np.mean(traces[:,1::2])
-    traces[:,0::2]=(traces[:,0::2]-d_mean)/d_std
-    traces[:,1::2]=(traces[:,1::2]-a_mean)/a_std
-    return traces
 
 def normalize_data_metrics(traces):
     for i in range(traces.shape[1]):
@@ -218,30 +226,13 @@ def set_of_neighbourhoods(X_embedded, nSs, radius=1, bins=15):
         neighbourhoods["x:%.2f, y:%.2f, n:%d"%(c_x,c_y, hist[max_x, max_y])] = get_neighbourhood_selection(X_embedded, nSs, c_x, c_y, radius=radius)
     return neighbourhoods, centers
 
-def plot_lines_angle(lines_to_plot, limit=20):
-    for line in lines_to_plot[:limit]:
-        angels = np.cumsum(line[:,1])
-        x = line[:,0]*np.cos(angels)
-        y = line[:,0]*np.sin(angels)
-        plt.plot(np.cumsum(x), np.cumsum(y))
-    plt.savefig("lines_exp.pdf")
-    
-def plot_lines_cumsum(lines_to_plot, limit=20, ax=None, title="x:, y: "):
-    if ax is not None: ax.set_title(title)
-    for line in lines_to_plot[:limit]:
-        line = np.cumsum(px2cm(line),axis=0)
-        if ax is None:
-            plt.plot(line[:,0], line[:,1])
-        else: 
-            ax.plot(line[:,0], line[:,1])
-            
-    plt.savefig("lines_exp.pdf")
-
 def plot_lines(lines_to_plot, ax=None, title="x:, y: "):
     if ax is not None: ax.set_title(title)
     for line in lines_to_plot:
+        error_default_points
         if ax is None:
             plt.plot(line[:,0], line[:,1])
+            plt.savefig("lines_%s.pdf"%(title))
         else: 
             ax.plot(line[:,0], line[:,1])
 

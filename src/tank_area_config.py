@@ -1,7 +1,8 @@
 import glob, json, os
 import matplotlib.pyplot as plt
 import numpy as np
-from src.utile import FRONT, BACK, ROOT, BLOCK, DATA_DIR, ROOT_LOCAL, get_camera_pos_keys, BLOCK1, BLOCK2
+from src.config import FRONT, BACK, BLOCK, DATA_DIR, BLOCK1, BLOCK2
+from src.utile import get_camera_pos_keys
 # AREA
 area_block1_back = os.environ["area_block1_back"]
 area_block1_front = os.environ["area_block1_front"]
