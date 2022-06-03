@@ -228,14 +228,14 @@ def set_of_neighbourhoods(X_embedded, nSs, radius=1, bins=15):
 def plot_lines(lines_to_plot, ax=None, title="x:, y: "):
     if ax is not None: ax.set_title(title)
     for line in lines_to_plot:
-        error_default_points
+        line = line[~error_default_points(line)]
         if ax is None:
             plt.plot(line[:,0], line[:,1])
             plt.savefig("lines_%s.pdf"%(title))
         else: 
             ax.plot(line[:,0], line[:,1])
 
-def boxplot_characteristics_of_cluster(traces_c, ax):
-    _, metric_names = get_metrics_for_traces()
+def boxplot_characteristics_of_cluster(traces_c, ax, metric_names= get_metrics_for_traces()[1]):
+    #_, metric_names = get_metrics_for_traces()
     ax.boxplot([*traces_c.T], labels=metric_names, showfliers=False)
     plt.setp(ax.get_xticklabels(), rotation=45, ha="right")

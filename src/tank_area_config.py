@@ -1,8 +1,20 @@
 import glob, json, os
 import matplotlib.pyplot as plt
 import numpy as np
-from src.config import FRONT, BACK, BLOCK, DATA_DIR, BLOCK1, BLOCK2
+from src.config import FRONT, BACK, BLOCK, DATA_DIR, BLOCK1, BLOCK2, ROOT_LOCAL,
 from src.utile import get_camera_pos_keys
+
+# AREA CONFIG 
+AREA_CONFIG="%s/area_config"%ROOT_LOCAL
+# area block 1
+area_block1_back="%s/areas back 10Sep2021"%AREA_CONFIG
+area_block1_front="%s/areas front 10Sep2021"%AREA_CONFIG
+# area block 2 
+area_block2_front_02nov="%s/areas front 02Nov2021"%AREA_CONFIG
+area_block2_back_02nov="%s/areas back 02Nov2021"%AREA_CONFIG
+area_block2_front_21nov="%s/areas front 21Nov2021"%AREA_CONFIG
+area_block2_back_21nov="%s/areas back 21Nov2021"%AREA_CONFIG
+
 # AREA
 area_block1_back = ""#os.environ["area_block1_back"]
 area_block1_front = ""#os.environ["area_block1_front"]
