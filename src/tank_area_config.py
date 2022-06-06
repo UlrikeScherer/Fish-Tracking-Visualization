@@ -1,7 +1,7 @@
 import glob, json, os
 import matplotlib.pyplot as plt
 import numpy as np
-from src.config import FRONT, BACK, BLOCK, DATA_DIR, BLOCK1, BLOCK2, ROOT_LOCAL,
+from src.config import FRONT, BACK, BLOCK, DATA_DIR, BLOCK1, BLOCK2, ROOT_LOCAL
 from src.utile import get_camera_pos_keys
 
 # AREA CONFIG 
