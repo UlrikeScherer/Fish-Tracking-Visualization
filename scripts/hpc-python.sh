@@ -12,6 +12,7 @@
 #module load comp/gcc/7.2.0
 
 #source ./venv/bin/activate      # activate your python environment
+source ~/miniconda/etc/profile.d/conda.sh
 conda activate rapids-22.04
 
 python src/hpc_clustering.py trace_size=200 n_clusters=7
