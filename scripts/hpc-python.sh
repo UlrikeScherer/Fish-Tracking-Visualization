@@ -7,12 +7,15 @@
 #SBATCH --ntasks=1
 #SBATCH --mem-per-cpu=1000      # memory in MB per cpu allocated
 #SBATCH --gres=gpu:tesla:1
+SBATCH --partition=ex_scioi_gpu
+SBATCH --gres=gpu:1
 
-module load nvidia/cuda/10.0    # load required modules (depends upon your code which modules are needed)
-module load comp/gcc/7.2.0
+#module load nvidia/cuda/10.0    # load required modules (depends upon your code which modules are needed)
+#module load comp/gcc/7.2.0
 
-source ./venv/bin/activate      # activate your python environment
+#source ./venv/bin/activate      # activate your python environment
+conda activate rapids-22.04
 
-python myCode.py
+python src/hpc-clustering.py trace_size=200 n_clusters=7
 
 deactivate 
