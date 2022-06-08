@@ -16,6 +16,6 @@ SBATCH --gres=gpu:1
 #source ./venv/bin/activate      # activate your python environment
 conda activate rapids-22.04
 
-python src/hpc-clustering.py trace_size=200 n_clusters=7
+python src/hpc_clustering.py trace_size=200 n_clusters=7
 
 deactivate 
