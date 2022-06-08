@@ -1,7 +1,7 @@
 from cuml.manifold import TSNE
 from cuml import PCA, KMeans
 from matplotlib import cm
-from src.config import VIS_DIR, N_FISHES
+from src.config import N_FISHES
 from src.utile import get_all_days_of_context
 import numpy as np
 import os, time, sys
@@ -29,27 +29,6 @@ def execute_clustering(trace_size, n_clusters):
     tsne_model = init_tsne_model(perplexity=30,N = pca_traces.shape[0])
     X_embedded = tsne_model.fit_transform(pca_traces)
     plot_components(pca_traces, X_embedded, clusters, file_name=get_results_filepath(trace_size, "pca_tsne_%d"%(n_clusters)))
-        
-def get_results_filepath(trace_size, file_name):
-    path_ = "%s/%s_trace_size_%s"%(VIS_DIR, BLOCK, trace_size)
-    if not os.path.exists(path_):
-        os.makedirs(path_)
-    return "%s/%s_%d.pdf"%(path_, file_name, trace_size)
-
-def plot_lines_for_cluster(traces, samples, clusters, n_clusters, trace_size, limit=10, fig_name="cluster_characteristics.pdf"):
-    nrows=2
-    fig, axs = plt.subplots(nrows=nrows,ncols=n_clusters, figsize=(n_clusters*4,nrows*4), sharey="row")
-    for cluster_id in range(n_clusters):
-        ax_b = axs[1,cluster_id]
-        ax = axs[0,cluster_id]
-        boxplot_characteristics_of_cluster(traces[clusters==cluster_id], ax_b)
-        samples_c_i = samples[clusters==cluster_id]
-        select = sample(range(len(samples_c_i)),k=limit)
-        plot_lines(samples_c_i[select], ax=ax, title="cluster: %d"%(cluster_id))
-        ax_b.yaxis.set_tick_params(which='both', labelbottom=True)
-
-    fig.savefig(get_results_filepath(trace_size, fig_name), bbox_inches = "tight")
-    plt.close(fig)
         
 def bar_plot_pca(pca, trace_size):
     y = pca.explained_variance_ratio_
