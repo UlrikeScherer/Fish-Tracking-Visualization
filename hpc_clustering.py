@@ -28,7 +28,7 @@ def execute_clustering(trace_size, n_clusters):
     
     tsne_model = init_tsne_model(perplexity=30,N = pca_traces.shape[0])
     X_embedded = tsne_model.fit_transform(pca_traces)
-    plot_components(pca_traces, X_embedded, clusters, trace_size, file_name=get_results_filepath(trace_size, "pca_tsne_%d"%(n_clusters)))
+    plot_components(pca_traces, X_embedded, clusters, file_name=get_results_filepath(trace_size, "pca_tsne_%d"%(n_clusters)))
         
 def get_results_filepath(trace_size, file_name):
     path_ = "%s/%s_trace_size_%s"%(VIS_DIR, BLOCK, trace_size)
