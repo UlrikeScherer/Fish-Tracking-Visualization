@@ -3,12 +3,10 @@
 #SBATCH --job-name=test
 #SBATCH --output=res_%j.txt     # output file
 #SBATCH --error=res_%j.err      # error file
-#SBATCH --partition=gpu         # partition to submit to
 #SBATCH --ntasks=1
 #SBATCH --mem-per-cpu=1000      # memory in MB per cpu allocated
-#SBATCH --gres=gpu:tesla:1
-SBATCH --partition=ex_scioi_gpu
-SBATCH --gres=gpu:1
+#SBATCH --partition=ex_scioi_gpu  # partition to submit to
+#SBATCH --gres=gpu:1
 
 #module load nvidia/cuda/10.0    # load required modules (depends upon your code which modules are needed)
 #module load comp/gcc/7.2.0
