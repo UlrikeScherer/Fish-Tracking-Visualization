@@ -3,7 +3,7 @@ import matplotlib as mpl
 import numpy as np
 import os
 from src.utile import get_date_string
-from src.config import BLOCK
+from src.config import BLOCK, VIS_DIR
 #########################
 colors=np.array([
 (166,206,227),
@@ -98,7 +98,7 @@ def sliding_window(dataset, time_interval, sw, fish_keys=None, day_keys=None, fi
             line.set_linewidth(7.0)
 
     if write_fig:
-        data_dir = "{}/{}/".format("vis", BLOCK)
+        data_dir = "{}/{}/".format(VIS_DIR, BLOCK)
         os.makedirs(data_dir, exist_ok=True)
         fig.savefig("{}/{}.pdf".format(data_dir,name),bbox_inches='tight', dpi=100)
     return fig

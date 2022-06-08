@@ -30,6 +30,7 @@ FEEDINGTIME = os.environ["FEEDINGTIME"]
 FRONT, BACK = "front", "back"
 ROOT_img = "plots"
 DATA_DIR = "data"
+VIS_DIR="vis"
 
 N_BATCHES=15
 N_BATCHES_FEEDING=8
