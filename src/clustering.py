@@ -1,5 +1,5 @@
 import os
-from src.config import BATCH_SIZE, BLOCK, STIME, BACK, sep
+from src.config import BATCH_SIZE, BLOCK, STIME, BACK, sep, VIS_DIR
 from src.error_filter import all_error_filters, error_default_points
 from src.transformation import rotation, pixel_to_cm
 from src.metrics import entropy_for_data, distance_to_wall
@@ -26,6 +26,12 @@ def get_traces_type():
         'formats': ["str"]*4 + ["f4"]*len(names)
     })
     return traces_type
+
+def get_results_filepath(trace_size, file_name):
+    path_ = "%s/%s_trace_size_%s"%(VIS_DIR, BLOCK, trace_size)
+    if not os.path.exists(path_):
+        os.makedirs(path_)
+    return "%s/%s_%d.pdf"%(path_, file_name, trace_size)
 
 def get_trace_file_path(trace_size, format="csv"):
     return "%s/traces_%s_%s_%s.%s"%(DIR_TRACES, BLOCK, STIME, trace_size, format)
@@ -241,6 +247,22 @@ def boxplot_characteristics_of_cluster(traces_c, ax, metric_names= get_metrics_f
     #_, metric_names = get_metrics_for_traces()
     ax.boxplot([*traces_c.T], labels=metric_names, showfliers=False)
     plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
+    
+def plot_lines_for_cluster(traces, samples, clusters, n_clusters, trace_size, limit=10, fig_name="cluster_characteristics.pdf"):
+    nrows=2
+    fig, axs = plt.subplots(nrows=nrows,ncols=n_clusters, figsize=(n_clusters*4,nrows*4), sharey="row")
+    for cluster_id in range(n_clusters):
+        ax_b = axs[1,cluster_id]
+        ax = axs[0,cluster_id]
+        boxplot_characteristics_of_cluster(traces[clusters==cluster_id], ax_b)
+        samples_c_i = samples[clusters==cluster_id]
+        cluster_share = samples_c_i.shape[0]/samples.shape[0]
+        select = sample(range(len(samples_c_i)),k=limit)
+        plot_lines(samples_c_i[select], ax=ax, title="cluster: %d,      share: %.2f"%(cluster_id, cluster_share))
+        ax_b.yaxis.set_tick_params(which='both', labelbottom=True)
+
+    fig.savefig(get_results_filepath(trace_size, fig_name), bbox_inches = "tight")
+    plt.close(fig)
         
 def sub_figure(ax, x, y, clusters,x_label, y_label):
     scatter = ax.scatter(x,y,c=clusters, cmap=plt.get_cmap("tab10"), alpha=0.5)
@@ -253,7 +275,7 @@ def sub_figure(ax, x, y, clusters,x_label, y_label):
     ax.set_ylim(max(-s*std_y+m_y, y_min),min(m_y+std_y*s, y_max))
     return scatter
 
-def plot_components(X_pca,X_tsne, clusters, file_name):
+def plot_components(X_pca,X_tsne, clusters, file_name=None):
     max_number_of_rows = 20000
     if X_pca.shape[0]> max_number_of_rows:
         rand_select = np.random.choice(X_pca.shape[0], size=max_number_of_rows, replace=False)
@@ -265,6 +287,7 @@ def plot_components(X_pca,X_tsne, clusters, file_name):
     legend1 = axs[1].legend(*scatter2.legend_elements(),loc="best",bbox_to_anchor=(0.8, 0.5, 0.5, 0.5), title="Cluster")
     fig.add_artist(legend1)
     fig.tight_layout() 
-    fig.savefig(file_name)
-    plt.close(fig)
+    if file_name is not None: 
+        fig.savefig(file_name)
+        plt.close(fig)
     
