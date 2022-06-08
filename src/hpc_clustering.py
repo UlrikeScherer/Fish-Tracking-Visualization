@@ -1,6 +1,5 @@
 from cuml.manifold import TSNE
 from cuml import PCA, KMeans
-from main import metric_names
 from matplotlib import cm
 from src.config import VIS_DIR
 from src.utile import get_all_days_of_context
