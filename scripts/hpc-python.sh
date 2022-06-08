@@ -1,9 +1,10 @@
-#!/bin/bash
+#!/bin/bash -l
 
-#SBATCH --job-name=test
+#SBATCH --job-name=tsne_clustering
 #SBATCH --output=res_%j.txt     # output file
 #SBATCH --error=res_%j.err      # error file
 #SBATCH --ntasks=1
+#SBATCH --time=0-02:00 
 #SBATCH --mem-per-cpu=1000      # memory in MB per cpu allocated
 #SBATCH --partition=ex_scioi_gpu  # partition to submit to
 #SBATCH --gres=gpu:1
@@ -12,9 +13,10 @@
 #module load comp/gcc/7.2.0
 
 #source ./venv/bin/activate      # activate your python environment
-source ~/miniconda/etc/profile.d/conda.sh
+#source ~/.condarc
+#source ~/miniconda/etc/profile.d/conda.sh
 conda activate rapids-22.04
-
-python src/hpc_clustering.py trace_size=200 n_clusters=7
-
-deactivate 
+echo "JOB START"
+python src/hpc_clustering.py trace_size=60 n_clusters=7
+echo "JOB DONE"
+conda deactivate 
