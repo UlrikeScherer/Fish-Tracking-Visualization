@@ -4,7 +4,7 @@ from matplotlib import cm
 from src.config import VIS_DIR
 from src.utile import get_all_days_of_context
 import numpy as np
-import os
+import os, time, sys
 from src.clustering import *
 
 def execute_clustering(trace_size, n_clusters):
