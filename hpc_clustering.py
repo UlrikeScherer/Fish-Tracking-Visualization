@@ -1,7 +1,7 @@
 from cuml.manifold import TSNE
 from cuml import PCA, KMeans
 from matplotlib import cm
-from src.config import VIS_DIR
+from src.config import VIS_DIR, N_FISHES
 from src.utile import get_all_days_of_context
 import numpy as np
 import os, time, sys
