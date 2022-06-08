@@ -5,7 +5,7 @@
 #SBATCH --error=res_%j.err      # error file
 #SBATCH --ntasks=1
 #SBATCH --time=0-02:00 
-#SBATCH --mem-per-cpu=1000      # memory in MB per cpu allocated
+#SBATCH --mem-per-cpu=10000      # memory in MB per cpu allocated
 #SBATCH --partition=ex_scioi_gpu  # partition to submit to
 #SBATCH --gres=gpu:1
 
@@ -17,6 +17,6 @@
 #source ~/miniconda/etc/profile.d/conda.sh
 conda activate rapids-22.04
 echo "JOB START"
-python src/hpc_clustering.py trace_size=200 n_clusters=7
+python hpc_clustering.py trace_size=200 n_clusters=7
 echo "JOB DONE"
 conda deactivate 
