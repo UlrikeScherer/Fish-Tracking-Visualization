@@ -243,7 +243,7 @@ def boxplot_characteristics_of_cluster(traces_c, ax, metric_names= get_metrics_f
     plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
         
 def sub_figure(ax, x, y, clusters,x_label, y_label):
-    scatter = ax.scatter(x,y,c=clusters, cmap=plt.get_cmap("tab10"), alpha=0.5, markerscale=1)
+    scatter = ax.scatter(x,y,c=clusters, cmap=plt.get_cmap("tab10"), alpha=0.5)
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     m_x, std_x, x_min, x_max = np.mean(x), np.std(x), np.min(x), np.max(x)
@@ -253,7 +253,7 @@ def sub_figure(ax, x, y, clusters,x_label, y_label):
     ax.set_ylim(max(-s*std_y+m_y, y_min),min(m_y+std_y*s, y_max))
     return scatter
 
-def plot_components(X_pca,X_tsne, clusters, file_name):
+def plot_components(X_pca,X_tsne, clusters, file_name=None):
     max_number_of_rows = 20000
     if X_pca.shape[0]> max_number_of_rows:
         rand_select = np.random.choice(X_pca.shape[0], size=max_number_of_rows, replace=False)
@@ -265,6 +265,7 @@ def plot_components(X_pca,X_tsne, clusters, file_name):
     legend1 = axs[1].legend(*scatter2.legend_elements(),loc="best",bbox_to_anchor=(0.8, 0.5, 0.5, 0.5), title="Cluster", markerscale=10)
     fig.add_artist(legend1)
     fig.tight_layout() 
-    fig.savefig(file_name)
-    plt.close(fig)
+    if file_name is not None: 
+        fig.savefig(file_name)
+        plt.close(fig)
     
