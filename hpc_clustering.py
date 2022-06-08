@@ -54,7 +54,7 @@ def plot_lines_for_cluster(traces, samples, clusters, n_clusters, trace_size, li
 def bar_plot_pca(pca, trace_size):
     y = pca.explained_variance_ratio_
     plt.bar(["PC%d"%(i+1) for i in range(len(y))],y)
-    plt.savefig(get_results_filepath(trace_size, "PCA_explained_variance_ratio"))
+    plt.savefig(get_results_filepath(trace_size, "PCA_explained_variance_ratio"), bbox_inches = "tight")
     plt.close()
 
 def bar_plot_pca_loadings(pca,trace_size,number_of_components=4):
@@ -68,7 +68,7 @@ def bar_plot_pca_loadings(pca,trace_size,number_of_components=4):
         axs[i].set_title("PC%d ratio: %.2f"%(i+1, pca.explained_variance_ratio_[i]))
         plt.setp(axs[i].get_xticklabels(), rotation=45, ha="right")
 
-    fig.savefig(get_results_filepath(trace_size,"PCA_Loadings"))
+    fig.savefig(get_results_filepath(trace_size,"PCA_Loadings"),bbox_inches = "tight")
     plt.close(fig)
 
 def init_tsne_model(perplexity,N,**kwargs):
