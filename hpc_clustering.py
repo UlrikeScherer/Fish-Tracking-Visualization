@@ -22,19 +22,19 @@ def execute_clustering(trace_size, n_clusters):
     KM = KMeans(n_clusters=n_clusters)
     clusters = KM.fit_predict(pca_traces)
 
-    plot_lines_for_cluster(traces_np, nSs, clusters, n_clusters, trace_size, limit=30, fig_name="cluster_characteristics_%d.pdf"%(n_clusters))
+    plot_lines_for_cluster(traces_np, nSs, clusters, n_clusters, trace_size, limit=30, fig_name="cluster_characteristics_%d"%(n_clusters))
     bar_plot_pca(pca, trace_size)
     bar_plot_pca_loadings(pca, trace_size)
     
     tsne_model = init_tsne_model(perplexity=30,N = pca_traces.shape[0])
     X_embedded = tsne_model.fit_transform(pca_traces)
-    plot_components(pca_traces, X_embedded, clusters, trace_size, file_name=get_results_filepath(trace_size, "pca_tsne_%d.pdf"%(n_clusters)))
+    plot_components(pca_traces, X_embedded, clusters, trace_size, file_name=get_results_filepath(trace_size, "pca_tsne_%d"%(n_clusters)))
         
 def get_results_filepath(trace_size, file_name):
     path_ = "%s/%s_trace_size_%s"%(VIS_DIR, BLOCK, trace_size)
     if not os.path.exists(path_):
         os.makedirs(path_)
-    return "%s/%s_%d"%(path_, file_name, trace_size)
+    return "%s/%s_%d.pdf"%(path_, file_name, trace_size)
 
 def plot_lines_for_cluster(traces, samples, clusters, n_clusters, trace_size, limit=10, fig_name="cluster_characteristics.pdf"):
     nrows=2
@@ -54,7 +54,7 @@ def plot_lines_for_cluster(traces, samples, clusters, n_clusters, trace_size, li
 def bar_plot_pca(pca, trace_size):
     y = pca.explained_variance_ratio_
     plt.bar(["PC%d"%(i+1) for i in range(len(y))],y)
-    plt.savefig(get_results_filepath(trace_size, "PCA_explained_variance_ratio.pdf"))
+    plt.savefig(get_results_filepath(trace_size, "PCA_explained_variance_ratio"))
     plt.close()
 
 def bar_plot_pca_loadings(pca,trace_size,number_of_components=4):
@@ -68,7 +68,7 @@ def bar_plot_pca_loadings(pca,trace_size,number_of_components=4):
         axs[i].set_title("PC%d ratio: %.2f"%(i+1, pca.explained_variance_ratio_[i]))
         plt.setp(axs[i].get_xticklabels(), rotation=45, ha="right")
 
-    fig.savefig(get_results_filepath(trace_size,"PCA_Loadings.pdf"))
+    fig.savefig(get_results_filepath(trace_size,"PCA_Loadings"))
     plt.close(fig)
 
 def init_tsne_model(perplexity,N,**kwargs):
