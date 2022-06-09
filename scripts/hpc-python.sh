@@ -17,6 +17,7 @@
 #source ~/miniconda/etc/profile.d/conda.sh
 conda activate rapids-22.04
 echo "JOB START"
-python hpc_clustering.py trace_size=20 n_clusters=7
+python hpc_clustering.py trace_size=1200 n_clusters=6
+python hpc_clustering.py trace_size=600 n_clusters=6
 echo "JOB DONE"
 conda deactivate 

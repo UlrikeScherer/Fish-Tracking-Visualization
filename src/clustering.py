@@ -233,6 +233,9 @@ def set_of_neighbourhoods(X_embedded, nSs, radius=1, bins=15):
         neighbourhoods["x:%.2f, y:%.2f, n:%d"%(c_x,c_y, hist[max_x, max_y])] = get_neighbourhood_selection(X_embedded, nSs, c_x, c_y, radius=radius)
     return neighbourhoods, centers
 
+###########################################################
+
+
 def plot_lines(lines_to_plot, ax=None, title="x:, y: "):
     if ax is not None: ax.set_title(title)
     for line in lines_to_plot:
@@ -265,7 +268,7 @@ def plot_lines_for_cluster(traces, samples, clusters, n_clusters, trace_size, li
     plt.close(fig)
         
 def sub_figure(ax, x, y, clusters,x_label, y_label):
-    scatter = ax.scatter(x,y,c=clusters, cmap=plt.get_cmap("tab10"), alpha=0.5)
+    scatter = ax.scatter(x,y,c=clusters, cmap=plt.get_cmap("tab10"), alpha=0.5, s=2)
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     m_x, std_x, x_min, x_max = np.mean(x), np.std(x), np.min(x), np.max(x)
