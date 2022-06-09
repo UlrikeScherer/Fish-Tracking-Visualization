@@ -2,7 +2,7 @@ from cuml.manifold import TSNE
 from cuml import PCA, KMeans
 from matplotlib import cm
 from src.config import N_FISHES
-from src.utile import get_all_days_of_context
+from src.utile import get_all_days_of_context, get_camera_pos_keys
 import numpy as np
 import time, sys
 from scipy.spatial.distance import cdist
@@ -28,8 +28,12 @@ def execute_clustering(trace_size, *n_clusters):
     for n_c in n_clusters:
         KM = KMeans(n_clusters=n_c)
         clusters = KM.fit_predict(pca_traces)
-        plot_lines_for_cluster(traces_np, nSs, clusters, n_clusters, trace_size, limit=30, fig_name="cluster_characteristics_%d"%(n_c))
+        plot_lines_for_cluster(traces_np, nSs, clusters, n_c, trace_size, limit=30, fig_name="cluster_characteristics_%d"%(n_c))
         plot_components(pca_traces, X_embedded, clusters, file_name=get_results_filepath(trace_size, "pca_tsne_%d"%(n_c)))
+        
+    fish_keys = get_camera_pos_keys()
+    #day_limit = get_all_days_of_context()[6]
+    fish_individuality_tsne(fish_keys, X_embedded, traces_all, clusters, n_clusters[-1], trace_size)
         
 def bar_plot_pca(pca, trace_size):
     y = pca.explained_variance_ratio_
@@ -98,7 +102,7 @@ def init_tsne_model(perplexity,N,**kwargs):
         metric='euclidean',
         init='random',
         verbose=0,
-        random_state=1,#None,
+        random_state=2,#None,
         method= 'barnes_hut',#'fft'
         angle=0.5,
         square_distances='legacy'
@@ -110,6 +114,6 @@ def init_tsne_model(perplexity,N,**kwargs):
 
 if __name__ == '__main__':
     tstart = time.time()
-    execute_clustering(**dict((arg.split('=')[0],int(arg.split('=')[1])) for arg in sys.argv[1:]))
+    execute_clustering(*[int(arg) for arg in sys.argv[1:]])
     tend = time.time()
     print("Running time:", tend-tstart, "sec.")

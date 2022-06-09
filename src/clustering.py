@@ -73,11 +73,12 @@ def calculate_traces(fish_indices, days, trace_size, write_to_file=False):
             Xs.append(X_df)
             nSs.append(trajectory_snippets(data, trace_size))
     traces = pd.concat(Xs)
+    traces_size = traces.shape[0]
     tfilter = traces.isna().any(axis=1)
     traces=traces[~tfilter]
     traces.reset_index(drop=True, inplace=True)
-    #traces = normalize_data_metrics(traces)
     nSs = np.concatenate(nSs)[~tfilter]
+    print("Out of %d traces %d where filtered out because of nan values"%(traces_size, sum(tfilter)))
     if write_to_file:
         os.makedirs(DIR_TRACES, exist_ok=True)
         traces.to_csv(get_trace_file_path(trace_size), sep=sep)
@@ -235,7 +236,6 @@ def set_of_neighbourhoods(X_embedded, nSs, radius=1, bins=15):
 
 ###########################################################
 
-
 def plot_lines(lines_to_plot, ax=None, title="x:, y: "):
     if ax is not None: ax.set_title(title)
     for line in lines_to_plot:
@@ -267,16 +267,22 @@ def plot_lines_for_cluster(traces, samples, clusters, n_clusters, trace_size, li
     fig.savefig(get_results_filepath(trace_size, fig_name), bbox_inches = "tight")
     plt.close(fig)
         
-def sub_figure(ax, x, y, clusters,x_label, y_label):
+def sub_figure(ax, x, y, clusters,x_label, y_label, limits=None):
     scatter = ax.scatter(x,y,c=clusters, cmap=plt.get_cmap("tab10"), alpha=0.5, s=2)
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
+    if limits is None:
+        limits = sub_figure_get_limits(x,y)
+    ax.set_xlim(limits[0], limits[1])
+    ax.set_ylim(limits[2], limits[3])
+    return scatter
+
+def sub_figure_get_limits(x,y, s = 4):
     m_x, std_x, x_min, x_max = np.mean(x), np.std(x), np.min(x), np.max(x)
     m_y, std_y, y_min, y_max = np.mean(y), np.std(y), np.min(y), np.max(y)
-    s = 4
-    ax.set_xlim(max(-s*std_x+m_x, x_min),min(m_x+std_x*s,x_max))
-    ax.set_ylim(max(-s*std_y+m_y, y_min),min(m_y+std_y*s, y_max))
-    return scatter
+    xmax, xmin = max(-s*std_x+m_x, x_min),min(m_x+std_x*s,x_max)
+    ymax, ymin = max(-s*std_y+m_y, y_min),min(m_y+std_y*s, y_max)
+    return xmax, xmin, ymax, ymin
 
 def plot_components(X_pca,X_tsne, clusters, file_name=None):
     max_number_of_rows = 20000
@@ -294,3 +300,30 @@ def plot_components(X_pca,X_tsne, clusters, file_name=None):
         fig.savefig(file_name)
         plt.close(fig)
     
+def fish_individuality_tsne(fish_keys, X_embedded, traces_all, clusters, n_clusters,trace_size):
+    if len(fish_keys)%2!=0:
+        raise Exception("This method does not support odd lengths of fish keys. ")
+    if len(fish_keys)%4==0 and len(fish_keys)>8:
+        nrows=4
+    else:
+        nrows=2
+        
+    ncols=len(fish_keys)//nrows
+    
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, sharex=True, sharey=True, squeeze=True, figsize=(3*ncols,3*nrows))
+    axs=np.concatenate(axs)
+
+    for i,f_key in enumerate(fish_keys):
+        filter_sum = traces_all["CAMERA_POSITION"]==f_key
+            
+        X=X_embedded[filter_sum]
+        s = sample(range(X.shape[0]), 5000)
+        X=X[s]
+        c = clusters[filter_sum][s]
+        sub_figure(axs[i],X[:,0], X[:,1], c, "t-SNE C1","t-NSE C2")
+        axs[i].set_title(f_key)
+    fig.tight_layout()
+    fig.savefig(get_results_filepath(trace_size, "fish_individuality_tsne_%d"%n_clusters))
+    plt.close(fig)
+    
+  
