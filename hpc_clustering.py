@@ -8,7 +8,7 @@ import time, sys
 from scipy.spatial.distance import cdist
 from src.clustering import *
 
-def execute_clustering(trace_size, n_clusters):
+def execute_clustering(trace_size, *n_clusters):
     try:
         traces_all, nSs = load_traces(trace_size)
         print("traces loaded for size: %s"%trace_size)
@@ -20,16 +20,16 @@ def execute_clustering(trace_size, n_clusters):
     pca = PCA()
     traces_np = normalize_data_metrics(traces_as_numpy(traces_all))
     pca_traces = pca.fit_transform(traces_np)
-    KM = KMeans(n_clusters=n_clusters)
-    clusters = KM.fit_predict(pca_traces)
     elbow_method_kmeans(pca_traces, 14, get_results_filepath(trace_size,"Elbow_Method"))
-    plot_lines_for_cluster(traces_np, nSs, clusters, n_clusters, trace_size, limit=30, fig_name="cluster_characteristics_%d"%(n_clusters))
     bar_plot_pca(pca, trace_size)
     bar_plot_pca_loadings(pca, trace_size)
-    
     tsne_model = init_tsne_model(perplexity=30,N = pca_traces.shape[0])
     X_embedded = tsne_model.fit_transform(pca_traces)
-    plot_components(pca_traces, X_embedded, clusters, file_name=get_results_filepath(trace_size, "pca_tsne_%d"%(n_clusters)))
+    for n_c in n_clusters:
+        KM = KMeans(n_clusters=n_c)
+        clusters = KM.fit_predict(pca_traces)
+        plot_lines_for_cluster(traces_np, nSs, clusters, n_clusters, trace_size, limit=30, fig_name="cluster_characteristics_%d"%(n_c))
+        plot_components(pca_traces, X_embedded, clusters, file_name=get_results_filepath(trace_size, "pca_tsne_%d"%(n_c)))
         
 def bar_plot_pca(pca, trace_size):
     y = pca.explained_variance_ratio_
