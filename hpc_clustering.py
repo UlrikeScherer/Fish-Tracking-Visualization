@@ -4,7 +4,8 @@ from matplotlib import cm
 from src.config import N_FISHES
 from src.utile import get_all_days_of_context
 import numpy as np
-import os, time, sys
+import time, sys
+from scipy.spatial.distance import cdist
 from src.clustering import *
 
 def execute_clustering(trace_size, n_clusters):
@@ -21,7 +22,7 @@ def execute_clustering(trace_size, n_clusters):
     pca_traces = pca.fit_transform(traces_np)
     KM = KMeans(n_clusters=n_clusters)
     clusters = KM.fit_predict(pca_traces)
-
+    elbow_method_kmeans(pca_traces, 14, get_results_filepath(trace_size,"Elbow_Method"))
     plot_lines_for_cluster(traces_np, nSs, clusters, n_clusters, trace_size, limit=30, fig_name="cluster_characteristics_%d"%(n_clusters))
     bar_plot_pca(pca, trace_size)
     bar_plot_pca_loadings(pca, trace_size)
@@ -49,6 +50,38 @@ def bar_plot_pca_loadings(pca,trace_size,number_of_components=4):
 
     fig.savefig(get_results_filepath(trace_size,"PCA_Loadings"),bbox_inches = "tight")
     plt.close(fig)
+
+def elbow_method_kmeans(X, max_k, fig_name=None):
+    distortions = []
+    inertias = []
+    mapping1 = {}
+    mapping2 = {}
+    K = range(1, max_k+1)
+    for k in K:
+        # Building and fitting the model
+        kmeanModel = KMeans(n_clusters=k).fit(X)
+        kmeanModel.fit(X)
+
+        distortions.append(sum(np.min(cdist(X, kmeanModel.cluster_centers_,
+                                            'euclidean'), axis=1)) / X.shape[0])
+        inertias.append(kmeanModel.inertia_)
+
+        mapping1[k] = sum(np.min(cdist(X, kmeanModel.cluster_centers_,
+                                       'euclidean'), axis=1)) / X.shape[0]
+        mapping2[k] = kmeanModel.inertia_
+    ### print and show 
+    for key, val in mapping1.items():
+        print(f'{key} : {val}')
+    plt.plot(K, distortions, 'bx-')
+    plt.xlabel('Values of K')
+    plt.ylabel('Distortion')
+    plt.title('The Elbow Method using Distortion')
+    plt.legend()
+    if fig_name is None:
+        plt.show()
+    else:
+        plt.savefig(fig_name)
+        plt.close()
 
 def init_tsne_model(perplexity,N,**kwargs):
     skl_kw = dict(

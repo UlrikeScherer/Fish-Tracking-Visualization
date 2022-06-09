@@ -1,0 +1,69 @@
+
+\documentclass[landscape]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage[a4paper, inner=1em, outer=1em, top=1em]{geometry}
+\usepackage{pgffor}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{hyperref}
+\usepackage{ifthen}
+\usepackage[nomessages]{fp}% http://ctan.org/pkg/fp
+\usepackage{adjustbox}
+\usepackage{tcolorbox}
+\usepackage{xstring}
+\usepackage{xurl}
+\usepackage{etoolbox}
+\usepackage{nopageno}
+\usepackage{tabularx}
+
+\providecommand{\block}{block1}
+\providecommand{\tracesize}{200}
+\graphicspath{{../vis/\block_trace_size_\tracesize/}} 
+
+\title{\Large Developing exploration behavior\\
+Clustering of trajectory sequences. 
+{\normalsize From the 10th of September to the 8th of November.}\\
+\textsc{\block}\\
+}
+\author{Research Unit 1, SCIoI Project 21}
+\date{\today}
+
+\begin{document}
+
+\maketitle  
+\begin{center}
+\subsection*{Legend}
+\begin{tabular}{p{3cm} p{8cm} }
+    \textbf{Activity} & is here defined as the average distance per frame (0.2 seconds) that a fish swims. We compute the mean  \\
+\end{tabular}
+\end{center}
+\subsection*{PCA}
+\begin{figure}
+    \begin{subfigure}[h]{.25\textwidth}
+        \includegraphics[width=\textwidth]{/PCA_explained_variance_ratio_\tracesize.pdf}
+        \subcaption*{Principal Components of the calculated 9 metrics for trajectory sequence of size \tracesize{}. }
+    \end{subfigure}
+    \begin{subfigure}[h]{.7\textwidth}
+        \includegraphics[width=\textwidth]{/PCA_loadings_\tracesize.pdf}
+        \subcaption*{Loadings on the Principal Components.}
+    \end{subfigure}
+\end{figure}
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}[h]{.25\textwidth}
+        \includegraphics[width=\textwidth]{Elbow_Method_\tracesize.pdf}
+        \subcaption*{Elbow Mothod measuring decreasing distortion with increasing clusters K.}
+    \end{subfigure}
+    \begin{subfigure}[h]{.7\textwidth}
+        \includegraphics[width=\textwidth]{cluster_characteristics_6_\tracesize.pdf}
+        \subcaption*{clustering characteristics for 6 clusters}
+    \end{subfigure}
+\end{figure}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{pca_tsne_6_\tracesize.pdf}
+\end{figure}
+
+\end{document}
