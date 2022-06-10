@@ -10,6 +10,8 @@ jupyter-lab --no-browser --port=5000
 
 #### README
 pandoc README.md -o README.pdf
+#### REQUIREMENTS 
+pipreqs --force 
 
 #### TODOs for LATER
 + README and DOCUMENTATION 
