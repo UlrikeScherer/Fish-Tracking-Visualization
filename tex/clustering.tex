@@ -20,12 +20,13 @@
 
 \providecommand{\block}{block1}
 \providecommand{\tracesize}{200}
+\providecommand{\nclusters}{6}
 \graphicspath{{../vis/\block_trace_size_\tracesize/}} 
 
 \title{\Large Developing exploration behavior\\
 Clustering of trajectory sequences. 
 {\normalsize From the 10th of September to the 8th of November.}\\
-\textsc{\block}\\
+\textsc{\block}, Trace Size: \textit{\tracesize}.\\
 }
 \author{Research Unit 1, SCIoI Project 21}
 \date{\today}
@@ -36,18 +37,19 @@ Clustering of trajectory sequences.
 \begin{center}
 \subsection*{Legend}
 \begin{tabular}{p{3cm} p{8cm} }
-    \textbf{Activity} & is here defined as the average distance per frame (0.2 seconds) that a fish swims. We compute the mean  \\
+    \textbf{Trace Size} & is \tracesize{}, thus each sample consists of 9 metrics calculated over \tracesize{} many consecutive data frames. There are 5 data frames per second.  \\
 \end{tabular}
 \end{center}
-\subsection*{PCA}
+\newpage
+%\subsection*{PCA}
 \begin{figure}
     \begin{subfigure}[h]{.25\textwidth}
         \includegraphics[width=\textwidth]{/PCA_explained_variance_ratio_\tracesize.pdf}
-        \subcaption*{Principal Components of the calculated 9 metrics for trajectory sequence of size \tracesize{}. }
+        \subcaption*{Principal Components of 9 calculated metrics for trajectory sequence of size \tracesize{}. }
     \end{subfigure}
     \begin{subfigure}[h]{.7\textwidth}
         \includegraphics[width=\textwidth]{/PCA_loadings_\tracesize.pdf}
-        \subcaption*{Loadings on the Principal Components.}
+        \subcaption*{Loadings of the first 4 Principal Components.}
     \end{subfigure}
 \end{figure}
 \begin{figure}[h]
@@ -57,13 +59,13 @@ Clustering of trajectory sequences.
         \subcaption*{Elbow Mothod measuring decreasing distortion with increasing clusters K.}
     \end{subfigure}
     \begin{subfigure}[h]{.7\textwidth}
-        \includegraphics[width=\textwidth]{cluster_characteristics_6_\tracesize.pdf}
-        \subcaption*{clustering characteristics for 6 clusters}
+        \includegraphics[width=\textwidth]{cluster_characteristics_\nclusters_\tracesize.pdf}
+        \subcaption*{Cluster Characteristics for \nclusters clusters}
     \end{subfigure}
 \end{figure}
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.8\textwidth]{pca_tsne_6_\tracesize.pdf}
+    \includegraphics[width=0.8\textwidth]{pca_tsne_\nclusters_\tracesize.pdf}
 \end{figure}
 
 \end{document}
