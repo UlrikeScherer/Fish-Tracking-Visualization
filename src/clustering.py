@@ -325,5 +325,52 @@ def fish_individuality_tsne(fish_keys, X_embedded, traces_all, clusters, n_clust
     fig.tight_layout()
     fig.savefig(get_results_filepath(trace_size, "fish_individuality_tsne_%d"%n_clusters))
     plt.close(fig)
+
+def fish_development_tsne(fish_key,days, X_embedded, traces_all, clusters, n_clusters,trace_size):
+    
+    if len(days)%2!=0 or len(days) < 8:
+        nrows=1
+    elif len(days)%4==0 and len(days)>8:
+        nrows=4
+    else:
+        nrows=2
+    ncols=len(days)//nrows
+    
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, sharex=True, sharey=True, squeeze=True, figsize=(3*ncols,3*nrows))
+    if len(axs.shape)>1:
+        axs=np.concatenate(axs)
+    fish_filter = traces_all["CAMERA_POSITION"]==fish_key
+    X_embedded=X_embedded[fish_filter]
+    clusters = clusters[fish_filter]
+    traces=traces_all[fish_filter]
+    day_before = "0"
+    limits = sub_figure_get_limits(X_embedded[:,0], X_embedded[:,1])
+    for i in range(len(days)):
+        filter_sum = (traces["DAY"]>day_before) & (traces["DAY"] <= days[i])
+        X=X_embedded[filter_sum]
+        s = sample(range(X.shape[0]), min(5000,X.shape[0]))
+        X=X[s]
+        c = clusters[filter_sum][s]
+        if X.shape[0]==0:
+            continue
+        sub_figure(axs[i],X[:,0], X[:,1], c, "t-SNE C1","t-NSE C2", limits=limits)
+        axs[i].set_title("upto %s"%get_date_string(days[i]))
+        day_before = days[i]
+    fig.tight_layout()
+    fig.savefig(get_results_filepath(trace_size, "fish_development_tsne_%d_%s"%(n_clusters, fish_key)))
+    plt.close(fig)
+    
+    
+############### TRANSITIONS 
+
+def transition_rates(fish_key, clusters,n_clusters, traces_all, trace_size):
+    fish_filter = traces_all["CAMERA_POSITION"] == fish_key
+    clusters=clusters[fish_filter]
+    cl, counts = np.unique(clusters, return_counts=True)
+    print(counts/clusters.shape[0])
+    transitions = pd.crosstab(pd.Series(clusters[:-1],name='from'),pd.Series(clusters[1:],name='to'),normalize=1)
+    return transitions
+
+    
     
   
