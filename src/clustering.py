@@ -268,11 +268,13 @@ def plot_lines_for_cluster(traces, samples, clusters, n_clusters, trace_size, li
     plt.close(fig)
         
 def sub_figure(ax, x, y, clusters,x_label, y_label, limits=None):
-    scatter = ax.scatter(x,y,c=clusters, cmap=plt.get_cmap("tab10"), alpha=0.5, s=2)
+    scatter = ax.scatter(x,y,c=clusters, cmap="tab10", alpha=0.5, s=2)
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     if limits is None:
         limits = sub_figure_get_limits(x,y)
+    else:
+        print("limits are set")
     ax.set_xlim(limits[0], limits[1])
     ax.set_ylim(limits[2], limits[3])
     return scatter
@@ -284,7 +286,7 @@ def sub_figure_get_limits(x,y, s = 4):
     ymax, ymin = max(-s*std_y+m_y, y_min),min(m_y+std_y*s, y_max)
     return xmax, xmin, ymax, ymin
 
-def plot_components(X_pca,X_tsne, clusters, file_name=None):
+def plot_components(X_pca, X_tsne, clusters, file_name=None):
     max_number_of_rows = 20000
     if X_pca.shape[0]> max_number_of_rows:
         rand_select = np.random.choice(X_pca.shape[0], size=max_number_of_rows, replace=False)
@@ -363,13 +365,6 @@ def fish_development_tsne(fish_key,days, X_embedded, traces_all, clusters, n_clu
     
 ############### TRANSITIONS 
 
-def transition_rates(fish_key, clusters,n_clusters, traces_all, trace_size):
-    fish_filter = traces_all["CAMERA_POSITION"] == fish_key
-    clusters=clusters[fish_filter]
-    cl, counts = np.unique(clusters, return_counts=True)
-    print(counts/clusters.shape[0])
-    transitions = pd.crosstab(pd.Series(clusters[:-1],name='from'),pd.Series(clusters[1:],name='to'),normalize=1)
-    return transitions
 
     
     
