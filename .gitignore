@@ -4,6 +4,7 @@ log-path-validation.txt
 **/methods.c
 Metrics.ipynb
 *.pdf
+!README.pdf
 # MacOS
 .DS_Store
 **/.vscode

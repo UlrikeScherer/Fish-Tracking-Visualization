@@ -1,7 +1,6 @@
 import os, sys, re, glob
 import time
 
-
 def check_foldersystem(path, n_files = 15, delete=0):
     LOG_msg = ["For path: %s"%path]
     for c in [name for name in os.listdir(path) if len(name)==8 and name.isnumeric()]:

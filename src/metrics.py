@@ -1,16 +1,15 @@
 import numpy as np
 from scipy.stats import entropy
-from src.utile import *
-from src.tank_area_config import read_area_data_from_json
+from src.error_filter import all_error_filters
+from src.config import *
+from src.utile import csv_of_the_day, get_all_days_of_context, get_days_in_order, get_fish2camera_map, get_seconds_from_day
+from src.tank_area_config import get_area_functions, get_area_functions
 from src.transformation import pixel_to_cm, px2cm
-from methods import activity, calc_steps, turning_angle, tortuosity_of_chunk, distance_to_wall_chunk, mean_std, absolute_angles #cython
+from methods import activity, turning_angle, tortuosity_of_chunk, distance_to_wall_chunk, mean_std, absolute_angles #cython
 import pandas as pd
 import os
 from itertools import product
-
-DATA_results = "results"
-float_format='%.10f'
-sep=";"
+import matplotlib.pyplot as plt
 
 def num_of_spikes(steps):
     spike_places = steps > S_LIMIT
@@ -82,28 +81,39 @@ def sum_of_angles(df):
         u = v
     return sum_alpha
 
-from numpy.lib.stride_tricks import sliding_window_view
-
 def entropy_for_chunk(chunk, area_tuple):
     """
     Args: chunk,
     area = tuple(fish_key, data)
     retrun entropy, std * 100
     """
-    if chunk.shape[0]==0:
+    if chunk.shape[0] == 0:
         return np.nan, np.nan
     fish_key, area = area_tuple
-    xmin, xmax = min(area[:,0]), max(area[:,0])
-    ymin, ymax = min(area[:,1]), max(area[:,1])
-    hist = np.histogram2d(chunk[:,0],chunk[:,1], bins=(20, 20), density=False, range=[[xmin, xmax], [ymin, ymax]])[0]
+    th = THRESHOLD_AREA_PX
+    xmin, xmax = min(area[:,0])-th, max(area[:,0])+th
+    ymin, ymax = min(area[:,1])-th, max(area[:,1])+th
+    
+    hist = np.histogram2d(chunk[:,0],chunk[:,1], bins=(18, 18), density=False, range=[[xmin, xmax], [ymin, ymax]])[0]
 
     l_x,l_y = hist.shape
     if BACK in fish_key: # if back use take the upper triangle -3
         tri = np.triu_indices(l_y, k=-3)
     else: # if front the lower triangle +3
-         tri = np.tril_indices(l_y, k=3)
-    if np.sum(hist) > 1.05 * np.sum(hist[tri]):
-        print("Warning the selected area for entropy has lost some points: ", "sum hist: ",np.sum(hist),  "sum selection: ", sum(hist[tri]), "\n", fish_key)
+        tri = np.tril_indices(l_y, k=3)
+    sum_hist = np.sum(hist)
+    if sum_hist == 0: #
+        print(chunk[:10], xmin, ymin, xmax, ymax)
+        print("Warning for %s all %d data points where not in der range of histogram and removed"%(fish_key, chunk.shape[0]))
+        return np.nan, np.nan
+    if chunk.shape[0] > sum_hist:
+        #print(chunk[:10])
+        print("Warning for %s %d out of %d data points where not in der range of histogram and removed"%(fish_key, chunk.shape[0]-sum_hist, chunk.shape[0]))
+    if sum_hist > np.sum(hist[tri]):
+        print("Warning for %s the selected area for entropy has lost some points: "%fish_key, "sum hist: ",np.sum(hist),  "sum selection: ", sum(hist[tri]), "\n", fish_key)
+        print("entropy: ", entropy(hist[tri]))
+        plt.plot(*area.T)
+        plt.plot(*chunk.T, "*")
     return entropy(hist[tri]),np.std(hist[tri])*100
 
 def average_by_metric(data, frame_interval, avg_metric_f, error_index):
@@ -125,7 +135,7 @@ def distance_to_wall(data, frame_interval, error_index, area):
 def tortuosity(data, frame_interval, error_index):
     return average_by_metric(data, frame_interval, lambda chunk: mean_std(tortuosity_of_chunk(chunk)), error_index)
 
-def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100, day_interval = (0, N_DAYS), metric=activity, write_to_csv=False, drop_out_of_scope=False, area_data=None):
+def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100, day_interval = (0, N_DAYS), metric=activity, write_to_csv=False, drop_out_of_scope=False):
     """
     Applies a given function to all fishes in fish_ids with the time_interval, for all days in the day_interval interval
     Args:
@@ -140,6 +150,7 @@ def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100
     if isinstance(fish_ids, int):
         fish_ids = [fish_ids]
     fish2camera = get_fish2camera_map()
+    area_func = get_area_functions()
     results = dict()
     package = dict(metric_name=metric.__name__, time_interval=time_interval, results=results)
     for i,fish in enumerate(fish_ids):
@@ -151,10 +162,12 @@ def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100
             keys, df_day = csv_of_the_day(camera_id, day, is_back=is_back, drop_out_of_scope=drop_out_of_scope) ## True or False testing needed
             if len(df_day)>0:
                 df = pd.concat(df_day)
-                err_filter = get_error_indices(df).to_numpy()
-                if area_data is not None:
-                    data = df[["xpx", "ypx"]].to_numpy()                          # DISTANCE TO WALL METRIC
-                    result = metric(data,time_interval*FRAMES_PER_SECOND, err_filter, (fish_key, area_data[fish_key]))
+                data = df[["xpx", "ypx"]].to_numpy()  
+                area_tuple = (fish_key, area_func(fish_key, day=day))
+                err_filter = all_error_filters(data, area_tuple)
+                if metric.__name__ in [entropy_for_data.__name__, distance_to_wall.__name__]:
+                                           # DISTANCE TO WALL METRIC
+                    result = metric(data,time_interval*FRAMES_PER_SECOND, err_filter, area_tuple)
                 else:
                     data = pixel_to_cm(df[["xpx", "ypx"]].to_numpy())
                     result = metric(data,time_interval*FRAMES_PER_SECOND, err_filter)
@@ -218,12 +231,10 @@ def tortuosity_per_interval(*args, **kwargs):
     return metric_per_interval(*args, **kwargs, metric=tortuosity)
 
 def entropy_per_interval(*args, **kwargs):
-    area_data = read_area_data_from_json()
-    return metric_per_interval(*args, **kwargs, metric=entropy_for_data, area_data=area_data)
+    return metric_per_interval(*args, **kwargs, metric=entropy_for_data)
 
 def distance_to_wall_per_interval(*args, **kwargs):
-    area_data = read_area_data_from_json()
-    return metric_per_interval(*args, **kwargs, metric=distance_to_wall, area_data=area_data)
+    return metric_per_interval(*args, **kwargs, metric=distance_to_wall)
 
 
 

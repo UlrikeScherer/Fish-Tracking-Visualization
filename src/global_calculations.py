@@ -1,5 +1,6 @@
 import numpy as np
-from src.utile import csv_of_the_day, get_fish2camera_map, S_LIMIT, BACK
+from src.config import S_LIMIT, BACK
+from src.utile import csv_of_the_day, get_fish2camera_map
 from src.metrics import calc_step_per_frame
 
 def global_mean(fish_ids, days):

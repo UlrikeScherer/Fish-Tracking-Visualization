@@ -2,51 +2,16 @@ from datetime import datetime
 from time import gmtime, strftime
 import pandas as pd
 import numpy as np
-import os
 import re
 import glob
-import json
 from itertools import product
-from envbash import load_envbash
+from src.error_filter import get_error_indices
+from src.config import *
 from path_validation import filter_files
-load_envbash('scripts/env.sh')
 
-# Calculated MEAN and SD for the data set filtered for erroneous frames
-MEAN_GLOBAL = 0.22746102241709162
-SD_GLOBAL = 1.0044248513034164
-S_LIMIT = 15 #MEAN_GLOBAL + 3 * SD_GLOBAL
-BATCH_SIZE = 9999
-FRAMES_PER_SECOND = 5
-ROOT=os.environ["rootserver"]
-ROOT_LOCAL=os.environ["root_local"]
-DIR_CSV=os.environ["path_csv"] #
-DIR_CSV_LOCAL=os.environ["path_csv_local"] #
-BLOCK = os.environ["BLOCK"] # block1 or block2
-
-# TRAJECTORY
-dir_front = os.environ["dir_front"]
-dir_back = os.environ["dir_back"]
-STIME = os.environ["STIME"]
-
-# FEEDING
-dir_feeding_front = os.environ["dir_feeding_front"]
-dir_feeding_back = os.environ["dir_feeding_back"]
-FEEDINGTIME = os.environ["FEEDINGTIME"]
-
-FRONT, BACK = "front", "back"
-ROOT_img = "plots"
-DATA_DIR = "data"
-
-N_BATCHES=15
-N_BATCHES_FEEDING=8
-
-N_FISHES = 24
-N_DAYS = 28
-HOURS_PER_DAY = 8
-N_SECONDS_PER_HOUR = 3600
-N_SECONDS_OF_DAY = 24*N_SECONDS_PER_HOUR
-
-def get_directory(is_feeding=False, is_back=False):
+def get_directory(is_feeding=None, is_back=None):
+    if is_feeding is None or is_back is None:
+        raise Exception("define kwargs")
     if is_feeding:
         if is_back: return dir_feeding_back
         else: return dir_feeding_front
@@ -166,16 +131,6 @@ def read_batch_csv(filename, drop_errors):
     df.reset_index(drop=True, inplace=True)
     return df
 
-def get_error_indices(dataframe):
-    """
-   @params: dataframe
-   returns a boolean pandas array with all indices to filter set to True
-    """
-    x = dataframe.xpx
-    y = dataframe.ypx
-    indexNames = ((x == -1) & (y == -1)) | ((x == 0) & (y == 0)) # except the last index for time recording
-    return indexNames
-
 def merge_files(filenames, drop_errors):
     batches = []
     for f in filenames:
@@ -188,9 +143,8 @@ def csv_of_the_day(camera, day, is_back=False, drop_out_of_scope=False, is_feedi
     @params: camera, day, is_back, drop_out_of_scope
     returns csv of the day for camera: front or back
     """
-    dir_ = dir_back if is_back else dir_front
-    if is_feeding:
-        dir_ = dir_feeding_back if is_back else dir_feeding_front
+
+    dir_ = get_directory(is_feeding=is_feeding, is_back=is_back)
 
     filenames_f = [f for f in glob.glob("{}/{}/{}*/{}_{}*.csv".format(dir_, camera, day, camera, day), recursive=True) if re.search(r'[0-9].*\.csv$', f[-6:])]
 
@@ -200,21 +154,3 @@ def csv_of_the_day(camera, day, is_back=False, drop_out_of_scope=False, is_feedi
     if print_log and len(LOG)>0:
         print("\n {}/{}/{}*: \n".format(dir_, camera, day),"\n".join(LOG))
     return file_keys, merge_files(correct_files, drop_out_of_scope)
-
-def activity_for_day_hist(fish_id, day_idx=1):
-    fish2camera=get_fish2camera_map()
-    camera_id, is_back = fish2camera[fish_id,0], fish2camera[fish_id,1]=="back"
-    mu_sd = list()
-    all_days = get_days_in_order(camera=camera_id, is_back=is_back)
-    day = all_days[day_idx]
-    keys, csv_by_day = csv_of_the_day(camera_id, day, is_back=is_back, drop_out_of_scope=True)
-    df = pd.concat(csv_by_day)
-    c = calc_steps(df[["x", "y"]].to_numpy())
-    p = plt.hist(c, bins=50,range=[0, 5], density=True, alpha=0.75)
-    plt.ylim(0, 3)
-    plt.xlabel('cm')
-    plt.ylabel('Probability')
-    plt.title('Histogram of step lengh per Frame')
-    mu, om = np.mean(c), np.std(c)
-    plt.text(mu, om, r'$\mu=\ $'+ "%.2f, "%mu + r'$\sigma=$'+"%.2f"%om)
-    plt.show()

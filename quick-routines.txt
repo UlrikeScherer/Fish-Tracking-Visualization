@@ -1,0 +1,24 @@
+#### NEXT TODOs
+1. transition rates 
+
+#### Start on the GPU
+srun --pty --partition=ex_scioi_gpu --gres=gpu:1 --time=0-02:00 bash -i
+conda activate rapids-22.04
+Type `ifconfig` and get the `inet` entry for `eth0`, i.e. the IP address of the node
+ssh -L localhost:5000:localhost:5000 luka.staerk@[IP address]
+jupyter-lab --no-browser --port=5000
+
+#### README
+pandoc README.md -o README.pdf
+#### REQUIREMENTS 
+pipreqs --force 
+
+#### TODOs for LATER
++ README and DOCUMENTATION 
++ pdfs for windows -- adapted the root to `C:\data\...`. (Not needed for now)
++ `\href` in windows not working.
++ start BioTracker from link. Install BioTracker on Mac?
++ How to start the BioTracker
+`.\BioTracker.lnk --video="X:\path-to-file.mp4"`
+
+

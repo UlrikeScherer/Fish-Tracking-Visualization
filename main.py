@@ -2,11 +2,13 @@ import time
 import sys, os, inspect
 import matplotlib.pyplot as plt
 import numpy as np
-from src.utile import get_camera_names, DIR_CSV_LOCAL, MEAN_GLOBAL, get_fish_ids, print_tex_table, get_fish2camera_map,get_camera_pos_keys, N_FISHES, N_SECONDS_PER_HOUR
+from src.utile import get_fish_ids, print_tex_table, get_fish2camera_map,get_camera_pos_keys
+from src.config import DIR_CSV_LOCAL, MEAN_GLOBAL, N_FISHES, N_SECONDS_PER_HOUR
 from src.visualisation import Trajectory
+from src.feeding import FeedingTrajectory
 from src.metrics import activity_per_interval, turning_angle_per_interval, tortuosity_per_interval, entropy_per_interval, metric_per_hour_csv, distance_to_wall_per_interval, absolute_angle_per_interval
 from src.activity_plotting import sliding_window, sliding_window_figures_for_tex
-from src.feeding import FeedingTrajectory
+
 TRAJECTORY="trajectory"
 FEEDING="feeding"
 ACTIVITY="activity"
@@ -18,12 +20,8 @@ WALL_DISTANCE="wall_distance"
 ALL_METRICS="all"
 programs = [TRAJECTORY,FEEDING, ACTIVITY, TURNING_ANGLE, ABS_ANGLE, TORTUOSITY, ENTROPY, WALL_DISTANCE]
 metric_names = [ACTIVITY, TURNING_ANGLE, ABS_ANGLE, TORTUOSITY, ENTROPY, WALL_DISTANCE]
-#time_intervals = [100,100,100,200]
 
-def map_r_to_idx(results, fish_idx):
-    return [results[i] for i in fish_idx]
-
-def plotting_odd_even(results, time_interval=None, metric_name=None, name=None, ylabel=None, sw=10, visualize=None, **kwargs):
+def plotting_odd_even(results, time_interval=None, name=None, ylabel=None, sw=10, visualize=None, **kwargs):
     ###
     if visualize is None:
         return None
@@ -44,7 +42,6 @@ def plotting_odd_even(results, time_interval=None, metric_name=None, name=None, 
         print("Plotting %s %s"%(names[i], batch))
         print_tex_table(batch, positions[i])
         batch_keys = [fish_keys[i] for i in batch]
-        #select_data = map_r_to_idx(results,batch_keys)
         f_ = sliding_window(results, time_interval, sw=sw, fish_keys=batch_keys, fish_labels=fish_labels[batch], ylabel=ylabel, name=names[i], **kwargs)
         plt.close(f_)
         sliding_window_figures_for_tex(results, time_interval, sw=sw, fish_keys=batch_keys, fish_labels=fish_labels[batch], ylabel=ylabel, name=names[i], **kwargs)
@@ -58,7 +55,6 @@ def main(program=None, test=0, time_interval=100, sw=10, fish_id=None, visualize
         print("TERMINATED: Please connect to external hard drive with path %s or edit path in scripts/env.sh"%DIR_CSV_LOCAL)
         return None
     is_feeding = program==FEEDING
-    cameras = get_camera_names(is_feeding=is_feeding)
     fish2camera = get_fish2camera_map(is_feeding=is_feeding)
     fish_keys = get_camera_pos_keys(is_feeding=is_feeding)
     N_FISHES = len(fish2camera)

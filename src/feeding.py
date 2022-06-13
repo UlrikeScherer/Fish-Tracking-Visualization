@@ -2,8 +2,8 @@ import pandas as pd
 import os
 import numpy as np
 from time import gmtime, strftime
-from src.utile import BACK, FRONT, get_days_in_order,get_all_days_of_context, get_camera_pos_keys, BLOCK
-from src.metrics import DATA_results
+from src.config import BACK, FRONT, BLOCK, DATA_results
+from src.utile import get_days_in_order,get_all_days_of_context, get_camera_pos_keys
 from src.visualisation import Trajectory
 from src.transformation import pixel_to_cm
 
