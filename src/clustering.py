@@ -362,8 +362,6 @@ def fish_development_tsne(fish_key,days, X_embedded, traces_all, clusters, n_clu
     fig.savefig(get_results_filepath(trace_size, "fish_development_tsne_%d_%s"%(n_clusters, fish_key)))
     plt.close(fig)
     
-    
-############### TRANSITIONS 
 
 
     
