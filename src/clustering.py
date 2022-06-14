@@ -3,7 +3,7 @@ from src.config import BATCH_SIZE, BLOCK, STIME, BACK, sep, VIS_DIR
 from src.error_filter import all_error_filters, error_default_points
 from src.transformation import rotation, pixel_to_cm
 from src.metrics import entropy_for_data, distance_to_wall
-from src.utile import  get_fish2camera_map, csv_of_the_day
+from src.utile import  get_fish2camera_map, csv_of_the_day, get_date_string
 from src.tank_area_config import get_area_functions
 from methods import activity, turning_angle, absolute_angles
 from itertools import product
@@ -27,8 +27,12 @@ def get_traces_type():
     })
     return traces_type
 
-def get_results_filepath(trace_size, file_name):
-    path_ = "%s/%s_trace_size_%s"%(VIS_DIR, BLOCK, trace_size)
+def get_results_filepath(trace_size, file_name, subfolder=None):
+    if subfolder:
+        path_ = "%s/%s_trace_size_%s/%s"%(VIS_DIR, BLOCK, trace_size, subfolder)
+    else:
+        path_ = "%s/%s_trace_size_%s"%(VIS_DIR, BLOCK, trace_size)
+        
     if not os.path.exists(path_):
         os.makedirs(path_)
     return "%s/%s_%d.pdf"%(path_, file_name, trace_size)
@@ -359,7 +363,7 @@ def fish_development_tsne(fish_key,days, X_embedded, traces_all, clusters, n_clu
         axs[i].set_title("upto %s"%get_date_string(days[i]))
         day_before = days[i]
     fig.tight_layout()
-    fig.savefig(get_results_filepath(trace_size, "fish_development_tsne_%d_%s"%(n_clusters, fish_key)))
+    fig.savefig(get_results_filepath(trace_size,"fish_development_tsne_%d_%s"%(n_clusters, fish_key), subfolder="fish_development"))
     plt.close(fig)
     
 
