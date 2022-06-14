@@ -27,10 +27,10 @@ def check_foldersystem(path, n_files = 15, delete=0):
 
             # normal case
             else:
-                if len(files) != 15:
+                if len(files) != n_files:
                     wrote_folder = True
-                    LOG_msg.append("In folder %s the number of csv files is unequal the expected number 15, it is %d instead"%(
-                        "{}/{}/{}".format(path, c, d), len(files))
+                    LOG_msg.append("In folder %s the number of csv files is unequal the expected number %d, it is %d instead"%(
+                        "{}/{}/{}".format(path, n_files, c, d), len(files))
                                 )
                 msg, duplicate_f, correct_f = filter_files(c,d,files, n_files)
 
@@ -96,7 +96,7 @@ def main(delete=0, n_files=15):
     """
     # past your path here as pathx
     path1 = '/Volumes/Extreme_SSD/FE_tracks_retracked/FE_tracks_060000_block1_retracked/FE_060000_tracks_block1_%s_retracked'
-    path2 = '/Volumes/data/loopbio_data/FE_(fingerprint_experiment)_SepDec2021/FE_tracks_retracked/FE_tracks_060000_block1_retracked/FE_060000_tracks_block1_%s_retracked'
+    path2 = '../FE_Tracks/FE_block1_060000_%s_final'
 
     # select the path here and use the %s to replace "front" or "back"
     PATH=path2
@@ -110,6 +110,6 @@ def main(delete=0, n_files=15):
 
 if __name__ == '__main__':
     tstart = time.time()
-    main(**dict(arg.split('=') for arg in sys.argv[1:]))
+    main(**dict((arg.split('=')[0], int(arg.split('=')[1])) for arg in sys.argv[1:]))
     tend = time.time()
     print("Running time:", tend-tstart, "sec.")
