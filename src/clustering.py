@@ -267,8 +267,8 @@ def plot_lines_for_cluster(traces, samples, clusters, n_clusters, trace_size, li
     fig.savefig(get_results_filepath(trace_size, fig_name), bbox_inches = "tight")
     plt.close(fig)
         
-def sub_figure(ax, x, y, clusters,x_label, y_label, limits=None):
-    scatter = ax.scatter(x,y,c=clusters, cmap="tab10", alpha=0.5, s=2)
+def sub_figure(ax, x, y, clusters,x_label, y_label, limits=None, zorder=-1):
+    scatter = ax.scatter(x,y,c=clusters, cmap="tab10", alpha=0.5, s=2, zorder=zorder)
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     if limits is None:
