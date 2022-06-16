@@ -39,6 +39,9 @@ def execute_clustering(trace_size, *n_clusters):
     fish_individuality_tsne(fish_keys, X_embedded, traces_all, clusters, n_c, trace_size)
     for fk in fish_keys:
         fish_development_tsne(fk, days[6::7], X_embedded, traces_all, clusters, n_c, trace_size)
+        
+    ## TRANSITIONS 
+    plot_transitions_individuality_develpoment(fish_keys, traces_all, X_embedded, clusters,n_c, trace_size)
     
 def bar_plot_pca(pca, trace_size):
     y = pca.explained_variance_ratio_
