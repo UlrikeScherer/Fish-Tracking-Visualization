@@ -278,7 +278,8 @@ def sub_figure(ax, x, y, clusters,x_label, y_label, limits=None, zorder=-1):
     if limits is None:
         limits = sub_figure_get_limits(x,y)
     else:
-        print("limits are set")
+        pass
+        #print("limits are set")
     ax.set_xlim(limits[0], limits[1])
     ax.set_ylim(limits[2], limits[3])
     return scatter
@@ -289,6 +290,18 @@ def sub_figure_get_limits(x,y, s = 4):
     xmax, xmin = max(-s*std_x+m_x, x_min),min(m_x+std_x*s,x_max)
     ymax, ymin = max(-s*std_y+m_y, y_min),min(m_y+std_y*s, y_max)
     return xmax, xmin, ymax, ymin
+
+def single_plot_components(X, clusters, x_label="t-SNE C1",y_label="t-SNE C2", file_name=None,):
+    max_number_of_rows = 20000
+    if X.shape[0] > max_number_of_rows:
+        s = sample(range(X.shape[0]), max_number_of_rows)
+        X, clusters =X[s], clusters[s]
+    fig, ax = plt.subplots(nrows=1,ncols=1, figsize=(5,5))
+    scatter2 = sub_figure(ax, X[:,0], X[:,1], clusters, x_label, y_label)
+    fig.tight_layout() 
+    if file_name is not None: 
+        fig.savefig(file_name)
+        plt.close(fig)
 
 def plot_components(X_pca, X_tsne, clusters, file_name=None):
     max_number_of_rows = 20000
@@ -315,7 +328,7 @@ def fish_individuality_tsne(fish_keys, X_embedded, traces_all, clusters, n_clust
         nrows=2
         
     ncols=len(fish_keys)//nrows
-    
+    max_size=5000
     fig, axs = plt.subplots(nrows=nrows, ncols=ncols, sharex=True, sharey=True, squeeze=True, figsize=(3*ncols,3*nrows))
     axs=np.concatenate(axs)
 
@@ -323,9 +336,11 @@ def fish_individuality_tsne(fish_keys, X_embedded, traces_all, clusters, n_clust
         filter_sum = traces_all["CAMERA_POSITION"]==f_key
             
         X=X_embedded[filter_sum]
-        s = sample(range(X.shape[0]), 5000)
-        X=X[s]
-        c = clusters[filter_sum][s]
+        c = clusters[filter_sum]
+        if X.shape[0]>max_size:
+            s = sample(range(X.shape[0]), max_size)
+            X=X[s]
+            c=c[s]
         sub_figure(axs[i],X[:,0], X[:,1], c, "t-SNE C1","t-NSE C2")
         axs[i].set_title(f_key)
     fig.tight_layout()
@@ -341,7 +356,7 @@ def fish_development_tsne(fish_key,days, X_embedded, traces_all, clusters, n_clu
     else:
         nrows=2
     ncols=len(days)//nrows
-    
+    max_size=5000
     fig, axs = plt.subplots(nrows=nrows, ncols=ncols, sharex=True, sharey=True, squeeze=True, figsize=(3*ncols,3*nrows))
     if len(axs.shape)>1:
         axs=np.concatenate(axs)
@@ -354,9 +369,11 @@ def fish_development_tsne(fish_key,days, X_embedded, traces_all, clusters, n_clu
     for i in range(len(days)):
         filter_sum = (traces["DAY"]>day_before) & (traces["DAY"] <= days[i])
         X=X_embedded[filter_sum]
-        s = sample(range(X.shape[0]), min(5000,X.shape[0]))
-        X=X[s]
-        c = clusters[filter_sum][s]
+        c = clusters[filter_sum]
+        if X.shape[0]>max_size:
+            s = sample(range(X.shape[0]),max_size)
+            X=X[s]
+            c = c[s]
         if X.shape[0]==0:
             continue
         sub_figure(axs[i],X[:,0], X[:,1], c, "t-SNE C1","t-NSE C2", limits=limits)

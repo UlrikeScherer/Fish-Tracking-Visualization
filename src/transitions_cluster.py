@@ -51,7 +51,7 @@ def draw_transition_graph(t, X_em, clusters,ax=None, flip_y=True, output=None, i
                     vertex_text=g.vertex_index,
            vertex_fill_color=vcolor,
             vertex_pen_width=vertex_pen_width,
-           eprops={"pen_width":eweight, "text":elabel, "font_size":eweight_scale,
+           eprops={"pen_width":eweight, "text":elabel, "font_size":emarker,
                    "marker_size":emarker,
                    "color":[0.179, 0.203,0.210, 0.7]},
            adjust_aspect=True, output=output,mplfig=ax)

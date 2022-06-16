@@ -3,6 +3,7 @@ from cuml import PCA, KMeans
 from matplotlib import cm
 from src.config import N_FISHES
 from src.utile import get_all_days_of_context, get_camera_pos_keys
+from src.transitions_cluster import transition_rates_over_all, draw_transition_graph
 import numpy as np
 import time, sys
 from scipy.spatial.distance import cdist
@@ -30,10 +31,17 @@ def execute_clustering(trace_size, *n_clusters):
         clusters = KM.fit_predict(pca_traces)
         plot_lines_for_cluster(traces_np, nSs, clusters, n_c, trace_size, limit=30, fig_name="cluster_characteristics_%d"%(n_c))
         plot_components(pca_traces, X_embedded, clusters, file_name=get_results_filepath(trace_size, "pca_tsne_%d"%(n_c)))
-        
+        single_plot_components(X_embedded, clusters,file_name=get_results_filepath(trace_size, "tsne_%d"%(n_c)))
+    
+    ## INDIVIDUALITY AND DEVELOPMENT 
     fish_keys = get_camera_pos_keys()
-    #day_limit = get_all_days_of_context()[6]
-    fish_individuality_tsne(fish_keys, X_embedded, traces_all, clusters, n_clusters[-1], trace_size)
+    days = get_all_days_of_context()
+    fish_individuality_tsne(fish_keys, X_embedded, traces_all, clusters, n_c, trace_size)
+    for fk in fish_keys:
+        fish_development_tsne(fk, days[6::7], X_embedded, traces_all, clusters, n_c, trace_size)
+    #TRANSITION 
+    t = transition_rates_over_all(fish_keys, clusters,n_c, traces_all, trace_size)
+    draw_transition_graph(t,X_embedded, clusters, flip_y=True, output=get_results_filepath(trace_size, "all_transitions_c%s"%t.shape[0]))
         
 def bar_plot_pca(pca, trace_size):
     y = pca.explained_variance_ratio_
