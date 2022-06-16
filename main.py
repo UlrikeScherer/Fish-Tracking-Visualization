@@ -51,9 +51,9 @@ def main(program=None, test=0, time_interval=100, sw=10, fish_id=None, visualize
                 program: trajectory, activity, turning_angle
                 time_interval: kwarg for the programs activity, turning_angle
     """
-    if not os.path.isdir(DIR_CSV_LOCAL):
-        print("TERMINATED: Please connect to external hard drive with path %s or edit path in scripts/env.sh"%DIR_CSV_LOCAL)
-        return None
+    #if not os.path.isdir(DIR_CSV_LOCAL):
+        #print("TERMINATED: Please connect to external hard drive with path %s or edit path in scripts/env.sh"%DIR_CSV_LOCAL)
+        #return None
     is_feeding = program==FEEDING
     fish2camera = get_fish2camera_map(is_feeding=is_feeding)
     fish_keys = get_camera_pos_keys(is_feeding=is_feeding)

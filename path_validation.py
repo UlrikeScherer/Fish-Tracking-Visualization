@@ -96,8 +96,8 @@ def main(delete=0, n_files=8):
     """
     # past your path here as pathx
 
-    path1 = '/Volumes/Extreme_SSD/FE_tracks_140000/FE_tracks_140000_block1/FE_tracks_140000_block1_%s'
-    path2 = '/Volumes/Extreme_SSD/FE_tracks_140000/FE_tracks_140000_block1/FE_tracks_140000_block1_%s'
+    path1 = '/Volumes/Extreme_SSD/FE_tracks_140000/FE_tracks_140000_block2/FE_tracks_140000_block2_%s'
+    path2 = '/Volumes/Extreme_SSD/FE_tracks_140000/FE_tracks_140000_block2/FE_tracks_140000_block2_%s'
 
   #  path2 = '/Volumes/data/loopbio_data/FE_(fingerprint_experiment)_SepDec2021/FE_tracks_retracked/FE_tracks_060000_block1_retracked/FE_060000_tracks_block1_%s_retracked'
 
