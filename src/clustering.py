@@ -332,7 +332,7 @@ def fish_individuality_tsne(fish_keys, X_embedded, traces_all, clusters, n_clust
     fig.savefig(get_results_filepath(trace_size, "fish_individuality_tsne_%d"%n_clusters))
     plt.close(fig)
 
-def fish_development_tsne(fish_key,days, X_embedded, traces_all, clusters, n_clusters,trace_size):
+def fish_development_tsne(fish_key,days, X_embedded, traces_all, clusters, n_clusters, trace_size):
     
     if len(days)%2!=0 or len(days) < 8:
         nrows=1

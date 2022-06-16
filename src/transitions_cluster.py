@@ -2,14 +2,20 @@ from graph_tool.draw import Graph, GraphView, graph_draw
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from src.config import CAM_POS
 
-def transition_rates(fish_key,clusters,n_clusters, traces_all, trace_size, normalize=0):
-    fish_filter = traces_all["CAMERA_POSITION"] == fish_key
+
+def transition_rates_for_fish(fish_key,clusters,traces_all):
+    fish_filter = traces_all[CAM_POS] == fish_key
     clusters_f=clusters[fish_filter]
     #cl, counts = np.unique(clusters_f, return_counts=True)
     #print(counts/clusters.shape[0])
-    transitions = pd.crosstab(pd.Series(clusters_f[:-1],name='from'),pd.Series(clusters_f[1:],name='to'),
-                              normalize=normalize, dropna=True)
+    transitions = transition_rates(clusters_f)
+    return transitions
+
+def transition_rates(clusters):
+    transitions = pd.crosstab(pd.Series(clusters[:-1],name='from'),pd.Series(clusters[1:],name='to'),
+                              normalize=0, dropna=True)
     return transitions
 
 def transition_rates_over_all(fish_keys, clusters,n_clusters, traces_all, trace_size):

@@ -45,3 +45,10 @@ N_SECONDS_OF_DAY = 24*N_SECONDS_PER_HOUR
 DATA_results = "results"
 float_format='%.10f'
 sep=";"
+
+# TRACE TABLE 
+CAM_POS = "CAMERA_POSITION"
+DAY = "DAY"
+BATCH = "BATCH"
+DATAFRAME="DATEFRAME"
+
