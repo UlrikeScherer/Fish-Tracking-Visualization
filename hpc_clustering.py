@@ -39,10 +39,7 @@ def execute_clustering(trace_size, *n_clusters):
     fish_individuality_tsne(fish_keys, X_embedded, traces_all, clusters, n_c, trace_size)
     for fk in fish_keys:
         fish_development_tsne(fk, days[6::7], X_embedded, traces_all, clusters, n_c, trace_size)
-    #TRANSITION 
-    t = transition_rates_over_all(fish_keys, clusters,n_c, traces_all, trace_size)
-    draw_transition_graph(t,X_embedded, clusters, flip_y=True, output=get_results_filepath(trace_size, "all_transitions_c%s"%t.shape[0]))
-        
+    
 def bar_plot_pca(pca, trace_size):
     y = pca.explained_variance_ratio_
     plt.bar(["PC%d"%(i+1) for i in range(len(y))],y)
