@@ -88,18 +88,22 @@ def filter_files(c, d, files, n_files):
         LOG.append("The following file names are corrupted, maybe wrong folder: \n\t{}".format("\n\t".join(corrupted_f)))
     return LOG, duplicate_f, correct_f
 
-def main(delete=0, n_files=15):
+def main(delete=0, n_files=8):
     """
     This main has two optional arguments
     delete: 0 or 1 indecation if files that are duplicates should be removed
     n_files: defines how many files to expect in each folder, default is 15, for feeding use 8, for a log file that is more clear.
     """
     # past your path here as pathx
-    path1 = '/Volumes/Extreme_SSD/FE_tracks_retracked/FE_tracks_060000_block1_retracked/FE_060000_tracks_block1_%s_retracked'
-    path2 = '../FE_Tracks/FE_block1_060000_%s_final'
+
+    path1 = '/Volumes/Extreme_SSD/FE_tracks_140000/FE_tracks_140000_block2/FE_tracks_140000_block2_%s'
+    path2 = '/Volumes/Extreme_SSD/FE_tracks_140000/FE_tracks_140000_block2/FE_tracks_140000_block2_%s'
+
+  #  path2 = '/Volumes/data/loopbio_data/FE_(fingerprint_experiment)_SepDec2021/FE_tracks_retracked/FE_tracks_060000_block1_retracked/FE_060000_tracks_block1_%s_retracked'
+
 
     # select the path here and use the %s to replace "front" or "back"
-    PATH=path2
+    PATH=path1
     position = ["front", "back"]
     LOG = list()
     for p in position: # validating files for front and back position
@@ -113,3 +117,7 @@ if __name__ == '__main__':
     main(**dict((arg.split('=')[0], int(arg.split('=')[1])) for arg in sys.argv[1:]))
     tend = time.time()
     print("Running time:", tend-tstart, "sec.")
+# <<<<<<< HEAD
+    
+# =======
+# >>>>>>> 82f1f170e953e0914ac21dc12d7e92e6f287d085

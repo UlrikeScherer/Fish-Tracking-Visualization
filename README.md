@@ -50,6 +50,7 @@ The python script `path_validation.py` is used to validate the filenames and pat
     - `time_interval=<<time in seconds>>` -- default: `time_interval=100` 
     - `fish_id=<<cam_pos>>`
 * run `python3 main.py program={metric} time_interval=hour` to record mean and standard derivation per fish per hour in one csv-file.
+
 * run: `bash scripts/build_analytics.sh` to generate the pdfs.
 
 ##### 3.1 Metrics:
