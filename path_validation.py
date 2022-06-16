@@ -30,7 +30,7 @@ def check_foldersystem(path, n_files = 15, delete=0):
                 if len(files) != n_files:
                     wrote_folder = True
                     LOG_msg.append("In folder %s the number of csv files is unequal the expected number %d, it is %d instead"%(
-                        "{}/{}/{}".format(path, n_files, c, d), len(files))
+                        "{}/{}/{}".format(path, c, d),n_files,len(files))
                                 )
                 msg, duplicate_f, correct_f = filter_files(c,d,files, n_files)
 
