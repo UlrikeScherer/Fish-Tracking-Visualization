@@ -28,8 +28,9 @@ dir_front=$path_csv_local/$POSITION_STR_FRONT
 dir_back=$path_csv_local/$POSITION_STR_BACK
 
 # FEEDING PATHS
-path_csv_feeding="$rootserver/FE_tracks_original/FE_tracks_${FEEDINGTIME}/FE_tracks_${FEEDINGTIME}_$BLOCK"
-path_csv_feeding_local="$root_local/FE_tracks_original/FE_tracks_${FEEDINGTIME}/FE_tracks_${FEEDINGTIME}_$BLOCK"
+path_feeding="FE_tracks_original/FE_tracks_${FEEDINGTIME}/FE_tracks_${FEEDINGTIME}_$BLOCK"
+path_csv_feeding="$rootserver/$path_feeding"
+path_csv_feeding_local="$root_local/$path_feeding"
 POSITION_STR_FRONT_FEEDING="FE_${FEEDINGTIME}_tracks_${BLOCK}_front"
 POSITION_STR_BACK_FEEDING="FE_${FEEDINGTIME}_tracks_${BLOCK}_back"
 
