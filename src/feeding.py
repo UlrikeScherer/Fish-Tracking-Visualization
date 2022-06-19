@@ -11,7 +11,7 @@ class FeedingTrajectory(Trajectory):
 
     is_feeding = True
     dir_data_feeding = "%s/%s/feeding"%(DATA_results,BLOCK)
-    fir_tex_feeding = "tex/files"
+    dir_tex_feeding = "tex/files"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -113,7 +113,7 @@ class FeedingTrajectory(Trajectory):
                 if d in self.feeding_times[i]:
                     text += "\setft{%s%s%s}{%s}"%(c,p,d,strftime("%H:%M:%S", gmtime(self.feeding_times[i][d]/5)))
                     text += "\setft{%s%s%sv}{%s}"%(c,p,d,self.visits[i][d])
-        text_file = open("%s/%s_feedingtime.tex"%(self.dir_data_feeding, BLOCK), "w")
+        text_file = open("%s/%s_feedingtime.tex"%(self.dir_tex_feeding, BLOCK), "w")
         text_file.write(text)
         text_file.close()
 
