@@ -84,11 +84,11 @@ def plot_transitions_individuality_develpoment(fish_keys, table, X_embedded, clu
     #TRANSITION 
     t = transition_rates_over_all(fish_keys, clusters, table, trace_size)
     cluster_means = [np.mean(X_embedded[clusters==idx],axis=0) for idx in range(n_clusters)]
-    draw_transition_graph(t,n_clusters, positions=cluster_means,flip_y=True, output=get_results_filepath(trace_size, "all_transitions_c%s"%t.shape[0]))
+    draw_transition_graph(t,n_clusters, positions=cluster_means,flip_y=True, output=get_results_filepath(trace_size, "all_transitions_c%s"%t.shape[0], format="png"))
     
     for fk,X,C,table in iter_fish_subset(fish_keys, table, X_embedded, clusters, table):
         t = transition_rates(C)
-        fpath = get_results_filepath(trace_size,"ft_%d_%s"%(n_clusters, fk), subfolder="individualty")
+        fpath = get_results_filepath(trace_size,"ft_%d_%s"%(n_clusters, fk), subfolder="individualty", format="png")
         g = draw_transition_graph(t,n_clusters, positions=cluster_means,flip_y=True,output=fpath)
         day_before = "0"
         for i,day in enumerate(days[6::7]):
