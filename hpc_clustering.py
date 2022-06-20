@@ -14,7 +14,7 @@ def execute_clustering(trace_size, *n_clusters):
         traces_all, nSs = load_traces(trace_size)
         print("traces loaded for size: %s"%trace_size)
     except:
-        print("Calculates all traces ...") 
+        print("Calculates all traces ...")
         days = get_all_days_of_context()
         traces_all, nSs = calculate_traces(list(range(N_FISHES)), days, trace_size, write_to_file=True)
 
@@ -27,7 +27,7 @@ def execute_clustering(trace_size, *n_clusters):
     tsne_model = init_tsne_model(perplexity=30,N = pca_traces.shape[0])
     X_embedded = tsne_model.fit_transform(pca_traces)
     for n_c in n_clusters:
-        KM = KMeans(n_clusters=n_c)
+        KM = KMeans(n_clusters=n_c, random_state=12)
         clusters = KM.fit_predict(pca_traces)
         plot_lines_for_cluster(traces_np, nSs, clusters, n_c, trace_size, limit=30, fig_name="cluster_characteristics_%d"%(n_c))
         plot_components(pca_traces, X_embedded, clusters, file_name=get_results_filepath(trace_size, "pca_tsne_%d"%(n_c)))
@@ -37,8 +37,10 @@ def execute_clustering(trace_size, *n_clusters):
     fish_keys = get_camera_pos_keys()
     days = get_all_days_of_context()
     fish_individuality_tsne(fish_keys, X_embedded, traces_all, clusters, n_c, trace_size)
+    cluster_distribution_over_days(traces_all, clusters, n_clusters,trace_size)
     for fk in fish_keys:
         fish_development_tsne(fk, days[6::7], X_embedded, traces_all, clusters, n_c, trace_size)
+        cluster_distribution_over_days(traces_all, clusters, n_clusters,trace_size, fish_key=fk)
         
     ## TRANSITIONS 
     plot_transitions_individuality_develpoment(fish_keys, traces_all, X_embedded, clusters,n_c, trace_size)

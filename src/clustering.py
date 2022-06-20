@@ -27,7 +27,7 @@ def get_traces_type():
     })
     return traces_type
 
-def get_results_filepath(trace_size, file_name, subfolder=None):
+def get_results_filepath(trace_size, file_name, subfolder=None, format="pdf"):
     if subfolder:
         path_ = "%s/%s_trace_size_%s/%s"%(VIS_DIR, BLOCK, trace_size, subfolder)
     else:
@@ -35,7 +35,7 @@ def get_results_filepath(trace_size, file_name, subfolder=None):
         
     if not os.path.exists(path_):
         os.makedirs(path_)
-    return "%s/%s_%d.pdf"%(path_, file_name, trace_size)
+    return "%s/%s_%d.%s"%(path_, file_name, trace_size, format)
 
 def get_trace_file_path(trace_size, format="csv"):
     return "%s/traces_%s_%s_%s.%s"%(DIR_TRACES, BLOCK, STIME, trace_size, format)

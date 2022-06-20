@@ -1,9 +1,10 @@
+from operator import is_
 import time
 import sys, os, inspect
 import matplotlib.pyplot as plt
 import numpy as np
 from src.utile import get_fish_ids, print_tex_table, get_fish2camera_map,get_camera_pos_keys
-from src.config import DIR_CSV_LOCAL, MEAN_GLOBAL, N_FISHES, N_SECONDS_PER_HOUR
+from src.config import DIR_CSV_LOCAL, MEAN_GLOBAL, N_SECONDS_PER_HOUR, dir_feeding_back
 from src.visualisation import Trajectory
 from src.feeding import FeedingTrajectory
 from src.metrics import activity_per_interval, turning_angle_per_interval, tortuosity_per_interval, entropy_per_interval, metric_per_hour_csv, distance_to_wall_per_interval, absolute_angle_per_interval
@@ -46,18 +47,29 @@ def plotting_odd_even(results, time_interval=None, name=None, ylabel=None, sw=10
         plt.close(f_)
         sliding_window_figures_for_tex(results, time_interval, sw=sw, fish_keys=batch_keys, fish_labels=fish_labels[batch], ylabel=ylabel, name=names[i], **kwargs)
 
+def is_valid_dir(directory):
+    if not os.path.isdir(directory):
+        print("TERMINATED: Please connect to external hard drive with path %s or edit path in scripts/env.sh"%directory)
+        return False
+    else:
+        return True
+
 def main(program=None, test=0, time_interval=100, sw=10, fish_id=None, visualize=None):
     """param:   test, 0,1 when test==1 run test mode
                 program: trajectory, activity, turning_angle
                 time_interval: kwarg for the programs activity, turning_angle
     """
-    #if not os.path.isdir(DIR_CSV_LOCAL):
-        #print("TERMINATED: Please connect to external hard drive with path %s or edit path in scripts/env.sh"%DIR_CSV_LOCAL)
-        #return None
+    if program==FEEDING:
+        if not is_valid_dir(dir_feeding_back): 
+            return None
+    else:
+        if not is_valid_dir(DIR_CSV_LOCAL):
+            return None
+
     is_feeding = program==FEEDING
     fish2camera = get_fish2camera_map(is_feeding=is_feeding)
     fish_keys = get_camera_pos_keys(is_feeding=is_feeding)
-    N_FISHES = len(fish2camera)
+    n_fishes = len(fish2camera)
     if time_interval == "hour": # change of parameters when computing metrics by hour
         time_interval=N_SECONDS_PER_HOUR
         sw=1
@@ -65,14 +77,16 @@ def main(program=None, test=0, time_interval=100, sw=10, fish_id=None, visualize
         time_interval=int(time_interval)
     file_name = "%s_%s"%(time_interval, program)
 
-    fish_ids = np.arange(N_FISHES)
+    fish_ids = np.arange(n_fishes)
+
     if fish_id != None:
         if fish_id.isnumeric():
             fish_ids=np.array([int(fish_id)])
         elif fish_id in fish_keys:
             fish_ids=np.array([fish_keys.index(fish_id)])
         else:
-            raise ValueError("fish_id=%s does not appear in the data, please provid the fish_id as camera_position or index integer in [0 to %s]. \n\n The following ids are valid: %s"%(fish_id, N_FISHES-1, fish_keys))
+            raise ValueError("fish_id=%s does not appear in the data, please provid the fish_id as camera_position or index integer in [0 to %s]. \n\n The following ids are valid: %s"%(fish_id, n_fishes-1, fish_keys))
+        print("program", program, "will run for fish:", fish_keys[fish_ids[0]])
 
     if int(test) == 1:
         print("Test RUN ", program)

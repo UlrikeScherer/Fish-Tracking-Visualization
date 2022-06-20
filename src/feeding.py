@@ -11,7 +11,7 @@ class FeedingTrajectory(Trajectory):
 
     is_feeding = True
     dir_data_feeding = "%s/%s/feeding"%(DATA_results,BLOCK)
-    fir_tex_feeding = "tex/files"
+    dir_tex_feeding = "tex/files"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -41,11 +41,17 @@ class FeedingTrajectory(Trajectory):
         batchxy = pixel_to_cm(batch[["xpx", "ypx"]].to_numpy())
         F.line.set_data(*batchxy.T)
 
-        feeding_b, box = self.feeding_data(batch, fish_id)
-        feeding_size = feeding_b.shape[0]
-        index_swim_in = np.where(feeding_b.FRAME[1:].array-feeding_b.FRAME[:-1].array != 1)[0]
-        index_visits = [0, *(index_swim_in+1), feeding_size-1]
-        entries = len(index_visits)
+        feeding_b, box = self.feeding_data(batch, fish_id) # feeding_b: array of data frames that are inside the feeding box. 
+        feeding_size = feeding_b.shape[0] # size of the feeding box gives us the time spent in the box in number of frames.
+        # The next line identifies the indices of feeding_b array where the fish swims from in to out of the box in the next frame
+        index_visits = []
+        n_entries = 0
+        # a case distinction has to be made: when the are no visits to the feeding box index_visits is empty.
+        if feeding_size > 0:
+            index_swim_in = np.where(feeding_b.FRAME[1:].array-feeding_b.FRAME[:-1].array != 1)[0]
+            index_visits = [0, *(index_swim_in+1), feeding_size-1] # The first visit to the box clearly happens at index 0 of feeding_b and the last visit ends at the last index of feeding_b
+            n_entries = len(index_visits)-1 # -1 for the last out index
+
         fb = pixel_to_cm(feeding_b[["xpx", "ypx"]].to_numpy()).T
         lines = F.ax.get_lines()
         # UPDATE BOX
@@ -55,21 +61,21 @@ class FeedingTrajectory(Trajectory):
         lines = lines[2:]
 
         for i,l in enumerate(lines):
-            if i < entries-1:
+            if i < n_entries:
                 s,e = index_visits[i], index_visits[i+1]
                 l.set_data(*fb[:,s:e])
             else:
                 l.remove()
-        for i in range(len(lines),entries-1):
+        for i in range(len(lines),n_entries):
             s,e = index_visits[i], index_visits[i+1]
             line_feed = F.ax.plot(*fb[:,s:e], "r-", alpha=0.7, solid_capstyle="projecting", markersize=0.2)
 
-        text_l = [" ","#Visits: %s"%(entries-1), r"$\Delta$ Feeding: %s"%(strftime("%M:%S", gmtime(feeding_size/5)))]
+        text_l = [" ","#Visits: %s"%(n_entries), r"$\Delta$ Feeding: %s"%(strftime("%M:%S", gmtime(feeding_size/5)))]
         remove_text = F.meta_text_for_plot(text_l=text_l)
 
         #ax.draw_artist(ax.patch)
         #ax.draw_artist(line)
-        self.update_feeding_and_visits(fish_id, date, feeding_size, entries-1)
+        self.update_feeding_and_visits(fish_id, date, feeding_size, n_entries)
 
         if self.write_fig:
             F.write_figure(directory, name)
@@ -107,7 +113,7 @@ class FeedingTrajectory(Trajectory):
                 if d in self.feeding_times[i]:
                     text += "\setft{%s%s%s}{%s}"%(c,p,d,strftime("%H:%M:%S", gmtime(self.feeding_times[i][d]/5)))
                     text += "\setft{%s%s%sv}{%s}"%(c,p,d,self.visits[i][d])
-        text_file = open("%s/%s_feedingtime.tex"%(self.dir_data_feeding, BLOCK), "w")
+        text_file = open("%s/%s_feedingtime.tex"%(self.dir_tex_feeding, BLOCK), "w")
         text_file.write(text)
         text_file.close()
 
