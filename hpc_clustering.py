@@ -37,10 +37,10 @@ def execute_clustering(trace_size, *n_clusters):
     fish_keys = get_camera_pos_keys()
     days = get_all_days_of_context()
     fish_individuality_tsne(fish_keys, X_embedded, traces_all, clusters, n_c, trace_size)
-    cluster_distribution_over_days(traces_all, clusters, n_clusters,days, trace_size)
+    cluster_distribution_over_days(traces_all, clusters, n_c,days, trace_size)
     for fk in fish_keys:
         fish_development_tsne(fk, days[6::7], X_embedded, traces_all, clusters, n_c, trace_size)
-        cluster_distribution_over_days(traces_all, clusters, n_clusters,days,trace_size, fish_key=fk)
+        cluster_distribution_over_days(traces_all, clusters, n_c,days,trace_size, fish_key=fk)
         
     ## TRANSITIONS 
     plot_transitions_individuality_develpoment(fish_keys, traces_all, X_embedded, clusters,n_c, trace_size)
