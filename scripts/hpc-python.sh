@@ -18,6 +18,6 @@
 conda activate rapids-22.04
 echo "JOB START"
 #python hpc_clustering.py 60 6 4
-python hpc_clustering.py 4500 6 4
+python hpc_clustering.py 200 6 4
 echo "JOB DONE"
 conda deactivate 
