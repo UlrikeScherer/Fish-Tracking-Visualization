@@ -2,9 +2,9 @@ from graph_tool.draw import Graph, GraphView, graph_draw
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from src.config import CAM_POS
+from src.config import CAM_POS, DAY
 from src.clustering import get_results_filepath
-from src.utile import get_all_days_of_context
+from src.utile import get_all_days_of_context, get_date_string
 
 
 def transition_rates_for_fish(fish_key,clusters, traces_all, normalize=0):
@@ -61,6 +61,7 @@ def draw_transition_graph(t, n_clusters, positions=None, ax=None, flip_y=True, o
                     vertex_text=g.vertex_index,
            vertex_fill_color=vcolor,
             vertex_pen_width=vertex_pen_width,
+            vertex_font_size=vweight,
            eprops={"pen_width":eweight, "text":elabel, "font_size":emarker,
                    "marker_size":emarker,
                    "color":[0.179, 0.203,0.210, 0.7]},
@@ -97,8 +98,35 @@ def plot_transitions_individuality_develpoment(fish_keys, table, X_embedded, clu
             if t_d.shape[0] == 0: continue
             if t_d.shape[0]==3: print(fk)
             day_before = day
-            weekpath = get_results_filepath(trace_size,"ft_c%d_%s_week%d"%(n_clusters, fk, i), subfolder="development/%s"%fk)
+            weekpath = get_results_filepath(trace_size,"ft_c%d_%s_week%d"%(n_clusters, fk, i), subfolder="development/%s"%fk, format="png")
             g = draw_transition_graph(t_d,n_clusters, positions=cluster_means,flip_y=True,output=weekpath)
+            
+#### --------- CLUSTER DISTRIBUTION ----------------- ####
+def get_cluster_distribution(clusters, n_clusters):
+    dist=np.zeros(n_clusters)
+    uni, counts = np.unique(clusters, return_counts=True)
+    dist[uni]=counts/clusters.shape[0]
+    return dist
 
+def cluster_distribution_over_days(table, clusters, n_clusters, days, trace_size, fish_key=None):
+    y = []
+    name="%d_clusters_distribution_over_days"%n_clusters
+    subfolder="development"
+    
+    if fish_key is not None:
+        clusters, table = flt_on_key(fish_key, CAM_POS, table,clusters, table)
+        name="%s_%s"%(name, fish_key)
+        subfolder="%s/%s"%(subfolder,fish_key)
+        
+    for d in days:
+        flt = table[DAY]==d
+        dist = get_cluster_distribution(clusters[flt], n_clusters)
+        y.append(dist)
+    df = pd.DataFrame(y, index=[get_date_string(d) for d in days], columns=["cluster %d"%c for c in range(n_clusters)])
+    df.plot(kind = 'bar', stacked = True, colormap="tab10", figsize=(10,5), rot=45, position=-1)
+    plt.tight_layout()
+    filepath = get_results_filepath(trace_size,name,subfolder=subfolder)
+    plt.savefig(filepath)
+    plt.close()
             
 
