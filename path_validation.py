@@ -4,7 +4,13 @@ import time
 def check_foldersystem(path, n_files = 15, delete=0):
     LOG_msg = ["For path: %s"%path]
     for c in [name for name in os.listdir(path) if len(name)==8 and name.isnumeric()]:
-        for d in [name for name in os.listdir("{}/{}".format(path,c)) if name[:8].isnumeric()]:
+        day_dirs = [name for name in os.listdir("{}/{}".format(path,c)) if name[:8].isnumeric()]
+        days_unique = set()
+        for d in day_dirs:
+            if d[:8] not in days_unique:
+                days_unique.add(d[:8])
+            else:
+                LOG_msg.append("Duplicate day {} in folder: {}/{}/".format(d,path,c))
             #if "{}.{}".format(d[:15],c) != d:
             #    LOG_msg.append("Day %s is not in the correct format"%d) # this message can be ignored
             files = glob.glob("{}/{}/{}/*.csv".format(path, c, d))
