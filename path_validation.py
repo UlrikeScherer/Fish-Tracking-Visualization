@@ -88,7 +88,7 @@ def filter_files(c, d, files, n_files):
         LOG.append("The following file names are corrupted, maybe wrong folder: \n\t{}".format("\n\t".join(corrupted_f)))
     return LOG, duplicate_f, correct_f
 
-def main(delete=0, n_files=8):
+def main(delete=0, n_files=15):
     """
     This main has two optional arguments
     delete: 0 or 1 indecation if files that are duplicates should be removed
@@ -96,9 +96,9 @@ def main(delete=0, n_files=8):
     """
     # past your path here as pathx
 
-    path1 = '/Volumes/Extreme_SSD/FE_tracks_140000/FE_tracks_140000_block2/FE_tracks_140000_block2_%s'
+    #path1 = '/Volumes/Extreme_SSD/FE_tracks_140000/FE_tracks_140000_block2/FE_tracks_140000_block2_%s'
     path2 = '/Volumes/Extreme_SSD/FE_tracks_140000/FE_tracks_140000_block2/FE_tracks_140000_block2_%s'
-
+    path1 = '/Volumes/Extreme_SSD/FE_tracks/FE_block2_060000_%s_final'
   #  path2 = '/Volumes/data/loopbio_data/FE_(fingerprint_experiment)_SepDec2021/FE_tracks_retracked/FE_tracks_060000_block1_retracked/FE_060000_tracks_block1_%s_retracked'
 
 
