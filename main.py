@@ -1,10 +1,11 @@
 from operator import is_
+import shutil
 import time
 import sys, os, inspect
 import matplotlib.pyplot as plt
 import numpy as np
 from src.utile import get_fish_ids, print_tex_table, get_fish2camera_map,get_camera_pos_keys
-from src.config import DIR_CSV_LOCAL, MEAN_GLOBAL, N_SECONDS_PER_HOUR, dir_feeding_back
+from src.config import DIR_CSV_LOCAL, MEAN_GLOBAL, N_SECONDS_PER_HOUR, dir_feeding_back, ROOT_img, VIS_DIR, DATA_results
 from src.visualisation import Trajectory
 from src.feeding import FeedingTrajectory
 from src.metrics import activity_per_interval, turning_angle_per_interval, tortuosity_per_interval, entropy_per_interval, metric_per_hour_csv, distance_to_wall_per_interval, absolute_angle_per_interval
@@ -19,6 +20,7 @@ TORTUOSITY="tortuosity"
 ENTROPY="entropy"
 WALL_DISTANCE="wall_distance"
 ALL_METRICS="all"
+CLEAR="clear"
 programs = [TRAJECTORY,FEEDING, ACTIVITY, TURNING_ANGLE, ABS_ANGLE, TORTUOSITY, ENTROPY, WALL_DISTANCE]
 metric_names = [ACTIVITY, TURNING_ANGLE, ABS_ANGLE, TORTUOSITY, ENTROPY, WALL_DISTANCE]
 
@@ -133,6 +135,11 @@ def main(program=None, test=0, time_interval=100, sw=10, fish_id=None, visualize
     elif program == ALL_METRICS:
         for p in metric_names:
             main(p, time_interval=time_interval, fish_id=fish_id, sw=sw)
+    elif program == CLEAR: ### clear all data remove directories DANGEROUS!
+        for path in [ROOT_img, DATA_results]: # VIS_DIR
+            if os.path.isdir(path):
+                shutil.rmtree(path)
+                print("Removed directory: %s"%path)
     else:
         print("Please provide the program name which you want to run. One of: ", programs)
 

@@ -68,6 +68,15 @@ def print_tex_table(fish_ids, filename):
         f.write("%d & %s & %s & %s\\\ \n"%(fid, camera, position, fids[fid].replace("_","\_")))
     f.close()
 
+def verify_day_directory(name, camera):
+    if (name[:8].isnumeric() and name[16:24]==camera):
+        return True
+    elif name[:8].isnumeric(): 
+        print("WARNING: for CAMERA %s day directory name %s does not follow name-convention of date_starttime.camera_* and will be ignored"%(camera,name))
+        return False
+    else: # all other directories are ignored
+        return False
+
 def get_days_in_order(interval=None, is_feeding=False, is_back=None, camera=None):
     """
     @params
@@ -79,11 +88,13 @@ def get_days_in_order(interval=None, is_feeding=False, is_back=None, camera=None
         raise ValueError("provid kwargs is_back and camera")
         #camera = get_camera_names(is_feeding=is_feeding, is_back=is_back)[0]
     dir_ = get_directory(is_feeding, is_back)
-    days = [name[:15] for name in os.listdir(dir_+"/"+camera) if name[:8].isnumeric()]
-    days.sort()
+    days = [name[:15] for name in os.listdir(dir_+"/"+camera) if verify_day_directory(name, camera)]
+    days_unique = sorted(list(set(days)))
+    if len(days_unique)< len(days):
+        print("WARNING DUPLICATE DAY: CAMERA %s_%s some days are duplicated, please check the directory"%(camera, BACK if is_back else FRONT))
     if interval:
-        return days[interval[0]: interval[1]]
-    return days
+        return days_unique[interval[0]: interval[1]]
+    return days_unique
 
 def get_all_days_of_context(is_feeding=False):
     days = list()

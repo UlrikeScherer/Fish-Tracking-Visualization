@@ -12,7 +12,7 @@ from itertools import product
 import matplotlib.pyplot as plt
 
 def num_of_spikes(steps):
-    spike_places = steps > S_LIMIT
+    spike_places = steps > SPIKE_THRESHOLD
     return np.sum(spike_places), spike_places
 
 def calc_length_of_steps(batchxy):
@@ -164,7 +164,7 @@ def metric_per_interval(fish_ids=[i for i in range(N_FISHES)], time_interval=100
                 df = pd.concat(df_day)
                 data = df[["xpx", "ypx"]].to_numpy()  
                 area_tuple = (fish_key, area_func(fish_key, day=day))
-                err_filter = all_error_filters(data, area_tuple)
+                err_filter = all_error_filters(data, area_tuple, fish_key=fish_key, day=day)
                 if metric.__name__ in [entropy_for_data.__name__, distance_to_wall.__name__]:
                                            # DISTANCE TO WALL METRIC
                     result = metric(data,time_interval*FRAMES_PER_SECOND, err_filter, area_tuple)
@@ -187,8 +187,8 @@ def metric_data_to_csv(results=None, metric_name=None, time_interval=None):
 
         time_np = np.array(time)
         concat_r = np.concatenate(list(days.values()))
-        if time_np.ndim != concat_r.ndim: # if data for day is empty dont write an csv-entry
-            print("# WARNING: for %s time and results have unequal dimentions: time: %s results: %s "%(cam_pos, time_np,concat_r))
+        if time_np.ndim != concat_r.ndim: # if data for day is empty do not write an csv-entry
+            print("# WARNING: for %s time and results have unequal dimensions. time: %s results: %s "%(cam_pos, time_np,concat_r))
             continue
         data = np.concatenate((time_np, concat_r), axis=1)
         df = pd.DataFrame(data, columns=["day", "time", "mean", "std", "number_of_valid_data_points"])

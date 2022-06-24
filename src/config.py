@@ -5,8 +5,10 @@ load_envbash('scripts/env.sh')
 # Calculated MEAN and SD for the data set filtered for erroneous frames
 MEAN_GLOBAL = 0.22746102241709162
 SD_GLOBAL = 1.0044248513034164
-S_LIMIT = 15 #MEAN_GLOBAL + 3 * SD_GLOBAL
-THRESHOLD_AREA_PX = 50 # The threshold for the exclusion of data points that are not within the area of the tank.
+# THRESHOLDS for the data set filtered for erroneous frames
+SPIKE_THRESHOLD = 15 # In centimeters. to consider a step as a spike (alternative definition MEAN_GLOBAL + 3 * SD_GLOBAL)
+DIRT_THRESHOLD = 60*5 # Threshold for dirt detection, indicates the number of consecutive frames that, when equal, are classified as dirt.
+THRESHOLD_AREA_PX = 50 # The threshold in pixels for the exclusion of data points that are not within the area of the tank.
 BATCH_SIZE = 10000 #9999
 FRAMES_PER_SECOND = 5
 ROOT=os.environ["rootserver"]

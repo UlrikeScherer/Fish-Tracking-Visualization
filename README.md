@@ -29,7 +29,7 @@ Accessing the data from the server is very slow.
     -  `--feeding` or `-f` for the feeding trajectories.
     -  `--test`, `-t` is used to test the script, to generate only the fist pdf.
     - `--local`, `-l` to use the paths of the local hard drive to link the csv file in the pdf.
-    - `--cam-id cameraID, -cam cameraID_position`, to create only the pdf for the given camera. 
+    - `--cam-id, -cam ` followed by `cameraID_position`, to create only the pdf for the given camera. 
 
 **Remark:** For the bash-script you can not build feeding and non feeding trajectories in parallel as they use the same files.
 
@@ -45,7 +45,7 @@ The python script `path_validation.py` is used to validate the filenames and pat
 ## 3. Trajectory Analysis
 * run: `python3 main.py program={metric} 
 * For **metric** use one keyword out of: 
-    - `activity, angle, tortuosity, entropy, abs_angle, wall_distance, all`.
+    - `activity, turning_angle, tortuosity, entropy, abs_angle, wall_distance, all`.
 * Optional arguments: 
     - `time_interval=<<time in seconds>>` -- default: `time_interval=100` 
     - `fish_id=<<cam_pos>>`

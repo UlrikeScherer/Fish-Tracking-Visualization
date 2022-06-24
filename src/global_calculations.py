@@ -1,5 +1,5 @@
 import numpy as np
-from src.config import S_LIMIT, BACK
+from src.config import SPIKE_THRESHOLD, BACK
 from src.utile import csv_of_the_day, get_fish2camera_map
 from src.metrics import calc_step_per_frame
 
@@ -26,7 +26,7 @@ def global_activity(fish_ids, days):
             n_steps = 0
             for b in batches:
                 steps = calc_step_per_frame(b)
-                steps = steps[steps < 3*S_LIMIT]
+                steps = steps[steps < 3*SPIKE_THRESHOLD]
                 sum_steps += steps.sum()
                 n_steps += len(steps)
             if n_steps>0:
