@@ -1,12 +1,12 @@
+from src.utils.error_filter import error_dirt_points
+from src.trajectory import Trajectory
+from src.utils import csv_of_the_day
+from src.metrics import metric_per_interval
 import unittest
 import time 
 import os
 import numpy as np
 from matplotlib.testing.compare import compare_images
-from src.error_filter import error_dirt_points
-from src.visualisation import Trajectory
-from src.utile import csv_of_the_day
-from src.metrics import metric_per_interval
 
 class TestTrajectory(unittest.TestCase):
     camera_id="23520289"

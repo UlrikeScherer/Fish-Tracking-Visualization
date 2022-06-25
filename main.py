@@ -4,10 +4,9 @@ import time
 import sys, os, inspect
 import matplotlib.pyplot as plt
 import numpy as np
-from src.utile import get_fish_ids, print_tex_table, get_fish2camera_map,get_camera_pos_keys
+from src.utils import print_tex_table, get_fish2camera_map,get_camera_pos_keys
 from src.config import DIR_CSV_LOCAL, MEAN_GLOBAL, N_SECONDS_PER_HOUR, dir_feeding_back, ROOT_img, VIS_DIR, DATA_results
-from src.visualisation import Trajectory
-from src.feeding import FeedingTrajectory
+from src.trajectory import Trajectory, FeedingTrajectory
 from src.metrics import activity_per_interval, turning_angle_per_interval, tortuosity_per_interval, entropy_per_interval, metric_per_hour_csv, distance_to_wall_per_interval, absolute_angle_per_interval
 from src.activity_plotting import sliding_window, sliding_window_figures_for_tex
 
@@ -37,7 +36,7 @@ def plotting_odd_even(results, time_interval=None, name=None, ylabel=None, sw=10
         fish_batches.append(list(range(start, end)))
     kwargs["write_fig"]=True
 
-    fish_labels = get_fish_ids()
+    fish_labels = get_camera_pos_keys()
     positions = ["front_1", "front_2", "back_1", "back_2"]
     names = ["%s_%s"%(name, p) for p in positions]
 

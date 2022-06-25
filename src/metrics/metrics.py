@@ -1,13 +1,13 @@
-import numpy as np
-from scipy.stats import entropy
-from src.error_filter import all_error_filters
+from src.utils import all_error_filters
 from src.config import *
-from src.utile import csv_of_the_day, get_all_days_of_context, get_days_in_order, get_fish2camera_map, get_seconds_from_day
-from src.tank_area_config import get_area_functions, get_area_functions
-from src.transformation import pixel_to_cm, px2cm
-from methods import activity, turning_angle, tortuosity_of_chunk, distance_to_wall_chunk, mean_std, absolute_angles #cython
+from src.utils import csv_of_the_day, get_all_days_of_context, get_days_in_order, get_fish2camera_map, get_seconds_from_day
+from src.metrics.tank_area_config import get_area_functions, get_area_functions
+from src.utils.transformation import pixel_to_cm, px2cm
+from src.methods import activity, turning_angle, tortuosity_of_chunk, distance_to_wall_chunk, mean_std, absolute_angles #cython
 import pandas as pd
 import os
+import numpy as np
+from scipy.stats import entropy
 from itertools import product
 import matplotlib.pyplot as plt
 

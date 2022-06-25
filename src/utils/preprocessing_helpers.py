@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from src.config import DATA_DIR, ROOT_LOCAL
-from src.utile import get_fish_ids
+from src.utils import get_fish_ids
 
 def update_livehistory_means_and_std(m_s):
     path, filename =ROOT_LOCAL, "DevEx_fingerprint_activity_lifehistory.csv"

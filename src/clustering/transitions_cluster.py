@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from src.config import CAM_POS, DAY
 from src.clustering import get_results_filepath
-from src.utile import get_all_days_of_context, get_date_string
+from src.utils import get_all_days_of_context, get_date_string
 
 
 def transition_rates_for_fish(fish_key,clusters, traces_all, normalize=0):

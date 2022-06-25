@@ -1,11 +1,11 @@
 import os
 from src.config import BATCH_SIZE, BLOCK, STIME, BACK, sep, VIS_DIR
-from src.error_filter import all_error_filters, error_default_points
-from src.transformation import rotation, pixel_to_cm
+from src.utils.error_filter import all_error_filters, error_default_points
+from src.utils.transformation import rotation, pixel_to_cm
 from src.metrics import entropy_for_data, distance_to_wall
-from src.utile import  get_fish2camera_map, csv_of_the_day, get_date_string
-from src.tank_area_config import get_area_functions
-from methods import activity, turning_angle, absolute_angles
+from src.utils import  get_fish2camera_map, csv_of_the_day, get_date_string
+from src.metrics.tank_area_config import get_area_functions
+from src.metrics.methods import activity, turning_angle, absolute_angles
 from itertools import product
 import pandas as pd
 from scipy.spatial import ConvexHull

@@ -3,10 +3,10 @@ import matplotlib.pyplot as plt
 import os
 import sys
 from src.config import BLOCK, ROOT_img, BACK, STIME, FEEDINGTIME
-from src.utile import csv_of_the_day, get_position_string, get_time_for_day, get_fish2camera_map, get_days_in_order
+from src.utils import csv_of_the_day, get_position_string, get_time_for_day, get_fish2camera_map, get_days_in_order
 from src.metrics import num_of_spikes, calc_length_of_steps, get_gaps_in_dataframes, activity_mean_sd
-from src.transformation import pixel_to_cm
-from methods import avg_and_sum_angles # import cython functions for faster for-loops.
+from src.utils.transformation import pixel_to_cm
+from src.methods import avg_and_sum_angles # import cython functions for faster for-loops.
 
 mpl.rcParams['lines.linewidth'] = 0.5
 mpl.rcParams['lines.linestyle'] = '-'

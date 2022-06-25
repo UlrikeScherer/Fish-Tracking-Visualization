@@ -5,7 +5,6 @@ import numpy as np
 import re
 import glob
 from itertools import product
-from src.error_filter import get_error_indices
 from src.config import *
 from path_validation import filter_files
 
@@ -141,6 +140,16 @@ def read_batch_csv(filename, drop_errors):
         df = df.drop(index=df[:-1][err_filter].index)
     df.reset_index(drop=True, inplace=True)
     return df
+
+def get_error_indices(dataframe):
+    """
+   @params: dataframe
+   returns a boolean pandas array with all indices to filter set to True
+    """
+    x = dataframe.xpx
+    y = dataframe.ypx
+    indexNames = ((x == -1) & (y == -1)) | ((x == 0) & (y == 0)) # except the last index for time recording
+    return indexNames
 
 def merge_files(filenames, drop_errors):
     batches = []

@@ -2,12 +2,12 @@ from cuml.manifold import TSNE
 from cuml import PCA, KMeans
 from matplotlib import cm
 from src.config import N_FISHES
-from src.utile import get_all_days_of_context, get_camera_pos_keys
-from src.transitions_cluster import cluster_distribution_over_days, plot_transitions_individuality_develpoment
+from src.utils import get_all_days_of_context, get_camera_pos_keys
+from src.clustering.transitions_cluster import cluster_distribution_over_days, plot_transitions_individuality_develpoment
 import numpy as np
 import time, sys
 from scipy.spatial.distance import cdist
-from src.clustering import *
+from src.clustering.clustering import *
 
 def execute_clustering(trace_size, *n_clusters):
     try:

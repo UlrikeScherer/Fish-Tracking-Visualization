@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
 import os
-from src.utile import get_date_string
+from src.utils import get_date_string
 from src.config import BLOCK, VIS_DIR
 #########################
 colors=np.array([

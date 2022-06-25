@@ -1,17 +1,7 @@
 import numpy as np
 from src.config import THRESHOLD_AREA_PX, BACK, DIRT_THRESHOLD, SPIKE_THRESHOLD
-from methods import distance_to_wall_chunk, calc_steps
-from src.transformation import px2cm
-
-def get_error_indices(dataframe):
-    """
-   @params: dataframe
-   returns a boolean pandas array with all indices to filter set to True
-    """
-    x = dataframe.xpx
-    y = dataframe.ypx
-    indexNames = ((x == -1) & (y == -1)) | ((x == 0) & (y == 0)) # except the last index for time recording
-    return indexNames
+from src.methods import distance_to_wall_chunk, calc_steps
+from src.utils.transformation import px2cm
 
 def all_error_filters(data, area_tuple, **kwargs):
     """

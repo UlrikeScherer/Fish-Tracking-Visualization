@@ -1,6 +1,6 @@
 import numpy as np
 from src.config import SPIKE_THRESHOLD, BACK
-from src.utile import csv_of_the_day, get_fish2camera_map
+from src.utils import csv_of_the_day, get_fish2camera_map
 from src.metrics import calc_step_per_frame
 
 def global_mean(fish_ids, days):
