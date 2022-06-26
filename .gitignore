@@ -10,6 +10,8 @@ Metrics.ipynb
 **/.vscode
 scripts/env.sh
 
+.flake8
+
 # ignore FOLDERS
 /plots
 /results

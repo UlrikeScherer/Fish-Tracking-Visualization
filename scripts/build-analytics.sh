@@ -1,5 +1,10 @@
 
 #!/bin/bash
+source scripts/config.sh
+if [ ! -d "$VIS_DIR" ]; then
+    echo "ERROR $VIS_DIR does not exists, first generate the plots with the python script"
+    exit 1
+fi
 source scripts/env.sh # get the following variables
 
 cd tex
@@ -25,7 +30,7 @@ for b in ${!position[@]}; do
 
     END=2
     for k in $(seq 1 $END); do 
-        pdflatex --interaction=nonstopmode "\newcommand\block{$BLOCK}\newcommand\position{${position[$b]}}\newcommand\timeinterval{$TIME_INTERVAL}\input{analytics}"
+        pdflatex --interaction=nonstopmode "\newcommand\plots{$VIS_DIR}\newcommand\block{$BLOCK}\newcommand\position{${position[$b]}}\newcommand\timeinterval{$TIME_INTERVAL}\input{analytics}"
 
     done
     mv ${analytics}.pdf $analytics/$BLOCK/${TIME_INTERVAL}_${analytics}_${position[$b]}.pdf
