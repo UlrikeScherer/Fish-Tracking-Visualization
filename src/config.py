@@ -4,7 +4,6 @@ import os
 load_envbash("scripts/config.sh")
 load_envbash("scripts/env.sh")
 
-
 # Calculated MEAN and SD for the data set filtered for erroneous frames
 MEAN_GLOBAL = 0.22746102241709162
 SD_GLOBAL = 1.0044248513034164
@@ -53,6 +52,7 @@ DATA_results = "results"
 float_format = "%.10f"
 sep = ";"
 
+DIR_TRACES = "%s/%s/%s" % (DATA_results, BLOCK, "traces")
 # TRACE TABLE
 CAM_POS = "CAMERA_POSITION"
 DAY = "DAY"

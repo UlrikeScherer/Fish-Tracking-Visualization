@@ -1,5 +1,16 @@
-import os
-from src.config import BATCH_SIZE, BLOCK, STIME, BACK, sep, VIS_DIR
+from src.config import (
+    BATCH_SIZE,
+    BLOCK,
+    STIME,
+    BACK,
+    sep,
+    VIS_DIR,
+    DIR_TRACES,
+    CAM_POS,
+    DAY,
+    BATCH,
+    DATAFRAME,
+)
 from src.utils.error_filter import all_error_filters, error_default_points
 from src.utils.transformation import rotation, pixel_to_cm
 from src.metrics import entropy_for_data, distance_to_wall
@@ -7,24 +18,23 @@ from src.utils import get_fish2camera_map, csv_of_the_day, get_date_string
 from src.metrics.tank_area_config import get_area_functions
 from src.methods import activity, turning_angle, absolute_angles
 from itertools import product
+import os
 import pandas as pd
 from scipy.spatial import ConvexHull
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-
 import plotly.graph_objects as go
 from random import sample
 
 MU_STR, SD_STR = "mu", "sd"
-DIR_TRACES = "%s/%s/%s" % ("results", BLOCK, "traces")
 
 
 def get_traces_type():
     _, names = get_metrics_for_traces()
     traces_type = np.dtype(
         {
-            "names": ["CAMERA_POSITION", "DAY", "BATCH", "DATAFRAME"] + names,
+            "names": [CAM_POS, DAY, BATCH, DATAFRAME] + names,
             "formats": ["str"] * 4 + ["f4"] * len(names),
         }
     )
@@ -111,7 +121,7 @@ def traces_as_numpy(traces):
 
 def get_traces_columns():
     _, names = get_metrics_for_traces()
-    return ["CAMERA_POSITION", "DAY", "BATCH", "DATAFRAME"] + names
+    return [CAM_POS, DAY, BATCH, DATAFRAME] + names
 
 
 def table_factory(key_c_p, day, batch_keys, traces_of_day, trace_size):
