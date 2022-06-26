@@ -149,4 +149,3 @@ if __name__ == "__main__":
     main(**dict((arg.split("=")[0], int(arg.split("=")[1])) for arg in sys.argv[1:]))
     tend = time.time()
     print("Running time:", tend - tstart, "sec.")
-

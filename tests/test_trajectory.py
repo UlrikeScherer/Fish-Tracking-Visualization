@@ -16,7 +16,7 @@ class TestTrajectory(unittest.TestCase):
     is_back = False
 
     def test_trajectory_plot(self):
-        img1 = "plots/060000/block1/front/{}/{}/{}.pdf".format(
+        img1 = "plots/trajectory/060000/block1/front/{}/{}/{}.pdf".format(
             self.camera_id, self.day, "000001"
         )
         img2 = "./output/test.pdf"
@@ -43,7 +43,7 @@ class TestTrajectory(unittest.TestCase):
 
         img2_size = os.path.getsize(img2)
         print("IMG Size is :", img2_size, "bytes")
-        self.assertTrue((img2_size) < 70000)
+        self.assertTrue((img2_size) < 90000)
 
     def test_metric(self):
         metric_per_interval(fish_ids=[1, 3], day_interval=[0, 4])
@@ -51,12 +51,7 @@ class TestTrajectory(unittest.TestCase):
     def test_filters(self):
         print("Testing filters")
         flt = error_dirt_points(a1, threshold=4)
-        self.assertTrue(
-            np.alltrue(
-                a1[flt]
-                == sol1
-            )
-        )
+        self.assertTrue(np.alltrue(a1[flt] == sol1))
 
 
 if __name__ == "__main__":

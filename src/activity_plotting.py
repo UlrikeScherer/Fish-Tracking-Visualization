@@ -5,7 +5,7 @@ import os
 from src.utils import get_date_string
 from src.config import BLOCK, VIS_DIR
 
-#########################
+
 colors = (
     np.array(
         [
