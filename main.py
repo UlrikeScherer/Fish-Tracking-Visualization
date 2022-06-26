@@ -9,7 +9,7 @@ from src.config import (
     MEAN_GLOBAL,
     N_SECONDS_PER_HOUR,
     dir_feeding_back,
-    ROOT_img,
+    PLOTS_TRAJECTORY,
     VIS_DIR,
     DATA_results,
 )
@@ -203,7 +203,7 @@ def main(program=None, test=0, time_interval=100, sw=10, fish_id=None, visualize
         for p in metric_names:
             main(p, time_interval=time_interval, fish_id=fish_id, sw=sw)
     elif program == CLEAR:  # clear all data remove directories DANGEROUS!
-        for path in [ROOT_img, DATA_results]:  # VIS_DIR
+        for path in [PLOTS_TRAJECTORY, DATA_results]:  # VIS_DIR
             if os.path.isdir(path):
                 shutil.rmtree(path)
                 print("Removed directory: %s" % path)

@@ -1,6 +1,5 @@
 #!/bin/bash
-# src/utile.py imports the paths of this file and the bash scripts in tex/ to generate the pdfs do the same
-
+# src/config.py imports the paths of this file and the bash scripts in tex/ to generate the pdfs do the same
 # --- BLOCK -------
 BLOCK="block1" # SPICIFY THE BLOCK TO RUN THE SCRIPT ON (block1, block2,...)
 # -----------------

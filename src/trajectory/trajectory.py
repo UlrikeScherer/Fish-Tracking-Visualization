@@ -2,7 +2,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import os
 import sys
-from src.config import BLOCK, ROOT_img, BACK, STIME, FEEDINGTIME
+from src.config import BLOCK, PLOTS_TRAJECTORY, BACK, STIME, FEEDINGTIME
 from src.utils import (
     csv_of_the_day,
     get_position_string,
@@ -204,7 +204,7 @@ class Trajectory:
         position = get_position_string(is_back)
         time_dir = FEEDINGTIME if self.is_feeding else STIME
         data_dir = "{}/{}/{}/{}/{}/{}".format(
-            ROOT_img, time_dir, BLOCK, position, camera_id, date
+            PLOTS_TRAJECTORY, time_dir, BLOCK, position, camera_id, date
         )
 
         if len(data) == 0:

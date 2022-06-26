@@ -1,7 +1,9 @@
 from envbash import load_envbash
 import os
 
+load_envbash("scripts/config.sh")
 load_envbash("scripts/env.sh")
+
 
 # Calculated MEAN and SD for the data set filtered for erroneous frames
 MEAN_GLOBAL = 0.22746102241709162
@@ -33,9 +35,9 @@ dir_feeding_back = os.environ["dir_feeding_back"]
 FEEDINGTIME = os.environ["FEEDINGTIME"]
 
 FRONT, BACK = "front", "back"
-ROOT_img = "plots"
+PLOTS_TRAJECTORY = os.environ["PLOTS_TRAJECTORY"]
 DATA_DIR = "data"
-VIS_DIR = "vis"
+VIS_DIR = os.environ["VIS_DIR"]
 
 N_BATCHES = 15
 N_BATCHES_FEEDING = 8

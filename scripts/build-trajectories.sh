@@ -1,4 +1,9 @@
 #!/bin/bash
+source scripts/config.sh 
+if [ ! -d "$PLOTS_TRAJECTORY" ]; then
+    echo "ERROR $PLOTS_TRAJECTORY does not exists, first generate the plots with the python script"
+    exit 1
+fi
 
 source scripts/env.sh # get the following variables
 
@@ -87,6 +92,7 @@ for b in ${!position[@]}; do
                     \newcommand\rootserver{$rootserver}
                     \newcommand\rootcsv{$CSV_DIR}
                     \newcommand\rootrecord{$path_recordings}
+                    \newcommand\plots{$PLOTS_TRAJECTORY}
                     \newcommand\block{$BLOCK}
                     \newcommand\posstr{$POSITION_STR/}
                     \newcommand\starttime{$STARTTIME}
@@ -178,4 +184,5 @@ for b in ${!position[@]}; do
     done
 done
 
-echo "Execution time: $SECONDS "
+rm main.out main.log main.aux
+echo "Execution time: $SECONDS seconds"
