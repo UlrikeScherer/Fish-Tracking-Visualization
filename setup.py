@@ -15,7 +15,7 @@ setup(
     version='0.1',
     author="Luka Stärk",
     author_email="luka.staerk@mailbox.org",
-    description="A package for analyzing trajectories",
+    description="A package to analyze trajectories",
     ext_modules=cythonize(extensions),
     packages=['src'],
 )

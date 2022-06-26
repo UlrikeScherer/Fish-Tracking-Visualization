@@ -1,6 +1,7 @@
 from .utile import (
     get_days_in_order,
     get_all_days_of_context,
+    get_camera_names,
     get_camera_pos_keys,
     get_position_string,
     csv_of_the_day,
@@ -11,13 +12,12 @@ from .utile import (
     print_tex_table,
 )
 
-from .error_filter import (
-    all_error_filters
-)
+from .error_filter import all_error_filters
 
 __all__ = [
     "get_days_in_order",
     "get_all_days_of_context",
+    "get_camera_names",
     "get_camera_pos_keys",
     "csv_of_the_day",
     "get_position_string",
@@ -27,4 +27,4 @@ __all__ = [
     "print_tex_table",
     "get_date_string",
     "all_error_filters",
-    ]
+]
