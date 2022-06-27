@@ -10,6 +10,7 @@ from .utile import (
     get_fish2camera_map,
     get_seconds_from_day,
     print_tex_table,
+    is_valid_dir,
 )
 
 from .error_filter import all_error_filters
@@ -27,4 +28,5 @@ __all__ = [
     "print_tex_table",
     "get_date_string",
     "all_error_filters",
+    "is_valid_dir",
 ]

@@ -22,8 +22,21 @@ from src.config import (
 )
 from path_validation import filter_files
 
+
+def is_valid_dir(directory):
+    if not os.path.isdir(directory):
+        print(
+            "TERMINATED: Please connect to external hard drive with path %s or edit path in scripts/env.sh"
+            % directory
+        )
+        return False
+    else:
+        return True
+
+
 def get_start_time_directory(is_feeding):
     return FEEDINGTIME if is_feeding else STIME
+
 
 def get_directory(is_feeding=None, is_back=None):
     if is_feeding is None or is_back is None:
