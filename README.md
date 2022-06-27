@@ -37,8 +37,8 @@ Accessing the data from the server is very slow.
 The python script `path_validation.py` is used to validate the filenames and paths of the data files. It logs all error messages into `log-path-validation.txt`. 
 
 ##### 2.1 Run the script:
-* `python path_validation.py path=path/to/root` -- where you would find the directories for front and back position. 
-+ for example: `python path_validation.py path=/Volumes/Extreme_SSD/FE_tracks`
+* `python path_validation.py path="path/to/root"` -- where you would find the directories for front and back position. 
++ for example: `python path_validation.py path="/Volumes/Extreme_SSD/FE_tracks"`
 * Optional arguments:  
     - `delete=1` -- to delete duplicated filenames 
     - `n_files=<<number of files>>` -- to change the expected number of files in a folder for a day. The default is *15* for feeding use *8*. 

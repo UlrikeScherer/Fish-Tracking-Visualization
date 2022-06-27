@@ -146,6 +146,8 @@ def main(delete=0, n_files=15, path=None):
     else:
         PATHS = ["%s/%s"%(path,dir_p) for dir_p in os.listdir(path) if dir_p[0]!= '.' and any([p in dir_p for p in position])]
 
+    if len(PATHS)<2:
+        raise ValueError("Path %s does not contain enough folders"%path)
     LOG = list()
     for p in PATHS:  # validating files for front and back position
         LOG.append(p.upper() + "-" * 100 + "\n")
