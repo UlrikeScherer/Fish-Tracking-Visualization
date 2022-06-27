@@ -1,6 +1,8 @@
 import os, sys, re, glob
 import time
 
+from numpy import any
+
 
 def check_foldersystem(path, n_files=15, delete=0):
     LOG_msg = ["For path: %s" % path]
@@ -121,31 +123,41 @@ def filter_files(c, d, files, n_files):
     return LOG, duplicate_f, correct_f
 
 
-def main(delete=0, n_files=15):
+def main(delete=0, n_files=15, path=None):
     """
-    This main has two optional arguments
-    delete: 0 or 1 indecation if files that are duplicates should be removed
+    @params:
+    This main has two optional arguments:
+    delete: if set to 1, the duplicates will be deleted
     n_files: defines how many files to expect in each folder, default is 15, for feeding use 8, for a log file that is more clear.
     """
+    if type(n_files) is not int:
+        n_files=int(n_files)
     # past your path here as path1 with %s indicating front or back
-    # path1 = '/Volumes/Extreme_SSD/FE_tracks_140000/FE_tracks_140000_block2/FE_tracks_140000_block2_%s'
-    # path1 = "/Volumes/Extreme_SSD/FE_tracks_140000/FE_tracks_140000_block2/FE_tracks_140000_block2_%s"
-    path1 = "/Volumes/Extreme_SSD/FE_tracks/FE_block2_060000_%s_final"
-    # path1 = '/Volumes/data/loopbio_data/FE_(fingerprint_experiment)_SepDec2021/FE_tracks_retracked/FE_tracks_060000_block1_retracked/FE_060000_tracks_block1_%s_retracked'
+    path1 = "/Volumes/Extreme_SSD/FE_tracks"
+    # path1 = '/Volumes/data/loopbio_data/FE_(fingerprint_experiment)_SepDec2021/FE_tracks_retracked/FE_tracks_060000_block1_retracked'
 
     # select the path here and use the %s to replace "front" or "back"
-    PATH = path1
     position = ["front", "back"]
+    if path is None:
+        path=path1
+
+    if not os.path.exists(path):
+        raise ValueError("Path %s does not exist"%path)
+    else:
+        PATHS = ["%s/%s"%(path,dir_p) for dir_p in os.listdir(path) if dir_p[0]!= '.' and any([p in dir_p for p in position])]
+
     LOG = list()
-    for p in position:  # validating files for front and back position
+    for p in PATHS:  # validating files for front and back position
         LOG.append(p.upper() + "-" * 100 + "\n")
-        LOG.extend(check_foldersystem(PATH % p, n_files=n_files, delete=delete))
+        LOG.extend(check_foldersystem(p, n_files=n_files, delete=delete))
     f = open("log-path-validation.txt", "w")
     f.writelines("\n".join(LOG))
+    print("LOG: see log-path-validation.txt, %d errors and warnings found" % len(LOG))
+    return len(LOG)==0
 
 
 if __name__ == "__main__":
     tstart = time.time()
-    main(**dict((arg.split("=")[0], int(arg.split("=")[1])) for arg in sys.argv[1:]))
+    main(**dict((arg.split("=")[0], arg.split("=")[1]) for arg in sys.argv[1:]))
     tend = time.time()
     print("Running time:", tend - tstart, "sec.")

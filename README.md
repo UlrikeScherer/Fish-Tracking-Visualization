@@ -20,8 +20,8 @@ Accessing the data from the server is very slow.
 
 ##### 1.1 Generate the trajectory visualizations, *run*:
 * Trajectories:         `python3 main.py program=trajectory`
-* Feeding Trajectories: `python3 main.py program=feeding`
-* optional arguments: `fish_id=<<cam_pos>>`, `test={0,1}`
+* Feeding Trajectories: `python3 main.py program=trajectory feeding=1`
+* optional arguments: `fish_id=<<cam_pos>>`, `test={0,1}`, `feeding={0,1}`
 
 ##### Then run the `bash`-script:
 * `bash scripts/build-trajectories.sh`
@@ -37,10 +37,11 @@ Accessing the data from the server is very slow.
 The python script `path_validation.py` is used to validate the filenames and paths of the data files. It logs all error messages into `log-path-validation.txt`. 
 
 ##### 2.1 Run the script:
-* `python path_validation.py` 
+* `python path_validation.py path=path/to/root` -- where you would find the directories for front and back position. 
++ for example: `python path_validation.py path=/Volumes/Extreme_SSD/FE_tracks`
 * Optional arguments:  
     - `delete=1` -- to delete duplicated filenames 
-    - `n_files=<<number of files>>` -- to change the expected number of files in a folder for a day. The default is *15*. 
+    - `n_files=<<number of files>>` -- to change the expected number of files in a folder for a day. The default is *15* for feeding use *8*. 
 
 ## 3. Trajectory Analysis
 * run: `python3 main.py program={metric} 
@@ -49,6 +50,7 @@ The python script `path_validation.py` is used to validate the filenames and pat
 * Optional arguments: 
     - `time_interval=<<time in seconds>>` -- default: `time_interval=100` 
     - `fish_id=<<cam_pos>>`
+    - `feeding={0,1}`
 * run `python3 main.py program={metric} time_interval=hour` to record mean and standard derivation per fish per hour in one csv-file.
 
 * run: `bash scripts/build_analytics.sh` to generate the pdfs.

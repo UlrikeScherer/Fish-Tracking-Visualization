@@ -13,6 +13,8 @@ from src.config import (
     N_BATCHES_FEEDING,
     FRONT,
     BACK,
+    FEEDINGTIME,
+    STIME,
     dir_feeding_back,
     dir_feeding_front,
     dir_back,
@@ -20,6 +22,8 @@ from src.config import (
 )
 from path_validation import filter_files
 
+def get_start_time_directory(is_feeding):
+    return FEEDINGTIME if is_feeding else STIME
 
 def get_directory(is_feeding=None, is_back=None):
     if is_feeding is None or is_back is None:

@@ -104,19 +104,21 @@ def is_valid_dir(directory):
         return True
 
 
-def main(program=None, test=0, time_interval=100, sw=10, fish_id=None, visualize=None):
+def main(program=None, test=0, time_interval=100, sw=10, fish_id=None, visualize=None, feeding=None):
     """param:   test, 0,1 when test==1 run test mode
     program: trajectory, activity, turning_angle
     time_interval: kwarg for the programs activity, turning_angle
     """
-    if program == FEEDING:
+    is_feeding = bool(feeding)
+
+    if is_feeding:
         if not is_valid_dir(dir_feeding_back):
             return None
     else:
         if not is_valid_dir(DIR_CSV_LOCAL):
             return None
 
-    is_feeding = program == FEEDING
+    
     fish2camera = get_fish2camera_map(is_feeding=is_feeding)
     fish_keys = get_camera_pos_keys(is_feeding=is_feeding)
     n_fishes = len(fish2camera)
@@ -147,19 +149,19 @@ def main(program=None, test=0, time_interval=100, sw=10, fish_id=None, visualize
         print("For fish indices: %s" % (fish_ids))
 
     kwargs_metrics = dict(
-        fish_ids=fish_ids, time_interval=time_interval, write_to_csv=True
+        fish_ids=fish_ids, time_interval=time_interval, write_to_csv=True, is_feeding=is_feeding
     )
     kwargs_plotting = dict(name=file_name, sw=sw, visualize=visualize)
 
     if program == TRAJECTORY:
-        T = Trajectory()
-        T.plots_for_tex(fish_ids)
-
-    elif program == FEEDING:
-        FT = FeedingTrajectory()
-        FT.plots_for_tex(fish_ids)
-        FT.feeding_data_to_csv()
-        FT.feeding_data_to_tex()
+        if is_feeding:
+            T = Trajectory()
+            T.plots_for_tex(fish_ids)
+        else:
+            FT = FeedingTrajectory()
+            FT.plots_for_tex(fish_ids)
+            FT.feeding_data_to_csv()
+            FT.feeding_data_to_tex()
 
     elif program == ACTIVITY:
         results = activity_per_interval(**kwargs_metrics)

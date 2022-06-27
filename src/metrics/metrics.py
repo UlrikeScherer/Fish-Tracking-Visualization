@@ -1,6 +1,8 @@
 from src.utils import all_error_filters
 from src.config import (
     BACK,
+    FEEDINGTIME,
+    STIME,
     THRESHOLD_AREA_PX,
     SPIKE_THRESHOLD,
     N_DAYS,
@@ -36,6 +38,8 @@ import numpy as np
 from scipy.stats import entropy
 from itertools import product
 import matplotlib.pyplot as plt
+
+from src.utils.utile import get_start_time_directory
 
 
 def num_of_spikes(steps):
@@ -217,6 +221,7 @@ def metric_per_interval(
     time_interval=100,
     day_interval=(0, N_DAYS),
     metric=activity,
+    is_feeding=False,
     write_to_csv=False,
     drop_out_of_scope=False,
 ):
@@ -233,22 +238,22 @@ def metric_per_interval(
     """
     if isinstance(fish_ids, int):
         fish_ids = [fish_ids]
-    fish2camera = get_fish2camera_map()
+    fish2camera = get_fish2camera_map(is_feeding=is_feeding)
     area_func = get_area_functions()
     results = dict()
     package = dict(
-        metric_name=metric.__name__, time_interval=time_interval, results=results
+        metric_name=metric.__name__, time_interval=time_interval, is_feeding=is_feeding,results=results
     )
     for i, fish in enumerate(fish_ids):
         camera_id, is_back = fish2camera[fish, 0], fish2camera[fish, 1] == BACK
         fish_key = "%s_%s" % (camera_id, fish2camera[fish, 1])
         day_dict = dict()
         days = get_days_in_order(
-            interval=day_interval, is_feeding=False, camera=camera_id, is_back=is_back
+            interval=day_interval, is_feeding=is_feeding, camera=camera_id, is_back=is_back
         )
         for j, day in enumerate(days):
             keys, df_day = csv_of_the_day(
-                camera_id, day, is_back=is_back, drop_out_of_scope=drop_out_of_scope
+                camera_id, day, is_back=is_back, is_feeding=is_feeding, drop_out_of_scope=drop_out_of_scope
             )  # True or False testing needed
             if len(df_day) > 0:
                 df = pd.concat(df_day)
@@ -277,7 +282,7 @@ def metric_per_interval(
     return package
 
 
-def metric_data_to_csv(results=None, metric_name=None, time_interval=None):
+def metric_data_to_csv(results=None, metric_name=None, time_interval=None, is_feeding=None):
     for i, (cam_pos, days) in enumerate(results.items()):
         time = list()
         for j, (day, value) in enumerate(days.items()):
@@ -303,8 +308,7 @@ def metric_data_to_csv(results=None, metric_name=None, time_interval=None):
         df = pd.DataFrame(
             data, columns=["day", "time", "mean", "std", "number_of_valid_data_points"]
         )
-        directory = "%s/%s/%s/" % (DATA_results, BLOCK, metric_name)
-        os.makedirs(directory, exist_ok=True)
+        directory = get_results_directory(metric_name, is_feeding)
         df.to_csv(
             "%s/%s_%s.csv" % (directory, time_interval, cam_pos),
             sep=sep,
@@ -312,7 +316,7 @@ def metric_data_to_csv(results=None, metric_name=None, time_interval=None):
         )
 
 
-def metric_per_hour_csv(results=None, metric_name=None, time_interval=None):
+def metric_per_hour_csv(results=None, metric_name=None, time_interval=None, is_feeding=None):
     data_idx = np.array(list(product(results.keys(), range(HOURS_PER_DAY))))
     # initialize table of nan
     data = np.empty((data_idx.shape[0], N_DAYS))
@@ -330,20 +334,31 @@ def metric_per_hour_csv(results=None, metric_name=None, time_interval=None):
             df_mean.loc[idx:k, day] = day_data[:, 0]
             df_std.loc[idx:k, day] = day_data[:, 1]
             df_n_valid.loc[idx:k, day] = day_data[:, 2]
+
+    directory = get_results_directory(metric_name, is_feeding)
     df_mean.to_csv(
-        "%s/%s/%s_mean.csv" % (DATA_results, BLOCK, metric_name),
+        "%s/%s_mean.csv" % (directory, metric_name),
         sep=sep,
         float_format=float_format,
     )
     df_std.to_csv(
-        "%s/%s/%s_std.csv" % (DATA_results, BLOCK, metric_name),
+        "%s/%s_std.csv" % (directory, metric_name),
         sep=sep,
         float_format=float_format,
     )
     df_n_valid.to_csv(
-        "%s/%s/%s_num_valid_datapoints.csv" % (DATA_results, BLOCK, metric_name),
+        "%s/%s_num_valid_datapoints.csv" % (directory, metric_name),
         sep=sep,
     )
+
+
+def get_results_directory(metric_name, is_feeding):
+    directory =  "%s/%s/%s/%s/" % (DATA_results, BLOCK, get_start_time_directory(is_feeding), metric_name)
+    if os.path.exists(directory):
+        return directory
+    else:
+        os.makedirs(directory)
+        return directory
 
 
 def activity_per_interval(*args, **kwargs):

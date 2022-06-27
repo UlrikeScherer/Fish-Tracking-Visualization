@@ -19,7 +19,8 @@ from src.metrics import (
 from src.utils.transformation import pixel_to_cm
 from src.methods import (
     avg_and_sum_angles,
-)  # import cython functions for faster for-loops.
+)
+from src.utils.utile import get_start_time_directory  # import cython functions for faster for-loops.
 
 mpl.rcParams["lines.linewidth"] = 0.5
 mpl.rcParams["lines.linestyle"] = "-"
@@ -202,7 +203,7 @@ class Trajectory:
 
     def plot_day_camera_fast(self, data, keys, camera_id, date, fish_id, is_back):
         position = get_position_string(is_back)
-        time_dir = FEEDINGTIME if self.is_feeding else STIME
+        time_dir = get_start_time_directory(self.is_feeding)
         data_dir = "{}/{}/{}/{}/{}/{}".format(
             PLOTS_TRAJECTORY, time_dir, BLOCK, position, camera_id, date
         )
