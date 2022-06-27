@@ -8,6 +8,7 @@ Type `ifconfig` and get the `inet` entry for `eth0`, i.e. the IP address of the 
 ssh -L localhost:5000:localhost:5000 luka.staerk@[IP address]
 jupyter-lab --no-browser --port=5000
 
+##### copy stuff 
 scp -r luka.staerk@gateway.hpc.tu-berlin.de:/home/users/l/luka.staerk/project21/Fish-Tracking-Visualization/vis/block1_trace_size_200/ 
 
 #### README

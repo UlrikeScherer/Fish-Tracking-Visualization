@@ -26,7 +26,6 @@ from src.metrics import (
 from src.activity_plotting import sliding_window, sliding_window_figures_for_tex
 
 TRAJECTORY = "trajectory"
-FEEDING = "feeding"
 ACTIVITY = "activity"
 TURNING_ANGLE = "turning_angle"
 ABS_ANGLE = "abs_angle"
@@ -35,17 +34,10 @@ ENTROPY = "entropy"
 WALL_DISTANCE = "wall_distance"
 ALL_METRICS = "all"
 CLEAR = "clear"
-programs = [
-    TRAJECTORY,
-    FEEDING,
-    ACTIVITY,
-    TURNING_ANGLE,
-    ABS_ANGLE,
-    TORTUOSITY,
-    ENTROPY,
-    WALL_DISTANCE,
-]
 metric_names = [ACTIVITY, TURNING_ANGLE, ABS_ANGLE, TORTUOSITY, ENTROPY, WALL_DISTANCE]
+programs = [
+    TRAJECTORY, *metric_names, ALL_METRICS, CLEAR
+]
 
 
 def plotting_odd_even(
