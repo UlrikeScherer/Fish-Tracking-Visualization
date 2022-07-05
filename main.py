@@ -186,7 +186,6 @@ def main(
     time_interval: kwarg for the programs activity, turning_angle
     """
     is_feeding = bool(feeding)
-    print("is_feeding", is_feeding)
     if is_feeding:
         if not is_valid_dir(dir_feeding_back):
             return None
