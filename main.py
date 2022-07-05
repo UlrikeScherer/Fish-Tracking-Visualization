@@ -85,13 +85,13 @@ def plotting_odd_even(
 
 def main_trajectory(is_feeding, fish_ids):
     if is_feeding:
-        T = Trajectory()
-        T.plots_for_tex(fish_ids)
-    else:
         FT = FeedingTrajectory()
         FT.plots_for_tex(fish_ids)
         FT.feeding_data_to_csv()
         FT.feeding_data_to_tex()
+    else:
+        T = Trajectory()
+        T.plots_for_tex(fish_ids)
 
 
 def main_metrics(program, time_interval=100, sw=10, visualize=False, **kwargs_metrics):
@@ -186,6 +186,7 @@ def main(
     time_interval: kwarg for the programs activity, turning_angle
     """
     is_feeding = bool(feeding)
+    print("is_feeding", is_feeding)
     if is_feeding:
         if not is_valid_dir(dir_feeding_back):
             return None
