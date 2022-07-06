@@ -2,7 +2,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import os
 import sys
-from src.config import BLOCK, PLOTS_TRAJECTORY, BACK, STIME, FEEDINGTIME
+from src.config import BLOCK, PLOTS_TRAJECTORY, BACK
 from src.utils import (
     csv_of_the_day,
     get_position_string,
@@ -20,7 +20,9 @@ from src.utils.transformation import pixel_to_cm
 from src.methods import (
     avg_and_sum_angles,
 )
-from src.utils.utile import get_start_time_directory  # import cython functions for faster for-loops.
+from src.utils.utile import (
+    get_start_time_directory,
+)  # import cython functions for faster for-loops.
 
 mpl.rcParams["lines.linewidth"] = 0.5
 mpl.rcParams["lines.linestyle"] = "-"

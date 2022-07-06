@@ -21,7 +21,7 @@ Accessing the data from the server is very slow.
 ##### 1.1 Generate the trajectory visualizations, *run*:
 * Trajectories:         `python3 main.py program=trajectory`
 * Feeding Trajectories: `python3 main.py program=trajectory feeding=1`
-* optional arguments: `fish_id=<<cam_pos>>`, `test={0,1}`, `feeding={0,1}`
+* optional arguments: `fish_id=<<cam_pos or index in {0,...,23}>>`, `feeding={0,1}`
 
 ##### Then run the `bash`-script:
 * `bash scripts/build-trajectories.sh`

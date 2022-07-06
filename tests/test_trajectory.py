@@ -32,7 +32,7 @@ class TestTrajectory(unittest.TestCase):
         )
         T = Trajectory()
         for batch in day_df[1:2]:
-            fig = T.subplot_function(
+            _ = T.subplot_function(
                 batch, self.day, "output", "test", None, is_back=self.is_back
             )
         tmid2 = time.time()

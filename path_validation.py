@@ -131,7 +131,7 @@ def main(delete=0, n_files=15, path=None):
     n_files: defines how many files to expect in each folder, default is 15, for feeding use 8, for a log file that is more clear.
     """
     if type(n_files) is not int:
-        n_files=int(n_files)
+        n_files = int(n_files)
     # past your path here as path1 with %s indicating front or back
     path1 = "/Volumes/Extreme_SSD/FE_tracks"
     # path1 = '/Volumes/data/loopbio_data/FE_(fingerprint_experiment)_SepDec2021/FE_tracks_retracked/FE_tracks_060000_block1_retracked'
@@ -139,15 +139,19 @@ def main(delete=0, n_files=15, path=None):
     # select the path here and use the %s to replace "front" or "back"
     position = ["front", "back"]
     if path is None:
-        path=path1
+        path = path1
 
     if not os.path.exists(path):
-        raise ValueError("Path %s does not exist"%path)
+        raise ValueError("Path %s does not exist" % path)
     else:
-        PATHS = ["%s/%s"%(path,dir_p) for dir_p in os.listdir(path) if dir_p[0]!= '.' and any([p in dir_p for p in position])]
+        PATHS = [
+            "%s/%s" % (path, dir_p)
+            for dir_p in os.listdir(path)
+            if dir_p[0] != "." and any([p in dir_p for p in position])
+        ]
 
-    if len(PATHS)<2:
-        raise ValueError("Path %s does not contain enough folders"%path)
+    if len(PATHS) < 2:
+        raise ValueError("Path %s does not contain enough folders" % path)
     LOG = list()
     for p in PATHS:  # validating files for front and back position
         LOG.append(p.upper() + "-" * 100 + "\n")
@@ -155,7 +159,7 @@ def main(delete=0, n_files=15, path=None):
     f = open("log-path-validation.txt", "w")
     f.writelines("\n".join(LOG))
     print("LOG: see log-path-validation.txt, %d errors and warnings found" % len(LOG))
-    return len(LOG)==0
+    return len(LOG) == 0
 
 
 if __name__ == "__main__":
