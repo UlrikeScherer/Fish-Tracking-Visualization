@@ -216,6 +216,22 @@ def normalize_data_metrics(traces):
     return traces
 
 
+def clustering(traces, n_clusters, model=None, rating_feature=None):
+    if model is None:
+        model = KMeans(n_clusters=n_clusters, random_state=12)
+    if rating_feature is None:
+        rating_feature = traces[:,0]
+    clusters = model.fit_predict(traces)
+    avg_feature = np.zeros(n_clusters)
+    for i in range(n_clusters):
+        avg_feature[i]=np.mean(rating_feature[clusters==i])
+    index_map = np.argsort(avg_feature)
+    renamed_clusters = np.array()
+    for i,j in enumerate(index_map):
+
+    return clusters
+
+
 def TSNE_vis(X_embedded):
     cmap = ["Blues", "Reds"]
     p = sns.kdeplot(
