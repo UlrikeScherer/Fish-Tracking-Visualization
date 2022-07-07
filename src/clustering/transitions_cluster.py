@@ -21,9 +21,9 @@ def transition_rates(clusters, normalize=0):
         pd.Series(clusters[:-1], name="from"),
         pd.Series(clusters[1:], name="to"),
         normalize=normalize,
-        dropna=True,
+        dropna=False,
     )
-    return transitions
+    return transitions.fillna(value=0.0)
 
 
 def transition_rates_over_all(fish_keys, clusters, traces_all, trace_size):
@@ -31,8 +31,10 @@ def transition_rates_over_all(fish_keys, clusters, traces_all, trace_size):
         fish_keys[0], clusters, traces_all, normalize=False
     )
     for f_key in fish_keys[1:]:
-        tra_r = tra_r + transition_rates_for_fish(
-            f_key, clusters, traces_all, normalize=False
+        tra_r = tra_r.add(
+            transition_rates_for_fish(
+                f_key, clusters, traces_all, normalize=False
+            ), fill_value=0
         )
     return tra_r.div(tra_r.sum(axis=1), axis=0)
 

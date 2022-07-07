@@ -1,0 +1,53 @@
+
+\documentclass[article]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage[a4paper, inner=1em, outer=1em, top=1em]{geometry}
+\usepackage{pgffor}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{hyperref}
+\usepackage{ifthen}
+\usepackage[nomessages]{fp}% http://ctan.org/pkg/fp
+\usepackage{adjustbox}
+\usepackage{tcolorbox}
+\usepackage{xstring}
+\usepackage{xurl}
+\usepackage{etoolbox}
+\usepackage{nopageno}
+\usepackage{tabularx}
+
+\providecommand{\block}{block1}
+\providecommand{\nclusters}{4}
+\graphicspath{{../\plots/}} 
+
+\title{\Large Developing exploration behavior\\
+Clustering of trajectory sequences. 
+{\normalsize From the 10th of September to the 8th of November.}\\
+\textsc{\block}, Trace Size: \textit{\tracesize}.\\
+}
+\author{Research Unit 1, SCIoI Project 21}
+\date{\today}
+
+\begin{document}
+\maketitle  
+
+\newpage
+\foreach \tracesize in {20,200,4500}{
+    \begin{figure}[h]
+        \centering
+        \begin{subfigure}[h]{.5\textwidth}
+            \includegraphics[width=\textwidth]{\block_trace_size_\tracesize/cluster_characteristics_\nclusters_\tracesize.pdf}
+            \subcaption*{Cluster Characteristics for \textit{trace size} \tracesize{} and \nclusters{} clusters}
+        \end{subfigure}
+        \begin{subfigure}[h]{.49\textwidth}
+            \includegraphics[width=0.5\textwidth]{\block_trace_size_\tracesize/tsne_4_\tracesize.pdf}
+            \includegraphics[width=0.49\textwidth]{\block_trace_size_\tracesize/all_transitions_c4_\tracesize.png}
+            %\includegraphics[width=\textwidth]{\block_trace_size_\tracesize/tsne_4_\tracesize.pdf}
+            %\includegraphics[width=0.5\textwidth]{all_transitions_c4_\tracesize.png}
+        \end{subfigure}
+    \end{figure}
+}
+\clearpage
+\end{document}
