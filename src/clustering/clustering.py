@@ -26,6 +26,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from random import sample
+from sklearn.cluster import MiniBatchKMeans
 
 MU_STR, SD_STR = "mu", "sd"
 
@@ -218,7 +219,7 @@ def normalize_data_metrics(traces):
 
 def clustering(traces, n_clusters, model=None, rating_feature=None):
     if model is None:
-        model = KMeans(n_clusters=n_clusters, random_state=12)
+        model = MiniBatchKMeans(n_clusters=n_clusters, random_state=12)
     if rating_feature is None:
         rating_feature = traces[:,0]
     clusters = model.fit_predict(traces)
@@ -226,10 +227,10 @@ def clustering(traces, n_clusters, model=None, rating_feature=None):
     for i in range(n_clusters):
         avg_feature[i]=np.mean(rating_feature[clusters==i])
     index_map = np.argsort(avg_feature)
-    renamed_clusters = np.array()
+    renamed_clusters = np.empty(clusters.shape, dtype=int)
     for i,j in enumerate(index_map):
-
-    return clusters
+        renamed_clusters[clusters==j]=i
+    return renamed_clusters
 
 
 def TSNE_vis(X_embedded):
