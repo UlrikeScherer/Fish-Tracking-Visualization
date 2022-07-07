@@ -23,7 +23,7 @@ def transition_rates(clusters, normalize=0):
         normalize=normalize,
         dropna=False,
     )
-    return transitions.fillna(value=0.0)
+    return transitions
 
 
 def transition_rates_over_all(fish_keys, clusters, traces_all, trace_size):

@@ -17,6 +17,9 @@
 \usepackage{etoolbox}
 \usepackage{nopageno}
 \usepackage{tabularx}
+\setcounter{topnumber}{8}
+\setcounter{bottomnumber}{8}
+\setcounter{totalnumber}{8}
 
 \providecommand{\block}{block1}
 \providecommand{\nclusters}{4}
@@ -35,7 +38,7 @@ Clustering of trajectory sequences.
 
 \newpage
 \foreach \tracesize in {20,200,4500}{
-    \begin{figure}[h]
+    \begin{figure}[!h]
         \centering
         \begin{subfigure}[h]{.5\textwidth}
             \includegraphics[width=\textwidth]{\block_trace_size_\tracesize/cluster_characteristics_\nclusters_\tracesize.pdf}
