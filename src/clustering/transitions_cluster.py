@@ -77,10 +77,12 @@ def draw_transition_graph(
     elabel = g.new_ep("string")
     emarker = g.new_ep("double")
     vweight = g.new_vp("double")
+    vzindex = g.new_vp("int")
     vcolor = g.new_vp("vector<double>")
     pos = g.new_vp("vector<double>")
     _ = g.add_edge_list(edges, eprops=[eweight, emarker, elabel])
     vweight.a[t.index] = stationary_distribution(t_np) * vweight_scale
+    vzindex.a[t.index] = np.argsort(vweight.a)
     for v in g.vertices():
         vidx = g.vertex_index[v]
         X_c_mean = positions[vidx]
@@ -92,6 +94,7 @@ def draw_transition_graph(
     graph_draw(
         g,
         pos=pos,
+        vorder=vzindex,
         fit_view=0.8,
         ink_scale=ink_scale,
         fit_view_ink=True,
@@ -128,6 +131,10 @@ def flt_on_key(value, table_key, table, *arrays):
 def is_of_equal_size(*arrays):
     return np.alltrue([a.shape[0] == arrays[0].shape[0] for a in arrays])
 
+def get_cluster_means(X, clusters, n_clusters):
+    return [
+        np.mean(X[clusters == idx], axis=0) for idx in range(n_clusters)
+    ]
 
 def plot_transitions_individuality_develpoment(
     fish_keys, table, X_embedded, clusters, n_clusters, trace_size
@@ -135,9 +142,7 @@ def plot_transitions_individuality_develpoment(
     days = get_all_days_of_context()
     # TRANSITION
     t = transition_rates_over_all(fish_keys, clusters, table, trace_size)
-    cluster_means = [
-        np.mean(X_embedded[clusters == idx], axis=0) for idx in range(n_clusters)
-    ]
+    cluster_means = get_cluster_means(X_embedded, clusters, n_clusters)
     draw_transition_graph(
         t,
         n_clusters,
