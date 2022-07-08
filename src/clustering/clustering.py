@@ -12,6 +12,7 @@ from src.config import (
     DATAFRAME,
 )
 from src.utils.error_filter import all_error_filters, error_default_points
+from src.utils.plot_helpers import remove_spines
 from src.utils.transformation import rotation, pixel_to_cm
 from src.metrics import entropy_for_data, distance_to_wall
 from src.utils import get_fish2camera_map, csv_of_the_day, get_date_string
@@ -381,6 +382,7 @@ def sub_figure(ax, x, y, clusters, x_label, y_label, limits=None, zorder=-1):
     scatter = ax.scatter(x, y, c=clusters, cmap="tab10", alpha=0.5, s=2, zorder=zorder)
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
+    remove_spines(ax)
     if limits is None:
         limits = sub_figure_get_limits(x, y)
     else:
