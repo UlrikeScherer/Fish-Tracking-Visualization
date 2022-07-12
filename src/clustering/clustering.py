@@ -62,7 +62,7 @@ def load_traces(trace_size):
     trace_path = get_trace_file_path(trace_size)
     trace_path_npy = get_trace_file_path(trace_size, "npy")
     if not os.path.exists(trace_path) or not os.path.exists(trace_path_npy):
-        raise Exception("Trace for path %s does not exist" % trace_path)
+        raise FileNotFoundError("Trace for path %s does not exist" % trace_path)
     traces = pd.read_csv(trace_path, delimiter=sep, index_col=0)
     with open(trace_path_npy, "rb") as f:
         samples = np.load(f)
