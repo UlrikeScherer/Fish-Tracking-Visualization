@@ -5,15 +5,23 @@ from .metrics import (
     turning_angle_per_interval,
     absolute_angle_per_interval,
     entropy_per_interval,
-    entropy_for_data,
+    entropy,
     distance_to_wall_per_interval,
     distance_to_wall,
-    metric_per_hour_csv,
     num_of_spikes,
     calc_length_of_steps,
     get_gaps_in_dataframes,
     activity_mean_sd,
+    activity,
+    tortuosity,
+    turning_angle,
+    absolute_angles,
 )
+
+from .results_to_csv import (
+    metric_per_hour_csv,
+)
+
 
 __all__ = [
     "metric_per_interval",
@@ -22,7 +30,7 @@ __all__ = [
     "turning_angle_per_interval",
     "absolute_angle_per_interval",
     "entropy_per_interval",
-    "entropy_for_data",
+    "entropy",
     "distance_to_wall_per_interval",
     "distance_to_wall",
     "metric_per_hour_csv",
@@ -30,4 +38,8 @@ __all__ = [
     "calc_length_of_steps",
     "get_gaps_in_dataframes",
     "activity_mean_sd",
+    "activity",
+    "tortuosity",
+    "turning_angle",
+    "absolute_angles",
 ]

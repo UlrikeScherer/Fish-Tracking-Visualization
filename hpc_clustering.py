@@ -6,6 +6,7 @@ from matplotlib import cm
 import numpy as np
 import time, sys
 from scipy.spatial.distance import cdist
+
 # local imports
 from src.config import N_FISHES
 from src.utils import get_all_days_of_context, get_camera_pos_keys
@@ -52,7 +53,7 @@ def execute_clustering(trace_size, *n_clusters):
     X_embedded = tsne_model.fit_transform(pca_traces)
     for n_c in n_clusters:
         KM = KMeans(n_clusters=n_c, random_state=12)
-        clusters = clustering(pca_traces, n_c, model=KM, rating_feature=traces_np[:,0])
+        clusters = clustering(pca_traces, n_c, model=KM, rating_feature=traces_np[:, 0])
         plot_lines_for_cluster(
             traces_np,
             nSs,

@@ -14,10 +14,15 @@ from src.config import (
 from src.utils.error_filter import all_error_filters, error_default_points
 from src.utils.plot_helpers import remove_spines
 from src.utils.transformation import rotation, pixel_to_cm
-from src.metrics import entropy_for_data, distance_to_wall
+from src.metrics import (
+    entropy,
+    distance_to_wall,
+    activity,
+    turning_angle,
+    absolute_angles,
+)
 from src.utils import get_fish2camera_map, csv_of_the_day, get_date_string
 from src.metrics.tank_area_config import get_area_functions
-from src.methods import activity, turning_angle, absolute_angles
 from itertools import product
 import os
 import pandas as pd
@@ -177,14 +182,14 @@ def get_metrics_for_traces():
         activity,
         turning_angle,
         absolute_angles,
-        entropy_for_data,
+        entropy,
         distance_to_wall,
     ]
     names = [
         "%s_%s" % (m, s)
         for m, s in product(map(lambda m: m.__name__, metrics_f), [MU_STR, SD_STR])
     ]
-    names.remove("%s_%s" % (entropy_for_data.__name__, SD_STR))  # remove entropy_sd
+    names.remove("%s_%s" % (entropy.__name__, SD_STR))  # remove entropy_sd
     return metrics_f, names
 
 
@@ -197,7 +202,7 @@ def transform_to_traces_metric_based(data, trace_size, filter_index, area):
         idx = i * 2
         if f.__name__ == distance_to_wall.__name__:
             newSet[:, idx : idx + 2] = f(data, trace_size, filter_index, area)[:, :2]
-        elif f.__name__ == entropy_for_data.__name__:
+        elif f.__name__ == entropy.__name__:
             entropy_idx = i * 2 + 1
             newSet[:, idx : idx + 2] = f(data, trace_size, filter_index, area)[
                 :, :2
@@ -222,15 +227,15 @@ def clustering(traces, n_clusters, model=None, rating_feature=None):
     if model is None:
         model = MiniBatchKMeans(n_clusters=n_clusters, random_state=12)
     if rating_feature is None:
-        rating_feature = traces[:,0]
+        rating_feature = traces[:, 0]
     clusters = model.fit_predict(traces)
     avg_feature = np.zeros(n_clusters)
     for i in range(n_clusters):
-        avg_feature[i]=np.mean(rating_feature[clusters==i])
+        avg_feature[i] = np.mean(rating_feature[clusters == i])
     index_map = np.argsort(avg_feature)
     renamed_clusters = np.empty(clusters.shape, dtype=int)
-    for i,j in enumerate(index_map):
-        renamed_clusters[clusters==j]=i
+    for i, j in enumerate(index_map):
+        renamed_clusters[clusters == j] = i
     return renamed_clusters
 
 
