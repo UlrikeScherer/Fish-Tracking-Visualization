@@ -6,6 +6,7 @@ import numpy as np
 from src.utils import print_tex_table, get_camera_pos_keys
 from src.config import (
     DIR_CSV_LOCAL,
+    HOURS_PER_DAY,
     MEAN_GLOBAL,
     N_SECONDS_PER_HOUR,
     dir_feeding_back,
@@ -22,7 +23,10 @@ from src.metrics import (
     distance_to_wall_per_interval,
     absolute_angle_per_interval,
 )
-from src.activity_plotting import sliding_window, sliding_window_figures_for_tex
+from src.visualizations.activity_plotting import (
+    sliding_window,
+    sliding_window_figures_for_tex,
+)
 from src.utils import is_valid_dir
 
 TRAJECTORY = "trajectory"
@@ -94,20 +98,35 @@ def main_trajectory(is_feeding, fish_ids):
         T.plots_for_tex(fish_ids)
 
 
-def main_metrics(program, time_interval=100, sw=10, visualize=False, **kwargs_metrics):
+def main_metrics(
+    program,
+    time_interval=100,
+    sw=10,
+    visualize=False,
+    include_median=None,
+    **kwargs_metrics
+):
 
     # TIME INTERVAL for the metrics
-    if time_interval == "hour":  # change of parameters when computing metrics by hour
-        time_interval = N_SECONDS_PER_HOUR
+    if time_interval in [
+        "hour",
+        "day",
+    ]:  # change of parameters when computing metrics by hour or day
         sw = 1
+        if time_interval == "hour":
+            time_interval = N_SECONDS_PER_HOUR
+        if time_interval == "day":
+            time_interval = N_SECONDS_PER_HOUR * HOURS_PER_DAY
     else:
         time_interval = int(time_interval)
 
+    if include_median and program != ACTIVITY:
+        raise ValueError("include_median is only valid for activity")
     # put it back in the kwargs
     kwargs_metrics.update(time_interval=time_interval)
 
     if program == ACTIVITY:
-        results = activity_per_interval(**kwargs_metrics)
+        results = activity_per_interval(include_median=include_median, **kwargs_metrics)
         plotting_odd_even(
             **results,
             ylabel="activity",
@@ -149,9 +168,11 @@ def main_metrics(program, time_interval=100, sw=10, visualize=False, **kwargs_me
     else:
         print("TERMINATED: Invalid program")
 
-    if time_interval == N_SECONDS_PER_HOUR:
+    if (
+        time_interval == N_SECONDS_PER_HOUR
+        or time_interval == N_SECONDS_PER_HOUR * HOURS_PER_DAY
+    ):
         metric_per_hour_csv(**results)
-        print("wrote hourly metrics to CSV file")
 
 
 def get_fish_ids_to_run(program, fish_id, is_feeding):
@@ -180,6 +201,7 @@ def main(
     fish_id=None,
     visualize=None,
     feeding=None,
+    include_median=None,
 ):
     """param:   test, 0,1 when test==1 run test mode
     program: trajectory, activity, turning_angle
@@ -201,6 +223,7 @@ def main(
         is_feeding=is_feeding,
         visualize=visualize,
         sw=sw,
+        include_median=include_median,
     )
     # PROGRAM METRICS or TRAJECTORY or CLEAR
     if program == TRAJECTORY:

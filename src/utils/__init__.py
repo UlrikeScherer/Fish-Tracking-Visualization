@@ -14,6 +14,7 @@ from .utile import (
 )
 
 from .error_filter import all_error_filters
+from .transformation import normalize_origin_of_compartment
 
 __all__ = [
     "get_days_in_order",
@@ -29,4 +30,5 @@ __all__ = [
     "get_date_string",
     "all_error_filters",
     "is_valid_dir",
+    "normalize_origin_of_compartment",
 ]

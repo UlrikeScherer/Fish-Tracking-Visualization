@@ -11,14 +11,22 @@ from src.config import (
     BATCH,
     DATAFRAME,
 )
+from src.metrics.metrics import update_filter_three_points, update_filter_two_points
 from src.utils.error_filter import all_error_filters, error_default_points
 from src.utils.plot_helpers import remove_spines
-from src.utils.transformation import rotation, pixel_to_cm
-from src.metrics import entropy_for_data, distance_to_wall
+from src.utils.transformation import normalize_origin_of_compartment, px2cm, rotation, pixel_to_cm
+from src.metrics import (
+    entropy,
+    distance_to_wall,
+    activity,
+    turning_angle,
+    absolute_angles,
+)
 from src.utils import get_fish2camera_map, csv_of_the_day, get_date_string
 from src.metrics.tank_area_config import get_area_functions
-from src.methods import activity, turning_angle, absolute_angles
+from src.methods import calc_steps, turning_directions, distance_to_wall_chunk
 from itertools import product
+from sklearn.preprocessing import normalize
 import os
 import pandas as pd
 from scipy.spatial import ConvexHull
@@ -93,7 +101,8 @@ def calculate_traces(fish_indices, days, trace_size, write_to_file=False):
             # filter for errorouse data points
             filter_index = all_error_filters(data, area_tuple)[:fit_len]
 
-            X = transform_to_traces_metric_based(
+            #X = transform_to_traces_metric_based(
+            X = transform_to_traces(
                 data, trace_size, filter_index, area_tuple
             )
             X_df = table_factory(fish_key, d, batch_keys, X, trace_size)
@@ -128,6 +137,8 @@ def get_traces_columns():
 
 def table_factory(key_c_p, day, batch_keys, traces_of_day, trace_size):
     col = get_traces_columns()
+    if len(col[4:])< traces_of_day.shape[1]:
+        col = col[:4] + list(range(traces_of_day.shape[1]))
     traces_df = pd.DataFrame(columns=col, index=range(traces_of_day.shape[0]))
     traces_df.loc[:, col[4:]] = traces_of_day
 
@@ -151,8 +162,8 @@ def fit_data_to_trace_size(size1, trace_size):
 
 def trajectory_snippets(data, trace_size):
     size1, size2 = data.shape
-    n_snippets = size1 // trace_size
-    return np.reshape(data, (n_snippets, trace_size, size2))
+    n_snippets = (size1-2) // trace_size
+    return np.reshape(data[:n_snippets*trace_size], (n_snippets, trace_size, size2))
 
 
 def rotate_trace(trace):
@@ -177,18 +188,18 @@ def get_metrics_for_traces():
         activity,
         turning_angle,
         absolute_angles,
-        entropy_for_data,
+        entropy,
         distance_to_wall,
     ]
     names = [
         "%s_%s" % (m, s)
         for m, s in product(map(lambda m: m.__name__, metrics_f), [MU_STR, SD_STR])
     ]
-    names.remove("%s_%s" % (entropy_for_data.__name__, SD_STR))  # remove entropy_sd
+    names.remove("%s_%s" % (entropy.__name__, SD_STR))  # remove entropy_sd
     return metrics_f, names
 
 
-def transform_to_traces_metric_based(data, trace_size, filter_index, area):
+def transform_to_traces_metric_based(data, trace_size, filter_index, area_tuple):
     lenX = data.shape[0]
     sizeSet = lenX // trace_size
     metric_functions, _ = get_metrics_for_traces()  #
@@ -196,10 +207,10 @@ def transform_to_traces_metric_based(data, trace_size, filter_index, area):
     for i, f in enumerate(metric_functions):
         idx = i * 2
         if f.__name__ == distance_to_wall.__name__:
-            newSet[:, idx : idx + 2] = f(data, trace_size, filter_index, area)[:, :2]
-        elif f.__name__ == entropy_for_data.__name__:
+            newSet[:, idx : idx + 2] = f(data, trace_size, filter_index, area_tuple)[:, :2]
+        elif f.__name__ == entropy.__name__:
             entropy_idx = i * 2 + 1
-            newSet[:, idx : idx + 2] = f(data, trace_size, filter_index, area)[
+            newSet[:, idx : idx + 2] = f(data, trace_size, filter_index, area_tuple)[
                 :, :2
             ]  # only take entropy not std over hist.
         else:
@@ -212,9 +223,8 @@ def transform_to_traces_metric_based(data, trace_size, filter_index, area):
 
 
 def normalize_data_metrics(traces):
-    for i in range(traces.shape[1]):
-        d_std, d_mean = np.std(traces[:, i]), np.mean(traces[:, i])
-        traces[:, i] = (traces[:, i] - d_mean) / d_std
+    d_std, d_mean = np.std(traces,axis=0), np.mean(traces, axis=0)
+    traces = (traces - d_mean) / d_std
     return traces
 
 
@@ -222,15 +232,15 @@ def clustering(traces, n_clusters, model=None, rating_feature=None):
     if model is None:
         model = MiniBatchKMeans(n_clusters=n_clusters, random_state=12)
     if rating_feature is None:
-        rating_feature = traces[:,0]
+        rating_feature = traces[:, 0]
     clusters = model.fit_predict(traces)
     avg_feature = np.zeros(n_clusters)
     for i in range(n_clusters):
-        avg_feature[i]=np.mean(rating_feature[clusters==i])
+        avg_feature[i] = np.mean(rating_feature[clusters == i])
     index_map = np.argsort(avg_feature)
     renamed_clusters = np.empty(clusters.shape, dtype=int)
-    for i,j in enumerate(index_map):
-        renamed_clusters[clusters==j]=i
+    for i, j in enumerate(index_map):
+        renamed_clusters[clusters == j] = i
     return renamed_clusters
 
 

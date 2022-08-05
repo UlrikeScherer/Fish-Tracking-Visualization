@@ -3,6 +3,7 @@ import os
 import numpy as np
 from time import gmtime, strftime
 from src.config import BACK, FRONT, BLOCK, DATA_results
+from src.metrics.metrics import calc_length_of_steps, num_of_spikes
 from src.utils import get_days_in_order, get_all_days_of_context, get_camera_pos_keys
 from .trajectory import Trajectory
 from src.utils.transformation import pixel_to_cm
@@ -44,7 +45,7 @@ class FeedingTrajectory(Trajectory):
         F = self.fig_back if is_back else self.fig_front
 
         F.ax.set_title(time_span, fontsize=10)
-
+        last_frame = batch.FRAME.array[-1]
         if batch.x.array[-1] <= -1:
             batch.drop(batch.tail(1).index)
 
@@ -101,7 +102,11 @@ class FeedingTrajectory(Trajectory):
             "#Visits: %s" % (n_entries),
             r"$\Delta$ Feeding: %s" % (strftime("%M:%S", gmtime(feeding_size / 5))),
         ]
-        remove_text = F.meta_text_for_plot(text_l=text_l)
+        steps = calc_length_of_steps(batchxy)
+        spikes, spike_places = num_of_spikes(steps)
+        N = batchxy.shape[0]
+        text_r = F.meta_text_rhs(N, last_frame - N, spikes)
+        remove_text = F.meta_text_for_plot(text_l=text_l, text_r=text_r)
 
         # ax.draw_artist(ax.patch)
         # ax.draw_artist(line)
@@ -190,6 +195,7 @@ def get_feeding_cords(data, camera_id, is_back):
 
 def get_feeding_box(data, TL_x, TL_y, TR_x, TR_y):
     scale = 2
+    # if x has the same value.
     if abs(TL_x - TR_x) < abs(TL_y - TR_y):
         # FRONT
         p_len = abs(TL_y - TR_y) * scale

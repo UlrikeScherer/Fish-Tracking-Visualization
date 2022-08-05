@@ -19,6 +19,9 @@ scripts/env.sh
 /vis
 /output
 /feeding
+/content
+wavelet.py
+
 *Icon*
 
 # Byte-compiled / optimized / DLL files

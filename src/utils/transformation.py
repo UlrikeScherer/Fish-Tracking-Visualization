@@ -1,5 +1,17 @@
 import numpy as np
 
+def normalize_origin_of_compartment(data, area, is_back):
+    if is_back:
+        origin1 = area[0,0], area[1,1]
+        new_area = (area-origin1)
+        origin2 = new_area[2,0],new_area[3,1]
+        new_area = -new_area+origin2
+        data = -data+origin1+origin2
+    else:
+        origin1 = area[1,0], area[0,1]
+        new_area = area - origin1
+        data = data - origin1
+    return data, new_area
 
 def rotation(t):
     return np.array([[np.cos(t), -np.sin(t)], [np.sin(t), np.cos(t)]])
@@ -19,30 +31,3 @@ def pixel_to_cm(pixels):
     T = np.diag(t)
     trans_cm = np.array([19.86765585, -1.16965425])
     return (pixels @ R @ T) - trans_cm
-
-
-def find_rot_tras(px, cm):
-    """
-    @params: px, cm: np.array 2x2 row-wise
-    returns: R rotation-translation matrix to map from pixels to centimeter coordinates.
-    """
-    px_dist = abs(px[1] - px[0])
-    cm_dist = abs(cm[-1] - cm[0])
-    fraq = cm_dist / px_dist
-    px = px * fraq
-    px_center = px.sum(axis=0) * (1 / px.shape[0])
-    cm_center = cm.sum(axis=0) * (1 / cm.shape[0])
-
-    H = (px - px_center).T @ (cm - cm_center)
-    U, S, V = np.linalg.svd(H)
-    R = V @ U.T
-    px_t = (R @ px.T).T
-    px_dist_t = abs(px_t[-1] - px_t[0])
-    T = np.diag((cm_dist / px_dist_t))
-    if np.linalg.det(R) < 0:
-        U, S, V = np.linalg.svd(R)  # multiply 3rd column of V by -1
-        V[:, -1] = V[:, -1] * -1
-        R = V @ U.T
-
-    trans = cm_center - T @ (R @ px_center)
-    return T @ R, trans, S

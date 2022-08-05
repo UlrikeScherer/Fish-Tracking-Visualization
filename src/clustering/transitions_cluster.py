@@ -32,9 +32,8 @@ def transition_rates_over_all(fish_keys, clusters, traces_all, trace_size):
     )
     for f_key in fish_keys[1:]:
         tra_r = tra_r.add(
-            transition_rates_for_fish(
-                f_key, clusters, traces_all, normalize=False
-            ), fill_value=0
+            transition_rates_for_fish(f_key, clusters, traces_all, normalize=False),
+            fill_value=0,
         )
     return tra_r.div(tra_r.sum(axis=1), axis=0)
 
@@ -131,12 +130,12 @@ def flt_on_key(value, table_key, table, *arrays):
 def is_of_equal_size(*arrays):
     return np.alltrue([a.shape[0] == arrays[0].shape[0] for a in arrays])
 
-def get_cluster_means(X, clusters, n_clusters):
-    return [
-        np.mean(X[clusters == idx], axis=0) for idx in range(n_clusters)
-    ]
 
-def plot_transitions_individuality_develpoment(
+def get_cluster_means(X, clusters, n_clusters):
+    return [np.mean(X[clusters == idx], axis=0) for idx in range(n_clusters)]
+
+
+def plot_transitions_individuality_development(
     fish_keys, table, X_embedded, clusters, n_clusters, trace_size
 ):
     days = get_all_days_of_context()
