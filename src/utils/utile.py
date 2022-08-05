@@ -25,6 +25,10 @@ from src.config import (
 from path_validation import filter_files
 
 
+def flatten_list(list_of_lists):
+    return [item for sublist in list_of_lists for item in sublist]
+
+
 def is_valid_dir(directory):
     if not os.path.isdir(directory):
         print(

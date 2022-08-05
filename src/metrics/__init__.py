@@ -5,6 +5,7 @@ from .metrics import (
     turning_angle_per_interval,
     absolute_angle_per_interval,
     entropy_per_interval,
+    entropy_for_chunk,
     entropy,
     distance_to_wall_per_interval,
     distance_to_wall,
@@ -16,11 +17,24 @@ from .metrics import (
     tortuosity,
     turning_angle,
     absolute_angles,
+    entropy_heatmap,
 )
 
 from .results_to_csv import (
     metric_per_hour_csv,
 )
+
+metric_names = [
+    metric.__name__
+    for metric in [
+        activity,
+        tortuosity,
+        turning_angle,
+        absolute_angles,
+        distance_to_wall,
+        entropy,
+    ]
+]
 
 
 __all__ = [
@@ -30,6 +44,7 @@ __all__ = [
     "turning_angle_per_interval",
     "absolute_angle_per_interval",
     "entropy_per_interval",
+    "entropy_for_chunk",
     "entropy",
     "distance_to_wall_per_interval",
     "distance_to_wall",
@@ -42,4 +57,5 @@ __all__ = [
     "tortuosity",
     "turning_angle",
     "absolute_angles",
+    "entropy_heatmap",
 ]

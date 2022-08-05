@@ -23,7 +23,10 @@ from src.metrics import (
     distance_to_wall_per_interval,
     absolute_angle_per_interval,
 )
-from src.activity_plotting import sliding_window, sliding_window_figures_for_tex
+from src.visualizations.activity_plotting import (
+    sliding_window,
+    sliding_window_figures_for_tex,
+)
 from src.utils import is_valid_dir
 
 TRAJECTORY = "trajectory"

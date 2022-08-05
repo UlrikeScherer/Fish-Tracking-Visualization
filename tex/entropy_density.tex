@@ -1,0 +1,77 @@
+
+\documentclass[article]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage[a4paper, inner=1em, outer=1em, top=1em, bottom=1em]{geometry}
+\usepackage{pgffor}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{hyperref}
+\usepackage{ifthen}
+\usepackage[nomessages]{fp}% http://ctan.org/pkg/fp
+\usepackage{adjustbox}
+\usepackage{tcolorbox}
+\usepackage{xstring}
+\usepackage{xurl}
+\usepackage{etoolbox}
+\usepackage{nopageno}
+\usepackage{tabularx}
+\setcounter{topnumber}{8}
+\setcounter{bottomnumber}{8}
+\setcounter{totalnumber}{8}
+
+\providecommand{\block}{block1}
+\providecommand{\name}{entropy_density}
+\graphicspath{{../\plots/\block/}} 
+
+\title{\Large Developing exploration behavior\\
+Clustering of trajectory sequences. 
+{\normalsize From the 10th of September to the 8th of November.}\\
+\textsc{\block}\\
+}
+\author{Research Unit 1, SCIoI Project 21}
+\date{\today}
+
+\begin{document}
+%\maketitle  
+
+%\newpage
+\foreach \fk in {
+    23442333_back,
+    23484201_back,
+    23484204_back,
+    23520257_back,
+    23520258_back,
+    23520264_back,
+    23520266_back,
+    23520268_back,
+    23520270_back,
+    23520276_back,
+    23520278_back,
+    23520289_back,
+    23442333_front,
+    23484201_front,
+    23484204_front,
+    23520257_front,
+    23520258_front,
+    23520264_front,
+    23520266_front,
+    23520268_front,
+    23520270_front,
+    23520276_front,
+    23520278_front,
+    23520289_front}{
+    %\begin{figure}[!ht]
+        \centering
+        %\begin{subfigure}[b]{\textwidth}
+            \foreach \week in {0, 1, 2, 3}{
+                \includegraphics[width=0.19\textwidth]{\name/\name_\fk_week_\week.pdf}
+            }
+            \includegraphics[width=0.19\textwidth]{\name/\name_\fk_overall.pdf}
+        %\end{subfigure}
+        %\caption*{Entropy density of $\fk{}$ for week 1 to 4 and overall at the most right side.}
+   % \end{figure}
+}
+%\clearpage
+\end{document}
