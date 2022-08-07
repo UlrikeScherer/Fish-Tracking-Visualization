@@ -8,7 +8,7 @@ from src.metrics.metrics import update_filter_three_points
 from src.config import BACK, BLOCK
 import numpy as np
 import motionmapperpy as mmpy
-from wavelet import mm_findWavelets
+from motionmapperpy.motionmapper import mm_findWavelets
 
 from src.utils import csv_of_the_day
 from src.utils.utile import get_camera_pos_keys, get_days_in_order
@@ -61,6 +61,8 @@ def subsample_train_dataset(parameters, fish_keys=None):
             select = np.random.choice(wlets.shape[0], parameters.training_points_of_day, replace=False)
             train_list.append((fk, day, wlets[select]))
     return train_list
+
+def subsampled_
 
 
 

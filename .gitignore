@@ -20,6 +20,7 @@ scripts/env.sh
 /output
 /feeding
 /content
+/motionmapperpy
 wavelet.py
 
 *Icon*
