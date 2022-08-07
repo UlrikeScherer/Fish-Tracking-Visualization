@@ -1,5 +1,7 @@
 import numpy as np
 
+CONST_PX2CM = 0.02326606
+
 def normalize_origin_of_compartment(data, area, is_back):
     if is_back:
         origin1 = area[0,0], area[1,1]
@@ -18,7 +20,7 @@ def rotation(t):
 
 
 def px2cm(a):
-    return a * 0.02326606
+    return a * CONST_PX2CM
 
 
 def pixel_to_cm(pixels):
@@ -27,7 +29,7 @@ def pixel_to_cm(pixels):
     returns: cm (Nx2)
     """
     R = rotation(np.pi / 4)
-    t = [0.02326606, 0.02326606]  # 0.01541363]
+    t = [CONST_PX2CM, CONST_PX2CM]
     T = np.diag(t)
     trans_cm = np.array([19.86765585, -1.16965425])
     return (pixels @ R @ T) - trans_cm
