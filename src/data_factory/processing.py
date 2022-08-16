@@ -27,8 +27,8 @@ def transform_to_traces_high_dim(data, filter_index, area_tuple):
     t_a = turning_directions(data)
     #wall = px2cm(distance_to_wall_chunk(data, new_area))
     f3 = update_filter_three_points(steps, filter_index)
-    X = np.array((np.arange(1,L-1),xy_steps[:-1,0],xy_steps[:-1,1], t_a)).T 
-    return X[~f3]
+    X = np.array((np.arange(1,L-1),xy_steps[:-1,0],xy_steps[:-1,1], t_a, data[1:-1,0], data[1:-1,1])).T 
+    return X[~f3], new_area
 
 def compute_projections(fish_key, day, area_tuple, write_file=False):
     cam, pos = fish_key.split("_")
@@ -39,10 +39,10 @@ def compute_projections(fish_key, day, area_tuple, write_file=False):
     data = pd.concat(csv_of_the_day(cam,day, is_back=is_back)[1])
     data_px = data[["xpx", "ypx"]].to_numpy()
     filter_index = all_error_filters(data_px, area_tuple)
-    X = transform_to_traces_high_dim(data_px, filter_index, area_tuple)
+    X, new_area = transform_to_traces_high_dim(data_px, filter_index, area_tuple)
     if write_file:
         np.save(file_path,X)
-    return X
+    return X, new_area
 
 def compute_all_projections(fish_keys=None):
     area_f = get_area_functions()
@@ -52,11 +52,12 @@ def compute_all_projections(fish_keys=None):
         days = get_days_in_order(camera=fk.split("_")[0], is_back=fk.split("_")[1]==BACK)
         for day in days:
             area_tuple = (fk, area_f(fk,day))
-            X = compute_projections(fk, day, area_tuple, write_file=True)
+            X, new_area = compute_projections(fk, day, area_tuple, write_file=True)
             print(f"{fk} {fish_keys.index(fk)} {day} {days.index(day)} {X.shape}", flush=True)
-            hdf5storage.write(data={'projections': X[:,1:]}, path='/', truncate_existing=True,
+            hdf5storage.write(data={'projections': X[:,1:4], 'positions': X[:,4:], 'area':new_area, 'index':X[:,0]}, path='/', truncate_existing=True,
                         filename=projectPath + f'/Projections/{BLOCK}_{fk}_{day}_pcaModes.mat',
                         store_python_metadata=False, matlab_compatible=True)
+            
 
 def subsample_train_dataset(parameters, fish_keys=None):
     area_f = get_area_functions()
