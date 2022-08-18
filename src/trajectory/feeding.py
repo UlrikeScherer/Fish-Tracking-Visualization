@@ -1,10 +1,12 @@
+import imp
 import pandas as pd
 import os
 import numpy as np
 from time import gmtime, strftime
-from src.config import BACK, FRONT, BLOCK, DATA_results
+from src.config import BACK, BATCH_SIZE, FRAMES_PER_SECOND, FRONT, BLOCK, DATA_results, FEEDINGTIME, DATA_DIR, sep
 from src.metrics.metrics import calc_length_of_steps, num_of_spikes
 from src.utils import get_days_in_order, get_all_days_of_context, get_camera_pos_keys
+from src.utils.utile import month_abbr2num
 from .trajectory import Trajectory
 from src.utils.transformation import pixel_to_cm
 
@@ -22,11 +24,14 @@ class FeedingTrajectory(Trajectory):
         self.set_feeding_box(is_back=True)
         self.feeding_times = []
         self.visits = []
+        self.num_df_feeding = []
+        self.start_end_times = start_end_dict()
         self.reset_data()
 
     def reset_data(self):
         self.feeding_times = [dict() for i in range(self.N_fishes)]
         self.visits = [dict() for i in range(self.N_fishes)]
+        self.num_df_feeding = [dict() for i in range(self.N_fishes)]
 
     def set_feeding_box(self, is_back=False):
         F = self.fig_back if is_back else self.fig_front
@@ -37,23 +42,40 @@ class FeedingTrajectory(Trajectory):
         batch,
         date,
         directory,
-        name,
+        batch_number,
         fish_id,
         time_span="batch: 1,   00:00:00 - 00:30:00",
         is_back=False,
     ):
         F = self.fig_back if is_back else self.fig_front
+        (f_start, f_end) = self.start_end_times[date]
+
+        if f_start * FRAMES_PER_SECOND < int(batch_number)* BATCH_SIZE:
+            start_idx = 0
+        elif f_start * FRAMES_PER_SECOND > (int(batch_number)+1)* BATCH_SIZE:
+            start_idx = BATCH_SIZE
+        else:
+            start_idx = f_start * FRAMES_PER_SECOND - int(batch_number)* BATCH_SIZE
+        
+        if f_end * FRAMES_PER_SECOND < int(batch_number)* BATCH_SIZE:
+            end_idx = BATCH_SIZE
+        elif f_end * FRAMES_PER_SECOND > (int(batch_number)+1)* BATCH_SIZE:
+            end_idx = 0
+        else:
+            end_idx = f_end * FRAMES_PER_SECOND - int(batch_number)* BATCH_SIZE
 
         F.ax.set_title(time_span, fontsize=10)
         last_frame = batch.FRAME.array[-1]
         if batch.x.array[-1] <= -1:
             batch.drop(batch.tail(1).index)
 
+        feeding_filter = batch.FRAME.between(start_idx, end_idx)
+
         batchxy = pixel_to_cm(batch[["xpx", "ypx"]].to_numpy())
         F.line.set_data(*batchxy.T)
 
         feeding_b, box = self.feeding_data(
-            batch, fish_id
+            batch[feeding_filter], fish_id
         )  # feeding_b: array of data frames that are inside the feeding box.
         feeding_size = feeding_b.shape[
             0
@@ -110,34 +132,39 @@ class FeedingTrajectory(Trajectory):
 
         # ax.draw_artist(ax.patch)
         # ax.draw_artist(line)
-        self.update_feeding_and_visits(fish_id, date, feeding_size, n_entries)
+        self.update_feeding_and_visits(fish_id, date, feeding_size, n_entries, sum(feeding_filter))
 
         if self.write_fig:
-            F.write_figure(directory, name)
+            F.write_figure(directory, batch_number)
         remove_text()
         return F.fig
 
-    def update_feeding_and_visits(self, fish_id, date, feeding_size, visits):
+    def update_feeding_and_visits(self, fish_id, date, feeding_size, visits, num_df_feeding):
         if date not in self.feeding_times[fish_id]:
             self.feeding_times[fish_id][date] = 0
             self.visits[fish_id][date] = 0
+            self.num_df_feeding[fish_id][date] = 0
         self.feeding_times[fish_id][date] += feeding_size
         self.visits[fish_id][date] += visits
+        self.num_df_feeding[fish_id][date] += num_df_feeding
 
     def feeding_data_to_csv(self):
         fish_names = get_camera_pos_keys(is_feeding=self.is_feeding)
         days = get_all_days_of_context(is_feeding=self.is_feeding)
         df_feeding = pd.DataFrame(columns=[fish_names], index=days)
         df_visits = pd.DataFrame(columns=[fish_names], index=days)
+        df_num_df_feeding = pd.DataFrame(columns=[fish_names], index=days)
         for i, fn in enumerate(fish_names):
             for d in days:
                 if d in self.feeding_times[i]:
                     df_feeding.loc[d, fn] = self.feeding_times[i][d]
                     df_visits.loc[d, fn] = self.visits[i][d]
+                    df_num_df_feeding.loc[d, fn] = self.num_df_feeding[i][d]
 
         os.makedirs(self.dir_data_feeding, exist_ok=True)
         df_feeding.to_csv("%s/%s.csv" % (self.dir_data_feeding, "feeding_times"))
         df_visits.to_csv("%s/%s.csv" % (self.dir_data_feeding, "visits"))
+        df_num_df_feeding.to_csv("%s/%s.csv" % (self.dir_data_feeding, "num_df_feeding"))
 
     def feeding_data_to_tex(self):
         text = """\newcommand\ftlist{}\newcommand\setft[2]{\csdef{ft#1}{#2}}\newcommand\getft[1]{\csuse{ft#1}}""".replace(
@@ -159,6 +186,7 @@ class FeedingTrajectory(Trajectory):
                         strftime("%H:%M:%S", gmtime(self.feeding_times[i][d] / 5)),
                     )
                     text += "\setft{%s%s%sv}{%s}" % (c, p, d, self.visits[i][d])
+                    text += "\setft{%s%s%snum}{%s}" % (c,p,d,strftime("%H:%M:%S", gmtime(self.num_df_feeding[i][d] / 5)))
         text_file = open("%s/%s_feedingtime.tex" % (self.dir_tex_feeding, BLOCK), "w")
         text_file.write(text)
         text_file.close()
@@ -230,6 +258,26 @@ def get_feeding_box(data, TL_x, TL_y, TR_x, TR_y):
                 (TL_x, TL_y),
             ]
         )
-
     feeding = data[f1 & f2 & f3]
     return feeding, box
+
+def start_end_dict():
+    ft_df = pd.read_csv(f"{DATA_DIR}/DevEx_FE_feeding_times.csv", sep=sep)
+    b1_ft = ft_df[ft_df["block"]==int(BLOCK[5:]) & ~ft_df["feeding_start_analyses"].isna()]
+    feeding_times = dict([("%s%02d%02d_%s"%(y,month_abbr2num[m.lower()],d,FEEDINGTIME), 
+                           (get_df_idx_from_time(s),get_df_idx_from_time(e))) for (y,m,d,s,e) in zip(b1_ft["year"],
+        b1_ft["month"],
+        b1_ft["day_of_month"],
+        b1_ft["feeding_start_analyses"],
+        b1_ft["feeding_end_analyses"])
+                         ])
+    return feeding_times
+
+def get_df_idx_from_time(time,start_time=FEEDINGTIME): 
+    """
+    @time hh:mm
+    @start_time hhmmss 
+    """
+    time_sec = sum([int(t)*f for (t, f) in zip(time.split(":"),[3600, 60])])
+    start_time_sec = sum([int(t)*f for (t, f) in zip([start_time[i:i+2] for i in range(0,len(start_time),2)],[3600, 60, 1])])
+    return time_sec - start_time_sec

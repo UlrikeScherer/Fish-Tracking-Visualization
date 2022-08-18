@@ -65,7 +65,9 @@ start time: \starttime\\
      Trajectory over time of the molly at camera: \camera{}\\ position: \textsc{\position}\\
     \ifthenelse{\equal{\starttime}{140000}}
         {$\Delta$-Feeding Time: \getft{\camera\position#1}\\
-        Number of Visits: \getft{\camera\position#1v}\\}
+        Number of Visits: \getft{\camera\position#1v}\\
+        Considered Feeding Time: \getft{\camera\position#1num}\\
+        }
         {}%
      }
 }
