@@ -58,9 +58,9 @@ class FeedingTrajectory(Trajectory):
             start_idx = f_start * FRAMES_PER_SECOND - int(batch_number)* BATCH_SIZE
         
         if f_end * FRAMES_PER_SECOND < int(batch_number)* BATCH_SIZE:
-            end_idx = BATCH_SIZE
-        elif f_end * FRAMES_PER_SECOND > (int(batch_number)+1)* BATCH_SIZE:
             end_idx = 0
+        elif f_end * FRAMES_PER_SECOND > (int(batch_number)+1)* BATCH_SIZE:
+            end_idx = BATCH_SIZE
         else:
             end_idx = f_end * FRAMES_PER_SECOND - int(batch_number)* BATCH_SIZE
 
