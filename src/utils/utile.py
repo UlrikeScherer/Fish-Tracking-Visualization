@@ -24,6 +24,20 @@ from src.config import (
 )
 from path_validation import filter_files
 
+month_abbr2num = {
+        'jan': 1,
+        'feb': 2,
+        'mar': 3,
+        'apr':4,
+         'may':5,
+         'jun':6,
+         'jul':7,
+         'aug':8,
+         'sep':9,
+         'oct':10,
+         'nov':11,
+         'dec':12
+        }
 
 def flatten_list(list_of_lists):
     return [item for sublist in list_of_lists for item in sublist]
