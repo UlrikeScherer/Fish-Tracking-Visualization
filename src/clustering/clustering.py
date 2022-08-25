@@ -12,11 +12,17 @@ from src.config import (
     DATAFRAME,
 )
 from src.utils.error_filter import all_error_filters, error_default_points
+from src.utils.plot_helpers import remove_spines
 from src.utils.transformation import rotation, pixel_to_cm
-from src.metrics import entropy_for_data, distance_to_wall
+from src.metrics import (
+    entropy,
+    distance_to_wall,
+    activity,
+    turning_angle,
+    absolute_angles,
+)
 from src.utils import get_fish2camera_map, csv_of_the_day, get_date_string
 from src.metrics.tank_area_config import get_area_functions
-from src.methods import activity, turning_angle, absolute_angles
 from itertools import product
 import os
 import pandas as pd
@@ -26,6 +32,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from random import sample
+from sklearn.cluster import MiniBatchKMeans
 
 MU_STR, SD_STR = "mu", "sd"
 
@@ -60,7 +67,7 @@ def load_traces(trace_size):
     trace_path = get_trace_file_path(trace_size)
     trace_path_npy = get_trace_file_path(trace_size, "npy")
     if not os.path.exists(trace_path) or not os.path.exists(trace_path_npy):
-        raise Exception("Trace for path %s does not exist" % trace_path)
+        raise FileNotFoundError("Trace for path %s does not exist" % trace_path)
     traces = pd.read_csv(trace_path, delimiter=sep, index_col=0)
     with open(trace_path_npy, "rb") as f:
         samples = np.load(f)
@@ -175,14 +182,14 @@ def get_metrics_for_traces():
         activity,
         turning_angle,
         absolute_angles,
-        entropy_for_data,
+        entropy,
         distance_to_wall,
     ]
     names = [
         "%s_%s" % (m, s)
         for m, s in product(map(lambda m: m.__name__, metrics_f), [MU_STR, SD_STR])
     ]
-    names.remove("%s_%s" % (entropy_for_data.__name__, SD_STR))  # remove entropy_sd
+    names.remove("%s_%s" % (entropy.__name__, SD_STR))  # remove entropy_sd
     return metrics_f, names
 
 
@@ -195,7 +202,7 @@ def transform_to_traces_metric_based(data, trace_size, filter_index, area):
         idx = i * 2
         if f.__name__ == distance_to_wall.__name__:
             newSet[:, idx : idx + 2] = f(data, trace_size, filter_index, area)[:, :2]
-        elif f.__name__ == entropy_for_data.__name__:
+        elif f.__name__ == entropy.__name__:
             entropy_idx = i * 2 + 1
             newSet[:, idx : idx + 2] = f(data, trace_size, filter_index, area)[
                 :, :2
@@ -214,6 +221,22 @@ def normalize_data_metrics(traces):
         d_std, d_mean = np.std(traces[:, i]), np.mean(traces[:, i])
         traces[:, i] = (traces[:, i] - d_mean) / d_std
     return traces
+
+
+def clustering(traces, n_clusters, model=None, rating_feature=None):
+    if model is None:
+        model = MiniBatchKMeans(n_clusters=n_clusters, random_state=12)
+    if rating_feature is None:
+        rating_feature = traces[:, 0]
+    clusters = model.fit_predict(traces)
+    avg_feature = np.zeros(n_clusters)
+    for i in range(n_clusters):
+        avg_feature[i] = np.mean(rating_feature[clusters == i])
+    index_map = np.argsort(avg_feature)
+    renamed_clusters = np.empty(clusters.shape, dtype=int)
+    for i, j in enumerate(index_map):
+        renamed_clusters[clusters == j] = i
+    return renamed_clusters
 
 
 def TSNE_vis(X_embedded):
@@ -364,6 +387,7 @@ def sub_figure(ax, x, y, clusters, x_label, y_label, limits=None, zorder=-1):
     scatter = ax.scatter(x, y, c=clusters, cmap="tab10", alpha=0.5, s=2, zorder=zorder)
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
+    remove_spines(ax)
     if limits is None:
         limits = sub_figure_get_limits(x, y)
     else:

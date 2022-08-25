@@ -21,7 +21,7 @@ def transition_rates(clusters, normalize=0):
         pd.Series(clusters[:-1], name="from"),
         pd.Series(clusters[1:], name="to"),
         normalize=normalize,
-        dropna=True,
+        dropna=False,
     )
     return transitions
 
@@ -31,8 +31,9 @@ def transition_rates_over_all(fish_keys, clusters, traces_all, trace_size):
         fish_keys[0], clusters, traces_all, normalize=False
     )
     for f_key in fish_keys[1:]:
-        tra_r = tra_r + transition_rates_for_fish(
-            f_key, clusters, traces_all, normalize=False
+        tra_r = tra_r.add(
+            transition_rates_for_fish(f_key, clusters, traces_all, normalize=False),
+            fill_value=0,
         )
     return tra_r.div(tra_r.sum(axis=1), axis=0)
 
@@ -75,10 +76,12 @@ def draw_transition_graph(
     elabel = g.new_ep("string")
     emarker = g.new_ep("double")
     vweight = g.new_vp("double")
+    vzindex = g.new_vp("int")
     vcolor = g.new_vp("vector<double>")
     pos = g.new_vp("vector<double>")
     _ = g.add_edge_list(edges, eprops=[eweight, emarker, elabel])
     vweight.a[t.index] = stationary_distribution(t_np) * vweight_scale
+    vzindex.a[t.index] = np.argsort(vweight.a)
     for v in g.vertices():
         vidx = g.vertex_index[v]
         X_c_mean = positions[vidx]
@@ -90,6 +93,7 @@ def draw_transition_graph(
     graph_draw(
         g,
         pos=pos,
+        vorder=vzindex,
         fit_view=0.8,
         ink_scale=ink_scale,
         fit_view_ink=True,
@@ -127,15 +131,17 @@ def is_of_equal_size(*arrays):
     return np.alltrue([a.shape[0] == arrays[0].shape[0] for a in arrays])
 
 
+def get_cluster_means(X, clusters, n_clusters):
+    return [np.mean(X[clusters == idx], axis=0) for idx in range(n_clusters)]
+
+
 def plot_transitions_individuality_develpoment(
     fish_keys, table, X_embedded, clusters, n_clusters, trace_size
 ):
     days = get_all_days_of_context()
     # TRANSITION
     t = transition_rates_over_all(fish_keys, clusters, table, trace_size)
-    cluster_means = [
-        np.mean(X_embedded[clusters == idx], axis=0) for idx in range(n_clusters)
-    ]
+    cluster_means = get_cluster_means(X_embedded, clusters, n_clusters)
     draw_transition_graph(
         t,
         n_clusters,

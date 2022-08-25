@@ -1,0 +1,58 @@
+
+\documentclass[article]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage[a4paper, inner=1em, outer=1em, top=1em, bottom=1em]{geometry}
+\usepackage{pgffor}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{hyperref}
+\usepackage{ifthen}
+\usepackage[nomessages]{fp}% http://ctan.org/pkg/fp
+\usepackage{adjustbox}
+\usepackage{tcolorbox}
+\usepackage{xstring}
+\usepackage{xurl}
+\usepackage{etoolbox}
+\usepackage{nopageno}
+\usepackage{tabularx}
+\setcounter{topnumber}{8}
+\setcounter{bottomnumber}{8}
+\setcounter{totalnumber}{8}
+
+\providecommand{\block}{block1}
+\providecommand{\nclusters}{4}
+\graphicspath{{../\plots/}} 
+
+\title{\Large Developing exploration behavior\\
+Clustering of trajectory sequences. 
+{\normalsize From the 10th of September to the 8th of November.}\\
+\textsc{\block}\\
+}
+\author{Research Unit 1, SCIoI Project 21}
+\date{\today}
+
+\begin{document}
+%\maketitle  
+
+%\newpage
+\foreach \tracesize in {20,60,200,600,4500}{
+    \begin{figure}[!h]
+        \centering
+        \begin{subfigure}[b]{.45\textwidth}
+            \includegraphics[width=\textwidth]{\block_trace_size_\tracesize/cluster_characteristics_\nclusters_\tracesize.pdf}
+            \setcounter{\ctr}{\tracesize/5}
+            \subcaption*{Cluster Characteristics for \textit{trace size} \tracesize{} and \nclusters{} clusters}
+        \end{subfigure}
+        \begin{subfigure}[b]{.5\textwidth}
+            \includegraphics[width=0.5\textwidth]{\block_trace_size_\tracesize/tsne_4_\tracesize.pdf}
+            \includegraphics[height=0.45\textwidth]{\block_trace_size_\tracesize/all_transitions_c4_\tracesize.png}
+            %\includegraphics[width=\textwidth]{\block_trace_size_\tracesize/tsne_4_\tracesize.pdf}
+            %\includegraphics[width=0.5\textwidth]{all_transitions_c4_\tracesize.png}
+            \subcaption*{Corresponding t-SNE plot and transitions rates for \textit{trace size} \tracesize{}.}
+        \end{subfigure}
+    \end{figure}
+}
+%\clearpage
+\end{document}

@@ -1,9 +1,11 @@
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
+import pandas as pd
 import os
+from src.metrics.results_to_csv import get_filename_for_metric_csv
 from src.utils import get_date_string
-from src.config import BLOCK, VIS_DIR
+from src.config import BLOCK, VIS_DIR, sep
 
 
 colors = (
@@ -131,10 +133,11 @@ def sliding_window(
             ]
             x_end = offset + (len(data) - sw + 1) * time_interval
             x_max = max(x_max, x_end)  # x_max update to draw the dashed baseline
-            axes[d_idx].plot(
+            plot_metric_data(
+                axes[d_idx],
                 range(offset, x_end, time_interval),
                 slide_data,
-                "-",
+                linestyle="-",
                 label=fish_labels[i],
                 color=color_map[i],
                 linewidth=2,
@@ -153,10 +156,11 @@ def sliding_window(
                     axes[d_idx].set_ylabel(ylabel, fontsize=20)
     if baseline is not None:
         for i in range(n_days):
-            axes[i].plot(
+            plot_metric_data(
+                axes[i],
                 (offset, time_interval * ((x_max // time_interval) - 1)),
                 (baseline, baseline),
-                ":",
+                linestyle=":",
                 color="black",
             )
 
@@ -164,22 +168,66 @@ def sliding_window(
         axes[i].axis("off")
 
     if set_legend:
-        leg = axes[0].legend(
+        set_legend_for_metric_plot(
+            axes[0],
             loc="upper center",
             bbox_to_anchor=(ncols / 2 + 0.15, 1.55),
             ncol=n_fishes,
-            fancybox=True,
-            fontsize=18,
-            markerscale=2,
         )
-        for line in leg.get_lines():
-            line.set_linewidth(7.0)
 
     if write_fig:
         data_dir = "{}/{}/".format(VIS_DIR, BLOCK)
         os.makedirs(data_dir, exist_ok=True)
-        fig.savefig("{}/{}.pdf".format(data_dir, name), bbox_inches="tight", dpi=100)
+        fig.savefig("{}/{}.pdf".format(data_dir, name), bbox_inches="tight")
     return fig
+
+
+def plot_metric_data(
+    ax,
+    x,
+    y,
+    color,
+    label=None,
+    linestyle="-",
+    x_label=None,
+    y_label=None,
+    title=None,
+    linewidth=2,
+    **kwargs
+):
+    ax.plot(
+        x,
+        y,
+        label=label,
+        color=color,
+        linestyle=linestyle,
+        linewidth=linewidth,
+        **kwargs
+    )
+    if x_label is not None:
+        ax.set_xlabel(x_label)
+    if y_label is not None:
+        ax.set_ylabel(y_label)
+    if title is not None:
+        ax.set_title(title)
+    ax.grid(axis="y")
+    return ax
+
+
+def set_legend_for_metric_plot(
+    ax, legend_loc="upper center", ncol=1, fontsize=18, bbox_to_anchor=(0.5, 1.05)
+):
+    leg = ax.legend(
+        loc=legend_loc,
+        bbox_to_anchor=bbox_to_anchor,
+        ncol=ncol,
+        fancybox=True,
+        fontsize=fontsize,
+        markerscale=2,
+    )
+    for line in leg.get_lines():
+        line.set_linewidth(7.0)
+    return ax
 
 
 def plot_turning_direction(data, time_interval):
@@ -196,3 +244,51 @@ def plot_turning_direction(data, time_interval):
     )
     ax.set_xlabel("seconds")
     return fig
+
+
+def plot_metric_figure_for_days(metric_name, measure=None, write_fig=True):
+    fig, axis = plt.subplots(figsize=(25, 5), ncols=2, sharey=True)
+    file_e = get_filename_for_metric_csv(
+        metric_name, "DAY", False, measure_name=measure
+    )
+    df = pd.read_csv(file_e, sep=sep)
+    days = df.columns[2:]
+    days = list(map(lambda d: "%s/%s" % (d[4:6], d[6:8]), days))
+    df_np = df.to_numpy()
+    nfish = df_np.shape[0]
+    ncols = int(np.ceil(nfish / 2))
+    for axi, ax in enumerate(axis):
+        start = 0 + axi * ncols
+        for i in range(start, min(start + ncols, nfish)):
+            plot_metric_data(
+                ax,
+                days,
+                df_np[i, 2:],
+                color=color_map[i % len(color_map)],
+                label=df_np[i, 1][6:10],
+                linestyle="--",
+                marker="o",
+                markersize=2,
+                linewidth=0.2,
+            )
+        ax.set_xlabel("Date")
+        ax.set_ylabel(
+            "%s %s in cm" % (metric_name, measure if measure is not None else "")
+        )
+        ax.tick_params(axis="x", labelrotation=45)
+        ax.grid(axis="y")
+        set_legend_for_metric_plot(
+            ax, ncol=ncols, fontsize=8, bbox_to_anchor=(0.5, 1.15)
+        )
+    if write_fig:
+        fig.savefig(
+            get_filepath_metric_plot(metric_name, measure=measure), bbox_inches="tight"
+        )
+
+
+def get_filepath_metric_plot(metric_name, measure=None):
+    data_dir = "{}/{}/".format(VIS_DIR, BLOCK)
+    os.makedirs(data_dir, exist_ok=True)
+    return "{}/{}{}.pdf".format(
+        data_dir, metric_name, "_" + measure if measure is not None else ""
+    )

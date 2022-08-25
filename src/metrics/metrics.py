@@ -5,44 +5,47 @@ from src.config import (
     SPIKE_THRESHOLD,
     N_DAYS,
     N_FISHES,
-    N_SECONDS_OF_DAY,
     FRAMES_PER_SECOND,
-    HOURS_PER_DAY,
-    BLOCK,
-    DATA_results,
-    float_format,
-    sep,
 )
 from src.utils import (
     csv_of_the_day,
-    get_all_days_of_context,
     get_days_in_order,
     get_fish2camera_map,
-    get_seconds_from_day,
 )
 from src.metrics.tank_area_config import get_area_functions
 from src.utils.transformation import pixel_to_cm, px2cm
+from src.metrics.results_to_csv import metric_data_to_csv
 from src.methods import (
-    activity,
-    turning_angle,
     tortuosity_of_chunk,
+    turning_directions,
     distance_to_wall_chunk,
     mean_std,
-    absolute_angles,
+    calc_steps,
 )  # cython
 import pandas as pd
-import os
 import numpy as np
-from scipy.stats import entropy
-from itertools import product
+import scipy.stats as scipy_stats
 import matplotlib.pyplot as plt
 
-from src.utils.utile import get_start_time_directory
+NDIM = 3
 
 
 def num_of_spikes(steps):
-    spike_places = steps > SPIKE_THRESHOLD
+    spike_places = get_spikes_filter(steps)
     return np.sum(spike_places), spike_places
+
+
+def get_spikes_filter(steps):
+    return steps > SPIKE_THRESHOLD
+
+
+def update_filter_two_points(steps, filter_index):
+    return filter_index[:-1] | filter_index[1:] | get_spikes_filter(steps)
+
+
+def update_filter_three_points(steps, filter_index):
+    filter_index = update_filter_two_points(steps, filter_index)
+    return filter_index[:-1] | filter_index[1:]
 
 
 def calc_length_of_steps(batchxy):
@@ -124,10 +127,10 @@ def entropy_for_chunk(chunk, area_tuple):
     """
     Args: chunk,
     area = tuple(fish_key, data)
-    retrun entropy, std * 100
+    retrun entropy
     """
     if chunk.shape[0] == 0:
-        return np.nan, np.nan
+        return np.nan
     fish_key, area = area_tuple
     th = THRESHOLD_AREA_PX
     xmin, xmax = min(area[:, 0]) - th, max(area[:, 0]) + th
@@ -153,7 +156,7 @@ def entropy_for_chunk(chunk, area_tuple):
             "Warning for %s all %d data points where not in der range of histogram and removed"
             % (fish_key, chunk.shape[0])
         )
-        return np.nan, np.nan
+        return np.nan
     if chunk.shape[0] > sum_hist:
         # print(chunk[:10])
         print(
@@ -171,33 +174,51 @@ def entropy_for_chunk(chunk, area_tuple):
             "\n",
             fish_key,
         )
-        print("entropy: ", entropy(hist[tri]))
+        print("entropy: ", scipy_stats.entropy(hist[tri]))
         plt.plot(*area.T)
         plt.plot(*chunk.T, "*")
-    return entropy(hist[tri]), np.std(hist[tri]) * 100
+    return scipy_stats.entropy(hist[tri])
 
 
-def average_by_metric(data, frame_interval, avg_metric_f, error_index):
+def calculate_result_for_interval(
+    data, frame_interval, avg_metric_f, error_index, NDIM=3
+):
     SIZE = data.shape[0]
     len_out = int(np.ceil(SIZE / frame_interval))
-    mu_sd = np.zeros([len_out, 3], dtype=float)
+    mu_sd = np.zeros([len_out, NDIM], dtype=float)
     for i, s in enumerate(
         range(frame_interval, data.shape[0] + frame_interval, frame_interval)
     ):
         chunk = data[s - frame_interval : s][~error_index[s - frame_interval : s]]
-        mu_sd[i, :2] = avg_metric_f(chunk)
-        mu_sd[i, 2] = len(chunk)
+        mu_sd[i, :-1] = avg_metric_f(chunk)
+        mu_sd[i, -1] = len(chunk)
     return mu_sd
 
 
-def entropy_for_data(data, frame_interval, error_index, area):
-    return average_by_metric(
-        data, frame_interval, lambda chunk: entropy_for_chunk(chunk, area), error_index
+def mean_std_for_interval(results, frame_interval, filtered, NDIM=3):
+    len_out = int(np.ceil(results.size / frame_interval))
+    mu_sd = np.zeros([len_out, NDIM], dtype=float)
+    for i, s in enumerate(range(0, results.size, frame_interval)):
+        chunk = results[s : s + frame_interval][
+            filtered[s : s + frame_interval]
+        ]  # select chunk and filter it
+        mu_sd[i, :-1] = mean_std(chunk)
+        mu_sd[i, -1] = len(chunk)
+    return mu_sd
+
+
+def entropy(data, frame_interval, error_index, area):
+    return calculate_result_for_interval(
+        data,
+        frame_interval,
+        lambda chunk: entropy_for_chunk(chunk, area),
+        error_index,
+        NDIM=2,
     )
 
 
 def distance_to_wall(data, frame_interval, error_index, area):
-    return average_by_metric(
+    return calculate_result_for_interval(
         data,
         frame_interval,
         lambda chunk: mean_std(px2cm(distance_to_wall_chunk(chunk, area[1]))),
@@ -206,12 +227,42 @@ def distance_to_wall(data, frame_interval, error_index, area):
 
 
 def tortuosity(data, frame_interval, error_index):
-    return average_by_metric(
+    return calculate_result_for_interval(
         data,
         frame_interval,
         lambda chunk: mean_std(tortuosity_of_chunk(chunk)),
         error_index,
     )
+
+
+def mean_std_median(chunk):
+    if len(chunk) == 0:
+        return (np.nan, np.nan, np.nan)
+    return (*mean_std(chunk), np.percentile(chunk, 50))
+
+
+def absolute_angles(data, frame_interval, filter_index):
+    filter_index = ~update_filter_three_points(calc_steps(data), filter_index)
+    return mean_std_for_interval(
+        np.abs(turning_directions(data)), frame_interval, filter_index
+    )
+
+
+def activity(data, frame_interval, filter_index, include_median=False):
+    steps = calc_steps(data)
+    filter_index = update_filter_two_points(steps, filter_index)
+    return calculate_result_for_interval(
+        steps,
+        frame_interval,
+        mean_std_median if include_median else mean_std,
+        filter_index,
+        4 if include_median else 3,
+    )
+
+
+def turning_angle(data, frame_interval, filter_index):
+    filter_index = ~update_filter_three_points(calc_steps(data), filter_index)
+    return mean_std_for_interval(turning_directions(data), frame_interval, filter_index)
 
 
 def metric_per_interval(
@@ -222,6 +273,8 @@ def metric_per_interval(
     is_feeding=False,
     write_to_csv=False,
     drop_out_of_scope=False,
+    out_dim=3,
+    include_median=False,
 ):
     """
     Applies a given function to all fishes in fish_ids with the time_interval, for all days in the day_interval interval
@@ -245,6 +298,11 @@ def metric_per_interval(
         is_feeding=is_feeding,
         results=results,
     )
+    metric_kwargs = dict()
+    if include_median:
+        out_dim = out_dim + 1
+        metric_kwargs.update(include_median=include_median)
+
     for i, fish in enumerate(fish_ids):
         camera_id, is_back = fish2camera[fish, 0], fish2camera[fish, 1] == BACK
         fish_key = "%s_%s" % (camera_id, fish2camera[fish, 1])
@@ -270,112 +328,33 @@ def metric_per_interval(
                 err_filter = all_error_filters(
                     data, area_tuple, fish_key=fish_key, day=day
                 )
-                if metric.__name__ in [
-                    entropy_for_data.__name__,
+                if metric.__name__ in [  # metrics in pixels using the area config
+                    entropy.__name__,
                     distance_to_wall.__name__,
                 ]:
                     # DISTANCE TO WALL METRIC
                     result = metric(
-                        data, time_interval * FRAMES_PER_SECOND, err_filter, area_tuple
+                        data,
+                        time_interval * FRAMES_PER_SECOND,
+                        err_filter,
+                        area_tuple,
+                        **metric_kwargs
                     )
                 else:
                     data = pixel_to_cm(df[["xpx", "ypx"]].to_numpy())
-                    result = metric(data, time_interval * FRAMES_PER_SECOND, err_filter)
+                    result = metric(
+                        data,
+                        time_interval * FRAMES_PER_SECOND,
+                        err_filter,
+                        **metric_kwargs
+                    )
                 day_dict[day] = result
             else:
-                day_dict[day] = np.empty([0, 3])
+                day_dict[day] = np.empty([0, out_dim])
         results[fish_key] = day_dict
     if write_to_csv:
         metric_data_to_csv(**package)
     return package
-
-
-def metric_data_to_csv(
-    results=None, metric_name=None, time_interval=None, is_feeding=None
-):
-    for i, (cam_pos, days) in enumerate(results.items()):
-        time = list()
-        for j, (day, value) in enumerate(days.items()):
-            sec_day = get_seconds_from_day(day)
-            time.extend(
-                [
-                    (day, t * time_interval + j * N_SECONDS_OF_DAY + sec_day)
-                    for t in range(1, value.shape[0] + 1)
-                ]
-            )
-
-        time_np = np.array(time)
-        concat_r = np.concatenate(list(days.values()))
-        if (
-            time_np.ndim != concat_r.ndim
-        ):  # if data for day is empty do not write an csv-entry
-            print(
-                "# WARNING: for %s time and results have unequal dimensions. time: %s results: %s "
-                % (cam_pos, time_np, concat_r)
-            )
-            continue
-        data = np.concatenate((time_np, concat_r), axis=1)
-        df = pd.DataFrame(
-            data, columns=["day", "time", "mean", "std", "number_of_valid_data_points"]
-        )
-        directory = get_results_directory(metric_name, is_feeding)
-        df.to_csv(
-            "%s/%s_%s.csv" % (directory, time_interval, cam_pos),
-            sep=sep,
-            float_format=float_format,
-        )
-
-
-def metric_per_hour_csv(
-    results=None, metric_name=None, time_interval=None, is_feeding=None
-):
-    data_idx = np.array(list(product(results.keys(), range(HOURS_PER_DAY))))
-    # initialize table of nan
-    data = np.empty((data_idx.shape[0], N_DAYS))
-    data.fill(np.nan)
-    days = get_all_days_of_context()
-    df = pd.DataFrame(data=data_idx, columns=["CAMERA_POSITION", "HOUR"])
-    df_d = pd.DataFrame(data=data, columns=days)
-    df_mean = pd.concat((df, df_d), axis=1)
-    df_std = df_mean.copy()
-    df_n_valid = df_mean.copy()
-    for i, (cam_pos, fish) in enumerate(results.items()):
-        for j, (day, day_data) in enumerate(fish.items()):
-            idx = i * HOURS_PER_DAY
-            k = idx + day_data.shape[0] - 1
-            df_mean.loc[idx:k, day] = day_data[:, 0]
-            df_std.loc[idx:k, day] = day_data[:, 1]
-            df_n_valid.loc[idx:k, day] = day_data[:, 2]
-
-    directory = get_results_directory(metric_name, is_feeding)
-    df_mean.to_csv(
-        "%s/%s_mean.csv" % (directory, metric_name),
-        sep=sep,
-        float_format=float_format,
-    )
-    df_std.to_csv(
-        "%s/%s_std.csv" % (directory, metric_name),
-        sep=sep,
-        float_format=float_format,
-    )
-    df_n_valid.to_csv(
-        "%s/%s_num_valid_datapoints.csv" % (directory, metric_name),
-        sep=sep,
-    )
-
-
-def get_results_directory(metric_name, is_feeding):
-    directory = "%s/%s/%s/%s/" % (
-        DATA_results,
-        BLOCK,
-        get_start_time_directory(is_feeding),
-        metric_name,
-    )
-    if os.path.exists(directory):
-        return directory
-    else:
-        os.makedirs(directory)
-        return directory
 
 
 def activity_per_interval(*args, **kwargs):
@@ -395,7 +374,7 @@ def tortuosity_per_interval(*args, **kwargs):
 
 
 def entropy_per_interval(*args, **kwargs):
-    return metric_per_interval(*args, **kwargs, metric=entropy_for_data)
+    return metric_per_interval(*args, **kwargs, metric=entropy, out_dim=2)
 
 
 def distance_to_wall_per_interval(*args, **kwargs):

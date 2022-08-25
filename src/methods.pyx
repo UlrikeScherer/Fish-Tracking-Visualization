@@ -141,36 +141,6 @@ cpdef np.ndarray[float, ndim=1] turning_directions(np.ndarray[double, ndim=2] da
     results[indices] = d_angles
     return results[:-1]
 
-cpdef np.ndarray[np.npy_bool, ndim=1] get_spikes_filter(np.ndarray[double, ndim=1]  steps):
-    return (steps > 15)
-
-cpdef np.ndarray[double, ndim=NDIM] absolute_angles(np.ndarray[double, ndim=2] data, int frame_interval, np.ndarray[np.npy_bool, ndim=1] filter_index):
-    filter_index = ( filter_index[:-1] | filter_index[1:] | get_spikes_filter(calc_steps(data)))
-    filter_index = ~ (filter_index[:-1] | filter_index[1:])
-    return mean_std_for_interval(np.abs(turning_directions(data)), frame_interval, filter_index)
-
-cpdef np.ndarray[double, ndim=NDIM] activity(np.ndarray[double, ndim=2] data, int frame_interval, np.ndarray[np.npy_bool, ndim=1] filter_index):
-    cdef np.ndarray[double, ndim=1] steps
-    steps = calc_steps(data)
-    filter_index = ~ ( filter_index[:-1] | filter_index[1:] | get_spikes_filter(steps) )
-    return mean_std_for_interval(steps, frame_interval, filter_index)
-
-cpdef np.ndarray[double, ndim=NDIM] turning_angle(np.ndarray[double, ndim=2] data, int frame_interval, np.ndarray[np.npy_bool, ndim=1] filter_index):
-    filter_index = ( filter_index[:-1] | filter_index[1:] | get_spikes_filter(calc_steps(data)))
-    filter_index = ~ (filter_index[:-1] | filter_index[1:])
-    return mean_std_for_interval(turning_directions(data), frame_interval, filter_index)
-
-cpdef np.ndarray[double, ndim=NDIM] mean_std_for_interval(np.ndarray[double, ndim=1] results, int frame_interval, np.ndarray[np.npy_bool, ndim=1] filtered):
-    cdef int len_out, i, s
-    len_out = int(ceil(results.size/frame_interval))
-    cdef np.ndarray mu_sd = np.zeros([len_out,NDIM], dtype=float)
-    cdef np.ndarray[double, ndim=1] chunk
-    for i,s in enumerate(range(0, results.size, frame_interval)):
-        chunk = results[s:s+frame_interval][filtered[s:s+frame_interval]] # select chunk and filter it
-        mu_sd[i,:2]=mean_std(chunk)
-        mu_sd[i,2] = len(chunk)
-    return mu_sd
-
 cpdef (double, double) mean_std(np.ndarray[double, ndim=1] data):
     if data.size == 0:
         return (np.nan, np.nan)

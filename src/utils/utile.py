@@ -9,11 +9,13 @@ from itertools import product
 from src.config import (
     DATA_DIR,
     BLOCK,
+    HOURS_PER_DAY,
     N_BATCHES,
     N_BATCHES_FEEDING,
     FRONT,
     BACK,
     FEEDINGTIME,
+    N_SECONDS_PER_HOUR,
     STIME,
     dir_feeding_back,
     dir_feeding_front,
@@ -38,9 +40,16 @@ def get_start_time_directory(is_feeding):
     return FEEDINGTIME if is_feeding else STIME
 
 
+def get_interval_name_from_seconds(seconds):
+    if seconds == N_SECONDS_PER_HOUR:
+        return "HOUR"
+    if seconds == N_SECONDS_PER_HOUR * HOURS_PER_DAY:
+        return "DAY"
+
+
 def get_directory(is_feeding=None, is_back=None):
     if is_feeding is None or is_back is None:
-        raise Exception("define kwargs")
+        raise Exception("define kwargs is_feeding and is_back")
     if is_feeding:
         if is_back:
             return dir_feeding_back
