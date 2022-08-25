@@ -10,6 +10,8 @@ Metrics.ipynb
 **/.vscode
 scripts/env.sh
 
+*.ipynb 
+
 .flake8
 
 # ignore FOLDERS
@@ -19,6 +21,10 @@ scripts/env.sh
 /vis
 /output
 /feeding
+/content
+/motionmapperpy
+wavelet.py
+
 *Icon*
 
 # Byte-compiled / optimized / DLL files

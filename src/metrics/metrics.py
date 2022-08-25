@@ -123,6 +123,21 @@ def sum_of_angles(df):
     return sum_alpha
 
 
+def entropy_heatmap(chunk, area, bins=(18, 18)):
+    """Calculate the 2D histogram of the chunk"""
+    th = THRESHOLD_AREA_PX
+    xmin, xmax = min(area[:, 0]) - th, max(area[:, 0]) + th
+    ymin, ymax = min(area[:, 1]) - th, max(area[:, 1]) + th
+
+    return np.histogram2d(
+        chunk[:, 0],
+        chunk[:, 1],
+        bins=bins,
+        density=False,
+        range=[[xmin, xmax], [ymin, ymax]],
+    )[0]
+
+
 def entropy_for_chunk(chunk, area_tuple):
     """
     Args: chunk,
@@ -132,18 +147,8 @@ def entropy_for_chunk(chunk, area_tuple):
     if chunk.shape[0] == 0:
         return np.nan
     fish_key, area = area_tuple
-    th = THRESHOLD_AREA_PX
-    xmin, xmax = min(area[:, 0]) - th, max(area[:, 0]) + th
-    ymin, ymax = min(area[:, 1]) - th, max(area[:, 1]) + th
 
-    hist = np.histogram2d(
-        chunk[:, 0],
-        chunk[:, 1],
-        bins=(18, 18),
-        density=False,
-        range=[[xmin, xmax], [ymin, ymax]],
-    )[0]
-
+    hist = entropy_heatmap(chunk, area)
     l_x, l_y = hist.shape
     if BACK in fish_key:  # if back use take the upper triangle -3
         tri = np.triu_indices(l_y, k=-3)
@@ -151,7 +156,7 @@ def entropy_for_chunk(chunk, area_tuple):
         tri = np.tril_indices(l_y, k=3)
     sum_hist = np.sum(hist)
     if sum_hist == 0:  #
-        print(chunk[:10], xmin, ymin, xmax, ymax)
+        print(chunk[:10])
         print(
             "Warning for %s all %d data points where not in der range of histogram and removed"
             % (fish_key, chunk.shape[0])

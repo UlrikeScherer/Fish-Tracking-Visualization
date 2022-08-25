@@ -135,7 +135,7 @@ def get_cluster_means(X, clusters, n_clusters):
     return [np.mean(X[clusters == idx], axis=0) for idx in range(n_clusters)]
 
 
-def plot_transitions_individuality_develpoment(
+def plot_transitions_individuality_development(
     fish_keys, table, X_embedded, clusters, n_clusters, trace_size
 ):
     days = get_all_days_of_context()

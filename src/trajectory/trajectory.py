@@ -70,17 +70,26 @@ class Figure:
     def meta_text_for_trajectory(
         self, mean, sd, avg_alpha, sum_alpha, spikes, misses, N
     ):
-        text_l = [
-            r"$\alpha_{avg}: %.3f$" % avg_alpha,
-            r"$\sum \alpha_i : %.f$" % sum_alpha,
-            r"$\mu + \sigma: %.2f + %.2f$" % (mean, sd),
-        ]
+        return self.meta_text_for_plot(
+            text_l=self.meta_text_lhs(avg_alpha, sum_alpha, mean, sd),
+            text_r=self.meta_text_rhs(N, misses, spikes),
+        )
+
+    def meta_text_rhs(self, N, misses, spikes):
         text_r = [
             r"$N: %.f$" % N,
             r"$\# misses: %.f$" % (misses),
             r"$ \# spikes: %.f$" % (spikes),
         ]
-        return self.meta_text_for_plot(text_l=text_l, text_r=text_r)
+        return text_r
+
+    def meta_text_lhs(self, avg_alpha, sum_alpha, mean, sd):
+        text_l = [
+            r"$\alpha_{avg}: %.3f$" % avg_alpha,
+            r"$\sum \alpha_i : %.f$" % sum_alpha,
+            r"$\mu + \sigma: %.2f + %.2f$" % (mean, sd),
+        ]
+        return text_l
 
     def meta_text_for_plot(self, text_l=[], text_r=[]):
         """

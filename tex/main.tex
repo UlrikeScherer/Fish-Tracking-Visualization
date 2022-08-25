@@ -65,7 +65,9 @@ start time: \starttime\\
      Trajectory over time of the molly at camera: \camera{}\\ position: \textsc{\position}\\
     \ifthenelse{\equal{\starttime}{140000}}
         {$\Delta$-Feeding Time: \getft{\camera\position#1}\\
-        Number of Visits: \getft{\camera\position#1v}\\}
+        Number of Visits: \getft{\camera\position#1v}\\
+        Considered Feeding Time: \getft{\camera\position#1num}\\
+        }
         {}%
      }
 }
@@ -133,7 +135,8 @@ start time: \starttime\\
         \subsection*{Legend}
         \begin{tabular}{p{3cm} p{7cm} }
             $\Delta$ Feeding & is the time (minutes:seconds) spend inside the box around the feeding patch for a batch. \\
-            \# Visits & is the number of times the individual entered the illustrated box around the feeding patch.
+            Number of Visits & is the number of times the individual entered the illustrated box around the feeding patch.\\
+            Considered Feeding Time & is the time corresponding to the number of data frames in the scope of the feeding window. Data frames outside of the feeding window are not counted as feeding time, however they might be inside the feeding-box. The feeding window is mostly from 14:05 to 16:10.  
             \end{tabular}
     \end{center}
 }
