@@ -1,0 +1,48 @@
+/VOLUMES/EXTREME_SSD/FE_TRACKS_140000/FE_TRACKS_140000_BLOCK2/FE_TRACKS_140000_BLOCK2_FRONT----------------------------------------------------------------------------------------------------
+
+For path: /Volumes/Extreme_SSD/FE_tracks_140000/FE_tracks_140000_block2/FE_tracks_140000_block2_front
+In folder /Volumes/Extreme_SSD/FE_tracks_140000/FE_tracks_140000_block2/FE_tracks_140000_block2_front/23442333/20211127_140000.23442333 the number of csv files is unequal the expected number 8, it is 0 instead
+The following files are missing: 
+ 		000000 000001 000002 000003 000004 000005 000006 000007
+In folder /Volumes/Extreme_SSD/FE_tracks_140000/FE_tracks_140000_block2/FE_tracks_140000_block2_front/23484204/20211113_140000.23484204 the number of csv files is unequal the expected number 8, it is 0 instead
+The following files are missing: 
+ 		000000 000001 000002 000003 000004 000005 000006 000007
+In folder /Volumes/Extreme_SSD/FE_tracks_140000/FE_tracks_140000_block2/FE_tracks_140000_block2_front/23520258/20211117_140000.23520258 the number of csv files is unequal the expected number 8, it is 0 instead
+The following files are missing: 
+ 		000000 000001 000002 000003 000004 000005 000006 000007
+In folder /Volumes/Extreme_SSD/FE_tracks_140000/FE_tracks_140000_block2/FE_tracks_140000_block2_front/23520276/20211105_140000.23520276 the number of csv files is unequal the expected number 8, it is 7 instead
+The following files are missing: 
+ 		000007
+In folder /Volumes/Extreme_SSD/FE_tracks_140000/FE_tracks_140000_block2/FE_tracks_140000_block2_front/23520278/20211116_140000.23520278 the number of csv files is unequal the expected number 8, it is 3 instead
+The following files are missing: 
+ 		000003 000004 000005 000006 000007
+/VOLUMES/EXTREME_SSD/FE_TRACKS_140000/FE_TRACKS_140000_BLOCK2/FE_TRACKS_140000_BLOCK2_BACK----------------------------------------------------------------------------------------------------
+
+For path: /Volumes/Extreme_SSD/FE_tracks_140000/FE_tracks_140000_block2/FE_tracks_140000_block2_back
+In folder /Volumes/Extreme_SSD/FE_tracks_140000/FE_tracks_140000_block2/FE_tracks_140000_block2_back/23484204/20211103_140000.23484204 the number of csv files is unequal the expected number 8, it is 4 instead
+The following files are missing: 
+ 		000004 000005 000006 000007
+In folder /Volumes/Extreme_SSD/FE_tracks_140000/FE_tracks_140000_block2/FE_tracks_140000_block2_back/23520257/20211102_140000.23520257 the number of csv files is unequal the expected number 8, it is 0 instead
+The following files are missing: 
+ 		000000 000001 000002 000003 000004 000005 000006 000007
+In folder /Volumes/Extreme_SSD/FE_tracks_140000/FE_tracks_140000_block2/FE_tracks_140000_block2_back/23520258/20211102_140000.23520258 the number of csv files is unequal the expected number 8, it is 0 instead
+The following files are missing: 
+ 		000000 000001 000002 000003 000004 000005 000006 000007
+In folder /Volumes/Extreme_SSD/FE_tracks_140000/FE_tracks_140000_block2/FE_tracks_140000_block2_back/23520266/20211102_140000.23520266 the number of csv files is unequal the expected number 8, it is 0 instead
+The following files are missing: 
+ 		000000 000001 000002 000003 000004 000005 000006 000007
+In folder /Volumes/Extreme_SSD/FE_tracks_140000/FE_tracks_140000_block2/FE_tracks_140000_block2_back/23520268/20211102_140000.23520268 the number of csv files is unequal the expected number 8, it is 0 instead
+The following files are missing: 
+ 		000000 000001 000002 000003 000004 000005 000006 000007
+In folder /Volumes/Extreme_SSD/FE_tracks_140000/FE_tracks_140000_block2/FE_tracks_140000_block2_back/23520270/20211108_140000.23520270 the number of csv files is unequal the expected number 8, it is 0 instead
+The following files are missing: 
+ 		000000 000001 000002 000003 000004 000005 000006 000007
+In folder /Volumes/Extreme_SSD/FE_tracks_140000/FE_tracks_140000_block2/FE_tracks_140000_block2_back/23520278/20211107_140000.23520278 the number of csv files is unequal the expected number 8, it is 3 instead
+The following files are missing: 
+ 		000003 000004 000005 000006 000007
+In folder /Volumes/Extreme_SSD/FE_tracks_140000/FE_tracks_140000_block2/FE_tracks_140000_block2_back/23520289/20211102_140000.23520289 the number of csv files is unequal the expected number 8, it is 0 instead
+The following files are missing: 
+ 		000000 000001 000002 000003 000004 000005 000006 000007
+In folder /Volumes/Extreme_SSD/FE_tracks_140000/FE_tracks_140000_block2/FE_tracks_140000_block2_back/23520289/20211117_140000.23520289 the number of csv files is unequal the expected number 8, it is 5 instead
+The following files are missing: 
+ 		000005 000006 000007
