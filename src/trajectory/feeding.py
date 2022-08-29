@@ -263,13 +263,13 @@ def get_feeding_box(data, TL_x, TL_y, TR_x, TR_y):
 
 def start_end_dict():
     ft_df = pd.read_csv(f"{DATA_DIR}/DevEx_FE_feeding_times.csv", sep=sep)
-    b1_ft = ft_df[ft_df["block"]==int(BLOCK[5:]) & ~ft_df["feeding_start_analyses"].isna()]
+    block_ft = ft_df[(ft_df["block"]==int(BLOCK[5:])) & ~ft_df["feeding_start_analyses"].isna()]
     feeding_times = dict([("%s%02d%02d_%s"%(y,month_abbr2num[m.lower()],d,FEEDINGTIME), 
-                           (get_df_idx_from_time(s),get_df_idx_from_time(e))) for (y,m,d,s,e) in zip(b1_ft["year"],
-        b1_ft["month"],
-        b1_ft["day_of_month"],
-        b1_ft["feeding_start_analyses"],
-        b1_ft["feeding_end_analyses"])
+                           (get_df_idx_from_time(s),get_df_idx_from_time(e))) for (y,m,d,s,e) in zip(block_ft["year"],
+        block_ft["month"],
+        block_ft["day_of_month"],
+        block_ft["feeding_start_analyses"],
+        block_ft["feeding_end_analyses"])
                          ])
     return feeding_times
 
