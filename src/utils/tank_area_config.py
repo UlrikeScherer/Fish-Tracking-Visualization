@@ -2,7 +2,7 @@ import glob, json, os
 import matplotlib.pyplot as plt
 import numpy as np
 from src.config import FRONT, BACK, BLOCK, DATA_DIR, BLOCK1, BLOCK2, ROOT_LOCAL
-from src.utils import get_camera_pos_keys
+from .utile import get_camera_pos_keys
 
 # AREA CONFIG
 AREA_CONFIG = "%s/area_config" % ROOT_LOCAL
@@ -15,19 +15,10 @@ area_block2_back_02nov = "%s/areas back 02Nov2021" % AREA_CONFIG
 area_block2_front_21nov = "%s/areas front 21Nov2021" % AREA_CONFIG
 area_block2_back_21nov = "%s/areas back 21Nov2021" % AREA_CONFIG
 
-# AREA
-area_block1_back = ""  # os.environ["area_block1_back"]
-area_block1_front = ""  # os.environ["area_block1_front"]
-
-# AREA
-area_block2_back_02nov = ""  # os.environ["area_block2_back_02nov"]
-area_block2_front_02nov = ""  # os.environ["area_block2_front_02nov"]
-area_block2_back_21nov = ""  # os.environ["area_block2_back_21nov"]
-area_block2_front_21nov = ""  # os.environ["area_block2_front_21nov"]
-
 nov21 = "20211121_060000"
 nov02 = "20211102_060000"
 
+CALIBRATION_DIST_CM = 83.0
 
 def get_area_functions():  # retruns a function to deliver the area for key and day
     if BLOCK == BLOCK1:
@@ -37,6 +28,20 @@ def get_area_functions():  # retruns a function to deliver the area for key and 
         area1 = read_area_data_from_json(day=nov02)
         area2 = read_area_data_from_json(day=nov21)
         return lambda key, day: area1[key] if day < nov21 else area2[key]
+
+def get_calibration_functions():
+    if BLOCK == BLOCK1:
+        f = open(f"{DATA_DIR}/{BLOCK}_calibration.json", "r")
+        calibration = json.load(f)
+        return lambda cam, day=None: calibration[cam]
+    elif BLOCK == BLOCK2:
+        f1 = open(f"{DATA_DIR}/{BLOCK}_calibration{nov02}.json", "r")
+        calibration1 = json.load(f1)
+        f2 = open(f"{DATA_DIR}/{BLOCK}_calibration{nov21}.json", "r")
+        calibration2 = json.load(f2)
+        return lambda cam, day: calibration1[cam] if day < nov21 else calibration2[cam]
+    else:
+        raise Exception("{} is not a valid block".format(BLOCK))  
 
 
 def read_area_data_from_json(day=None):
@@ -78,6 +83,8 @@ def get_areas(day=None):
     example_dict = {FRONT: np.array([]), BACK: np.array([])}
     for p, path in (area_paths).items():
         files_a = glob.glob("%s/*.csv" % (path), recursive=True)
+        if len(files_a) == 0:
+            raise Exception("no files found in %s" % path)
         for f in files_a:
             c = os.path.basename(f)[:8]
             if c.isnumeric():
@@ -129,3 +136,26 @@ def write_area_data_to_json(area_data, suffix=None):
     area_d = dict(zip(area_data.keys(), map(lambda v: v.tolist(), area_data.values())))
     with open("{}/{}_area_data{}.json".format(DATA_DIR, BLOCK, suffix), "w") as outfile:
         json.dump(area_d, outfile, indent=2)
+
+def get_line_starting_with(file, matchstr="Last"):
+    file_read = open(file, "r")
+    for line in file_read.readlines():
+        if matchstr == line[:len(matchstr)]:
+            return line
+        
+def compute_calibrations(day=None):  
+    calibration = dict()
+    for position,path in get_area_path(day).items():
+        files_a = glob.glob("%s/*.csv" % (path), recursive=True)
+        if len(files_a) == 0:
+            raise Exception("no files found in %s" % (path))
+        for file in files_a:
+            c = os.path.basename(file)[:8]
+            if c.isnumeric():
+                if c not in calibration:
+                    cal = np.array([list(map(lambda x: int(x), coord.split(","))) if "," in coord else None for coord in get_line_starting_with(file).split("#")[1].split(";")])
+                    calibration[c] = CALIBRATION_DIST_CM/np.mean(np.sqrt(np.sum((cal[:2]-cal[2:])**2, axis=1)))
+    suffix = day if day else ""       
+    with open(f"{DATA_DIR}/{BLOCK}_calibration{suffix}.json", "w") as f:
+        json.dump(calibration, f, indent=2)
+    return calibration

@@ -12,7 +12,7 @@ from src.utils import (
     get_days_in_order,
     get_fish2camera_map,
 )
-from src.metrics.tank_area_config import get_area_functions
+from src.utils.tank_area_config import get_area_functions
 from src.utils.transformation import pixel_to_cm, px2cm
 from src.metrics.results_to_csv import metric_data_to_csv
 from src.methods import (

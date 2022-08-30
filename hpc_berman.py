@@ -1,10 +1,8 @@
 import motionmapperpy as mmpy
-from scipy.signal import cwt, ricker
-import wavelet as wl
 from src.data_factory.processing import *
 from src.utils import *
 from src.config import BLOCK, ROOT_LOCAL
-from src.metrics.tank_area_config import *
+from src.utils.tank_area_config import *
 import h5py, hdf5storage, pickle, glob
 import time
 

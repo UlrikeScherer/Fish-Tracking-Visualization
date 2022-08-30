@@ -11,10 +11,9 @@ from src.config import (
     BATCH,
     DATAFRAME,
 )
-from src.metrics.metrics import update_filter_three_points, update_filter_two_points
 from src.utils.error_filter import all_error_filters, error_default_points
 from src.utils.plot_helpers import remove_spines
-from src.utils.transformation import normalize_origin_of_compartment, px2cm, rotation, pixel_to_cm
+from src.utils.transformation import rotation, pixel_to_cm
 from src.metrics import (
     entropy,
     distance_to_wall,
@@ -23,7 +22,7 @@ from src.metrics import (
     absolute_angles,
 )
 from src.utils import get_fish2camera_map, csv_of_the_day, get_date_string
-from src.metrics.tank_area_config import get_area_functions
+from src.utils.tank_area_config import get_area_functions
 from src.methods import calc_steps, turning_directions, distance_to_wall_chunk
 from itertools import product
 from sklearn.preprocessing import normalize
