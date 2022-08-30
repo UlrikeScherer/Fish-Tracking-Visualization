@@ -221,7 +221,6 @@ def entropy(data, frame_interval, error_index, area):
         NDIM=2,
     )
 
-
 def distance_to_wall(data, frame_interval, error_index, area):
     return calculate_result_for_interval(
         data,
@@ -229,7 +228,6 @@ def distance_to_wall(data, frame_interval, error_index, area):
         lambda chunk: mean_std(px2cm(distance_to_wall_chunk(chunk, area[1]))),
         error_index,
     )
-
 
 def tortuosity(data, frame_interval, error_index):
     return calculate_result_for_interval(
