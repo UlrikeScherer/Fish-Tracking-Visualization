@@ -200,14 +200,14 @@ def main(
     sw=10,
     fish_id=None,
     visualize=None,
-    feeding=None,
+    feeding=0,
     include_median=None,
 ):
     """param:   test, 0,1 when test==1 run test mode
     program: trajectory, activity, turning_angle
     time_interval: kwarg for the programs activity, turning_angle
     """
-    is_feeding = bool(feeding)
+    is_feeding = bool(int(feeding))
     if is_feeding:
         if not is_valid_dir(dir_feeding_back):
             return None

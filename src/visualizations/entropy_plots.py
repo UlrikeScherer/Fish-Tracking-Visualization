@@ -6,7 +6,7 @@ from src.visualizations.activity_plotting import get_filepath_metric_plot
 from src.clustering.density_plotting import white2blue, bg_color
 from src.config import BACK
 from src.metrics.metrics import entropy_for_chunk
-from src.metrics.tank_area_config import get_area_functions
+from src.utils.tank_area_config import get_area_functions
 from src.utils import (
     csv_of_the_day,
     get_all_days_of_context,

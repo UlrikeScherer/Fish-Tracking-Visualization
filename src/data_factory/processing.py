@@ -1,7 +1,7 @@
 import os, glob
 import pandas as pd
-from src.methods import turning_directions, distance_to_wall_chunk, calc_steps
-from src.metrics.tank_area_config import get_area_functions
+from src.methods import turning_directions, calc_steps
+from src.utils.tank_area_config import get_area_functions
 from src.utils.error_filter import all_error_filters
 from src.utils.transformation import px2cm, normalize_origin_of_compartment
 from src.metrics.metrics import update_filter_three_points

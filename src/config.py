@@ -22,6 +22,10 @@ DIR_CSV_LOCAL = os.environ["path_csv_local"]  #
 BLOCK = os.environ["BLOCK"]  # block1 or block2
 BLOCK1 = "block1"
 BLOCK2 = "block2"
+FRONT, BACK = "front", "back"
+PLOTS_TRAJECTORY = os.environ["PLOTS_TRAJECTORY"]
+DATA_DIR = "data"
+VIS_DIR = os.environ["VIS_DIR"]
 
 # TRAJECTORY
 dir_front = os.environ["dir_front"]
@@ -32,15 +36,10 @@ STIME = os.environ["STIME"]
 dir_feeding_front = os.environ["dir_feeding_front"]
 dir_feeding_back = os.environ["dir_feeding_back"]
 FEEDINGTIME = os.environ["FEEDINGTIME"]
-
-FRONT, BACK = "front", "back"
-PLOTS_TRAJECTORY = os.environ["PLOTS_TRAJECTORY"]
-DATA_DIR = "data"
-VIS_DIR = os.environ["VIS_DIR"]
+START_END_FEEDING_TIMES = f"{DATA_DIR}/DevEx_FE_feeding_times.csv"
 
 N_BATCHES = 15
 N_BATCHES_FEEDING = 8
-
 N_FISHES = 24
 N_DAYS = 28
 HOURS_PER_DAY = 8

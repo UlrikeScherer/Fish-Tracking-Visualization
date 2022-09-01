@@ -3,7 +3,7 @@ import pandas as pd
 import os
 import numpy as np
 from time import gmtime, strftime
-from src.config import BACK, BATCH_SIZE, FRAMES_PER_SECOND, FRONT, BLOCK, DATA_results, FEEDINGTIME, DATA_DIR, sep
+from src.config import BACK, BATCH_SIZE, FRAMES_PER_SECOND, FRONT, BLOCK, START_END_FEEDING_TIMES, DATA_results, FEEDINGTIME, DATA_DIR, sep
 from src.metrics.metrics import calc_length_of_steps, num_of_spikes
 from src.utils import get_days_in_order, get_all_days_of_context, get_camera_pos_keys
 from src.utils.utile import month_abbr2num
@@ -262,14 +262,14 @@ def get_feeding_box(data, TL_x, TL_y, TR_x, TR_y):
     return feeding, box
 
 def start_end_dict():
-    ft_df = pd.read_csv(f"{DATA_DIR}/DevEx_FE_feeding_times.csv", sep=sep)
-    b1_ft = ft_df[ft_df["block"]==int(BLOCK[5:]) & ~ft_df["feeding_start_analyses"].isna()]
+    ft_df = pd.read_csv(START_END_FEEDING_TIMES, sep=sep)
+    block_ft = ft_df[(ft_df["block"]==int(BLOCK[5:])) & ~ft_df["feeding_start_analyses"].isna()]
     feeding_times = dict([("%s%02d%02d_%s"%(y,month_abbr2num[m.lower()],d,FEEDINGTIME), 
-                           (get_df_idx_from_time(s),get_df_idx_from_time(e))) for (y,m,d,s,e) in zip(b1_ft["year"],
-        b1_ft["month"],
-        b1_ft["day_of_month"],
-        b1_ft["feeding_start_analyses"],
-        b1_ft["feeding_end_analyses"])
+                           (get_df_idx_from_time(s),get_df_idx_from_time(e))) for (y,m,d,s,e) in zip(block_ft["year"],
+        block_ft["month"],
+        block_ft["day_of_month"],
+        block_ft["feeding_start_analyses"],
+        block_ft["feeding_end_analyses"])
                          ])
     return feeding_times
 
