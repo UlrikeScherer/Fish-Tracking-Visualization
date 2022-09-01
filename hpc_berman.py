@@ -31,14 +31,14 @@ def factory_main():
     mmpy.createProjectDirectory(parameters.projectPath)
     fish_keys = get_camera_pos_keys()
 
-    compute_all_projections(fish_keys, recompute=True)
-    
-    mmpy.subsampled_tsne_from_projections(parameters, parameters.projectPath)
-    
-    fit_data(parameters)
+    #compute_all_projections(fish_keys, recompute=False)
+    print("Subsample from projections")
+    #mmpy.subsampled_tsne_from_projections(parameters, parameters.projectPath)
+    print("Fit data / find embeddings")
+    #fit_data(parameters)
     print("Find Watershed...")
     startsigma = 4.2 if parameters.method == 'TSNE' else 1.0
-    mmpy.findWatershedRegions(parameters, minimum_regions=50, startsigma=startsigma, pThreshold=[0.33, 0.67],
+    mmpy.findWatershedRegions(parameters, minimum_regions=5, startsigma=startsigma, pThreshold=[0.33, 0.67],
                          saveplot=True, endident = '*_pcaModes.mat')
 
     from IPython.display import Image

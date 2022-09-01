@@ -100,18 +100,18 @@ def subsample_wavelet_and_embeddings(parameters, fish_keys=None):
                           filename=training_data_file + 'training_data.mat', store_python_metadata=False,
                           matlab_compatible=True)
 
-def load_trajectory_data(fk, parameters):
+def load_trajectory_data(fk, parameters, day=""):
     data_by_day = []
-    pfile = glob.glob(parameters.projectPath+f'/Projections/{BLOCK}_{fk}_*_pcaModes.mat')
+    pfile = glob.glob(parameters.projectPath+f'/Projections/{BLOCK}_{fk}_{day}*_pcaModes.mat')
     for f in pfile: 
         data = hdf5storage.loadmat(f)
         data_by_day.append(data)
     return data_by_day
 
-def load_zVals(fk, parameters):
+def load_zVals(fk, parameters, day=""):
     data_by_day = []
     zValstr = get_zValues_str(parameters)
-    pfile = glob.glob(parameters.projectPath+f'/Projections/{BLOCK}_{fk}_*_pcaModes_{zValstr}.mat')
+    pfile = glob.glob(parameters.projectPath+f'/Projections/{BLOCK}_{fk}_{day}*_pcaModes_{zValstr}.mat')
     for f in pfile: 
         data = hdf5storage.loadmat(f)
         data_by_day.append(data)
@@ -124,6 +124,16 @@ def get_zValues_str(parameters):
         zValstr = 'uVals'
     return zValstr
 
+def get_regions_for_fish_key(fish_key, wshedfile, day=""):
+    index_fk = np.where([(f"{fish_key}_{day}" in file.flatten()[0]) for file in wshedfile['zValNames'][0]])[0]
+    if len(index_fk) == 0:
+        print(fish_key, day, " no corresponding regions found!")
+        return None
+    if index_fk[0]==0:
+        idx_p = [0,wshedfile['zValLens'].flatten().cumsum()[index_fk[-1]]]
+    else:
+        idx_p = wshedfile['zValLens'].flatten().cumsum()[[index_fk[0]-1, index_fk[-1]]]
+    return wshedfile['watershedRegions'].flatten()[idx_p[0]:idx_p[1]]
 
 
 
