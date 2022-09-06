@@ -50,7 +50,7 @@ def stationary_distribution(marcov_matrix):
 def draw_transition_graph(
     t,
     n_clusters,
-    positions=None,
+    positions,
     ax=None,
     flip_y=True,
     output=None,
@@ -81,14 +81,16 @@ def draw_transition_graph(
     pos = g.new_vp("vector<double>")
     _ = g.add_edge_list(edges, eprops=[eweight, emarker, elabel])
     vweight.a[t.index] = stationary_distribution(t_np) * vweight_scale
-    vzindex.a[t.index] = np.argsort(vweight.a)
+    vzindex.a[:] = np.argsort(vweight.a)
     for v in g.vertices():
         vidx = g.vertex_index[v]
-        X_c_mean = positions[vidx]
-        pos[v] = [X_c_mean[0], -X_c_mean[1] if flip_y else X_c_mean[1]]
-        vcolor[v] = plt.get_cmap("tab10", n_clusters)(vidx)
-        if vidx not in t.index:
+        if vidx not in t.index: # if not in transition matrix
             vcolor[v] = (1, 1, 1, 0)
+            pos[v] = [0,0]
+        else: 
+            vcolor[v] = plt.get_cmap("tab10", n_clusters)(t.index.get_loc(vidx))
+            X_c_mean = positions[t.index.get_loc(vidx)]
+            pos[v] = [X_c_mean[0], -X_c_mean[1] if flip_y else X_c_mean[1]]
 
     graph_draw(
         g,
