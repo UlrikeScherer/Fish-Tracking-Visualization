@@ -136,3 +136,13 @@ def get_regions_for_fish_key(wshedfile, fish_key="", day=""):
     else:
         idx_p = wshedfile['zValLens'].flatten().cumsum()[[index_fk[0]-1, index_fk[-1]]]
     return wshedfile['watershedRegions'].flatten()[idx_p[0]:idx_p[1]]
+
+def load_summerized_data(wshedfile, parameters, fish_key="", day=""):
+    proj_data = load_trajectory_data(parameters, fish_key, day=day)
+    clusters = get_regions_for_fish_key(wshedfile, fish_key, day=day)
+    positions = np.concatenate([trj["positions"] for trj in proj_data])
+    projections = np.concatenate([trj["projections"] for trj in proj_data])
+    area = proj_data[0]["area"]
+    X_em = np.concatenate([x["zValues"] for x in load_zVals(parameters, fish_key, day=day)])
+    return dict(positions=positions, projections=projections, embeddings=X_em, clusters=clusters, area=area)
+
