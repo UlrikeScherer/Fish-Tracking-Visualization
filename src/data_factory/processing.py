@@ -1,6 +1,6 @@
 import os, glob
 import pandas as pd
-from src.methods import turning_directions, calc_steps
+from src.methods import turning_directions, distance_to_wall_chunk, calc_steps
 from src.utils.tank_area_config import get_area_functions
 from src.utils.error_filter import all_error_filters
 from src.utils.transformation import px2cm, normalize_origin_of_compartment
@@ -146,3 +146,12 @@ def get_fish_info_from_wshed_idx(wshedfile, idx_s, idx_e):
     file_name = wshedfile['zValNames'].flatten()[hit_idx].flatten()[0].split("_")
     return "_".join(file_name[1:3]), file_name[3], idx_s-cumsum_lens[hit_idx]+lens[hit_idx], idx_e-cumsum_lens[hit_idx]+lens[hit_idx]
     
+def load_summerized_data(wshedfile, parameters, fish_key="", day=""):
+    proj_data = load_trajectory_data(parameters, fish_key, day=day)
+    clusters = get_regions_for_fish_key(wshedfile, fish_key, day=day)
+    positions = np.concatenate([trj["positions"] for trj in proj_data])
+    projections = np.concatenate([trj["projections"] for trj in proj_data])
+    area = proj_data[0]["area"]
+    X_em = np.concatenate([x["zValues"] for x in load_zVals(parameters, fish_key, day=day)])
+    return dict(positions=positions, projections=projections, embeddings=X_em, clusters=clusters, area=area)
+
