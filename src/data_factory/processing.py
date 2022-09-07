@@ -137,6 +137,15 @@ def get_regions_for_fish_key(wshedfile, fish_key="", day=""):
         idx_p = wshedfile['zValLens'].flatten().cumsum()[[index_fk[0]-1, index_fk[-1]]]
     return wshedfile['watershedRegions'].flatten()[idx_p[0]:idx_p[1]]
 
+def get_fish_info_from_wshed_idx(wshedfile, idx_s, idx_e):
+    lens = wshedfile['zValLens'].flatten()
+    cumsum_lens = lens.cumsum()
+    hit_idx = np.where(cumsum_lens>idx_s)[0][0]
+    if not idx_e < cumsum_lens[hit_idx]:
+        raise ValueError("%s,%s < %s are not from the same day"%(idx_s, idx_e, cumsum_lens[hit_idx]))
+    file_name = wshedfile['zValNames'].flatten()[hit_idx].flatten()[0].split("_")
+    return "_".join(file_name[1:3]), file_name[3], idx_s-cumsum_lens[hit_idx]+lens[hit_idx], idx_e-cumsum_lens[hit_idx]+lens[hit_idx]
+    
 def load_summerized_data(wshedfile, parameters, fish_key="", day=""):
     proj_data = load_trajectory_data(parameters, fish_key, day=day)
     clusters = get_regions_for_fish_key(wshedfile, fish_key, day=day)

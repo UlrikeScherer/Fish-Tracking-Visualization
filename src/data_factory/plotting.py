@@ -1,10 +1,12 @@
 
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 from random import sample
 from time import gmtime, strftime
-import motiomapper as mmpy
+import motionmapperpy as mmpy
 from src.clustering.clustering import get_results_filepath, boxplot_characteristics_of_cluster
+from src.config import BLOCK, VIS_DIR
 
 def plot_lines_for_cluster2(
     positions,
@@ -50,10 +52,9 @@ def plot_area(area_box, ax):
     ax.plot(*area_box.T)
     
     
-def ethnogram_of_clusters(clusters, start_time=0, end_time=8*(60**2), fish_key="", day="", write_fig=False):
-    wregs = clusters[start_time*5:end_time*5]
+def ethnogram_of_clusters(clusters, start_time=0, end_time=8*(60**2)*5, fish_key="", day="",rows=4, write_fig=False, name_append=""):
+    wregs = clusters[start_time:end_time]
     f2min = (60**2)*5
-    rows = 4
     len_half = wregs.shape[0]//rows
     step = len_half//10
     ethogram = np.zeros((wregs.max(), len(wregs)))
@@ -64,6 +65,8 @@ def ethnogram_of_clusters(clusters, start_time=0, end_time=8*(60**2), fish_key="
     ethogram = np.split(ethogram.T, np.array([len_half*i for i in range(1,rows)]))
 
     fig, axes = plt.subplots(rows, 1, figsize=(30,3*rows))
+    if rows == 1:
+        axes = np.array([axes])
     axes[0].set_title(f"{fish_key} {day}")
     for k, (e, ax) in enumerate(zip(ethogram, axes.flatten())):
         ax.imshow(e.T, aspect='auto', cmap=mmpy.gencmap())
@@ -78,5 +81,5 @@ def ethnogram_of_clusters(clusters, start_time=0, end_time=8*(60**2), fish_key="
         path_e = f"{VIS_DIR}/{BLOCK}_ethograms"
         if not os.path.exists(path_e):
             os.mkdir(path_e)
-        fig.savefig(f"{path_e}/ethogram_{fish_key}_{day}.pdf")
+        fig.savefig(f"{path_e}/ethogram_{name_append}{fish_key}_{day}.pdf")
     return fig
