@@ -15,7 +15,7 @@ from src.utils import csv_of_the_day
 from src.utils.utile import get_camera_pos_keys, get_days_in_order
 
 projectRoot = 'content'
-projectPath = '%s/Fish_moves'%projectRoot
+projectPath = '%s/Fish_moves_stw'%projectRoot
 WAVELET = 'wavelet'
 
 def transform_to_traces_high_dim(data, filter_index, area_tuple):
@@ -23,11 +23,11 @@ def transform_to_traces_high_dim(data, filter_index, area_tuple):
     fk, area = area_tuple
     data, new_area = normalize_origin_of_compartment(data, area, BACK in fk)
     steps = px2cm(calc_steps(data))
-    xy_steps = px2cm(data[:-1]-data[1:])
+    #xy_steps = px2cm(data[:-1]-data[1:])
     t_a = turning_directions(data)
-    #wall = px2cm(distance_to_wall_chunk(data, new_area))
+    wall = px2cm(distance_to_wall_chunk(data, new_area))
     f3 = update_filter_three_points(steps, filter_index)
-    X = np.array((np.arange(1,L-1),xy_steps[:-1,0],xy_steps[:-1,1], t_a, data[1:-1,0], data[1:-1,1])).T 
+    X = np.array((np.arange(1,L-1),steps[:-1], t_a, wall[1:-1], data[1:-1,0], data[1:-1,1])).T 
     return X[~f3], new_area
 
 def compute_projections(fish_key, day, area_tuple):

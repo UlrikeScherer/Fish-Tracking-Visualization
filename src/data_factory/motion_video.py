@@ -9,6 +9,7 @@ from moviepy.editor import VideoClip, VideoFileClip
 from moviepy.video.io.bindings import mplfig_to_npimage
 import motionmapperpy as mmpy
 from .processing import load_summerized_data
+from src.utils import get_date_string
 
 VIDEOS_DIR = "videos"
 def motion_video(wshedfile, parameters,fish_key, day, start=0, end=None, save=False, filename=""):
@@ -34,7 +35,7 @@ def motion_video(wshedfile, parameters,fish_key, day, start=0, end=None, save=Fa
     _, xx, density = mmpy.findPointDensity(trainingEmbedding, sigma, 511, [-m-10, m+10])
     axes[0].imshow(density, cmap=mmpy.gencmap(), extent=(xx[0], xx[-1], xx[0], xx[-1]), origin='lower')
     axes[0].axis('off')
-    axes[0].set_title('Method : %s'%parameters.method)
+    axes[0].set_title(' ')
     sc = axes[0].scatter([],[],marker='o', c="b", s=300)
     area_box = np.concatenate((area_box, [area_box[0]]))
     axes[1].plot(*area_box.T)
@@ -42,10 +43,10 @@ def motion_video(wshedfile, parameters,fish_key, day, start=0, end=None, save=Fa
     tstart = start
 
     def animate(t):
-        t = int(t*80)+tstart
+        t = int(t*50)+tstart
         line.set_data(*positions[t-100:t+100].T)
         axes[1].axis('off')
-        axes[0].set_title('%s %s H:M:S: %s'%(fish_key, day, strftime("%H:%M:%S",gmtime(t//5))))
+        axes[0].set_title('%s %s H:M:S: %s'%(fish_key, get_date_string(day), strftime("%H:%M:%S",gmtime(t//5))))
         sc.set_offsets(zValues[t])
         sc.set_color(get_color(clusters[t]))
         return mplfig_to_npimage(fig) #im, ax
@@ -55,10 +56,11 @@ def motion_video(wshedfile, parameters,fish_key, day, start=0, end=None, save=Fa
              'skyblue']
         return color[ci%len(color)]
 
-    anim = VideoClip(animate, duration=40) # will throw memory error for more than 100.
+    anim = VideoClip(animate, duration=20) # will throw memory error for more than 100.
     plt.close()
     if save:
-        if not os.path.exists(VIDEOS_DIR):
-            os.mkdir(VIDEOS_DIR)
-        anim.write_gif(f'{VIDEOS_DIR}/{filename}{fish_key}_{day}.gif', fps=5)
+        dir_v = f'{parameters.projectPath}/{VIDEOS_DIR}'
+        if not os.path.exists(dir_v):
+            os.mkdir(dir_v)
+        anim.write_videofile(f'{dir_v}/{filename}{fish_key}_{day}.mp4', fps=10, audio=False, threads=1)
     return anim
