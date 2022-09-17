@@ -15,7 +15,7 @@ from src.utils import csv_of_the_day
 from src.utils.utile import get_camera_pos_keys, get_days_in_order
 
 projectRoot = 'content'
-projectPath = '%s/Fish_moves_stw'%projectRoot
+projectPath = '%s/Fish_moves_stw2'%projectRoot
 WAVELET = 'wavelet'
 
 def transform_to_traces_high_dim(data, filter_index, area_tuple):
