@@ -4,7 +4,7 @@
 #SBATCH --output=res_%j.txt     # output file
 #SBATCH --error=res_%j.err      # error file
 #SBATCH --ntasks=1
-#SBATCH --time=0-16:00 
+#SBATCH --time=0-34:00 
 #SBATCH --mem-per-cpu=30000      # memory in MB per cpu allocated
 #SBATCH --partition=ex_scioi_gpu # partition to submit to
 #SBATCH --gres=gpu:1

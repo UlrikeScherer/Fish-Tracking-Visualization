@@ -14,8 +14,6 @@ from motionmapperpy.motionmapper import mm_findWavelets
 from src.utils import csv_of_the_day
 from src.utils.utile import get_camera_pos_keys, get_days_in_order
 
-projectRoot = 'content'
-projectPath = '%s/Fish_moves_stw'%projectRoot
 WAVELET = 'wavelet'
 
 def transform_to_traces_high_dim(data, filter_index, area_tuple):
@@ -43,7 +41,7 @@ def compute_projections(fish_key, day, area_tuple):
     X, new_area = transform_to_traces_high_dim(data_px, filter_index, area_tuple)
     return X, new_area
 
-def compute_all_projections(fish_keys=None, recompute=False):
+def compute_all_projections(projectPath, fish_keys=None, recompute=False):
     area_f = get_area_functions()
     if fish_keys is None:
         fish_keys = get_camera_pos_keys()
@@ -157,3 +155,7 @@ def load_summerized_data(wshedfile, parameters, fish_key="", day=""):
     kmeans_clusters = np.concatenate([x["clusters"] for x in zVals], axis=1).flatten()
     return dict(positions=positions, projections=projections, embeddings=X_em, clusters=clusters, kmeans_clusters=kmeans_clusters,area=area)
 
+def return_normalization_func(parameters):
+    data = np.concatenate([d["projections"] for d in load_trajectory_data(parameters)])
+    std = np.abs(data).std(axis=0)
+    return lambda pro: pro/std
