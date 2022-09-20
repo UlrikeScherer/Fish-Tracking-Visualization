@@ -58,8 +58,11 @@ def draw_transition_graph(
     vweight_scale=250,
     eweight_scale=10,
     vertex_pen_width=0.05,
+    cmap=None,
+    min_vsize=0.05,
     **kwargs
 ):
+    if cmap is None: cmap = plt.get_cmap("tab20")
     g = Graph(directed=True)
     t_np = t.to_numpy()
     edges = [
@@ -80,15 +83,16 @@ def draw_transition_graph(
     vcolor = g.new_vp("vector<double>")
     pos = g.new_vp("vector<double>")
     _ = g.add_edge_list(edges, eprops=[eweight, emarker, elabel])
-    vweight.a[t.index] = stationary_distribution(t_np) * vweight_scale
+    vweight.a[t.index] = np.max((stationary_distribution(t_np), [min_vsize]*t.shape[0]), axis=0) * vweight_scale
     vzindex.a[:] = np.argsort(vweight.a)
+    colors = cmap(t.index)
     for v in g.vertices():
         vidx = g.vertex_index[v]
         if vidx not in t.index: # if not in transition matrix
             vcolor[v] = (1, 1, 1, 0)
             pos[v] = [0,0]
         else: 
-            vcolor[v] = plt.get_cmap("tab10", n_clusters)(t.index.get_loc(vidx))
+            vcolor[v] = colors[t.index.get_loc(vidx)]
             X_c_mean = positions[t.index.get_loc(vidx)]
             pos[v] = [X_c_mean[0], -X_c_mean[1] if flip_y else X_c_mean[1]]
 

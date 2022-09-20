@@ -21,10 +21,11 @@ def plot_lines_for_cluster2(
     fig, axs = plt.subplots(
         nrows=nrows, ncols=n_clusters, figsize=(n_clusters * 4, nrows * 4), sharey="row"
     )
+    projections_norm = projections / np.max(np.abs(projections),axis=0)
     for cluster_id in range(1,n_clusters+1):
         ax_b = axs[1, cluster_id-1]
         ax = axs[0, cluster_id-1]
-        boxplot_characteristics_of_cluster(projections[clusters == cluster_id], ax_b, metric_names=["speed x", "speed y", "angle"])
+        boxplot_characteristics_of_cluster(projections_norm[clusters == cluster_id], ax_b, metric_names=["speed", " turing angle", "wall distance"])
         samples_c_idx = np.where(clusters == cluster_id)[0]
         cluster_share = samples_c_idx.shape[0] / projections.shape[0]
         select = sample(range(len(samples_c_idx)), k=limit)
@@ -33,7 +34,7 @@ def plot_lines_for_cluster2(
             samples_c_idx[select],
             area, 
             ax=ax,
-            title="cluster: %d,      share: %.2f" % (cluster_id, cluster_share),
+            title="cluster: %d,      share: %.3f" % (cluster_id, cluster_share),
         )
         ax_b.yaxis.set_tick_params(which="both", labelbottom=True)
 
@@ -52,7 +53,7 @@ def plot_area(area_box, ax):
     ax.plot(*area_box.T)
     
     
-def ethnogram_of_clusters(clusters, start_time=0, end_time=8*(60**2)*5, fish_key="", day="",rows=4, write_fig=False, name_append=""):
+def ethnogram_of_clusters(parameters, clusters, start_time=0, end_time=8*(60**2)*5, fish_key="", day="",rows=4, write_fig=False, name_append=""):
     wregs = clusters[start_time:end_time]
     f2min = (60**2)*5
     len_half = wregs.shape[0]//rows
@@ -78,7 +79,7 @@ def ethnogram_of_clusters(clusters, start_time=0, end_time=8*(60**2)*5, fish_key
 
     ax.set_xlabel('Time (H:M)')
     if write_fig:
-        path_e = f"{VIS_DIR}/{BLOCK}_ethograms"
+        path_e = f"{parameters.projectPath}/{BLOCK}_ethograms"
         if not os.path.exists(path_e):
             os.mkdir(path_e)
         fig.savefig(f"{path_e}/ethogram_{name_append}{fish_key}_{day}.pdf")

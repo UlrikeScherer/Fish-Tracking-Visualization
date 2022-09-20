@@ -152,6 +152,8 @@ def load_summerized_data(wshedfile, parameters, fish_key="", day=""):
     positions = np.concatenate([trj["positions"] for trj in proj_data])
     projections = np.concatenate([trj["projections"] for trj in proj_data])
     area = proj_data[0]["area"]
-    X_em = np.concatenate([x["zValues"] for x in load_zVals(parameters, fish_key, day=day)])
-    return dict(positions=positions, projections=projections, embeddings=X_em, clusters=clusters, area=area)
+    zVals = load_zVals(parameters, fish_key, day=day)
+    X_em = np.concatenate([x["zValues"] for x in zVals])
+    kmeans_clusters = np.concatenate([x["clusters"] for x in zVals], axis=1).flatten()
+    return dict(positions=positions, projections=projections, embeddings=X_em, clusters=clusters, kmeans_clusters=kmeans_clusters,area=area)
 
