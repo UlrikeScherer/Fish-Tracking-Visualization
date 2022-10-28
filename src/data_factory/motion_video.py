@@ -8,13 +8,15 @@ from matplotlib.animation import FuncAnimation
 from moviepy.editor import VideoClip, VideoFileClip
 from moviepy.video.io.bindings import mplfig_to_npimage
 import motionmapperpy as mmpy
+
+from src.data_factory.plotting import get_color_map
 from .processing import load_summerized_data, get_fish_info_from_wshed_idx, get_regions_for_fish_key
-from .utils import get_cluster_seqences
+from .utils import get_cluster_sequences
 from src.config import STIME
-from src.utils import get_date_string, get_seconds_from_day
+from src.utils import get_date_string, get_seconds_from_day, get_camera_pos_keys, get_all_days_of_context
 
 VIDEOS_DIR = "videos"
-def motion_video(wshedfile, parameters,fish_key, day, start=0, end=None, save=False, filename=""):
+def motion_video(wshedfile, parameters,fish_key, day, start=0, end=None, save=False, filename="", score=""):
     try:
         tqdm._instances.clear()
     except:
@@ -39,19 +41,22 @@ def motion_video(wshedfile, parameters,fish_key, day, start=0, end=None, save=Fa
     axes[0].axis('off')
     axes[0].set_title(' ')
     sc = axes[0].scatter([],[],marker='o', c="b", s=300)
+    lineZ = axes[0].plot([], [], "-", color="red")
     
     area_box = np.concatenate((area_box, [area_box[0]]))
     axes[1].plot(*area_box.T)
     (line,) = axes[1].plot([],[], "-o")
     tstart = start
-
+    
+    cmap = get_color_map(clusters.max())
     def animate(t):
         t = int(t*50)+tstart
         line.set_data(*positions[t-100:t+100].T)
         axes[1].axis('off')
-        axes[0].set_title('%s %s H:M:S: %s'%(fish_key, get_date_string(day), strftime("%H:%M:%S",gmtime(t//5))))
+        axes[0].set_title('%s %s H:M:S: %s     ratio: %.3f'%(fish_key, get_date_string(day), strftime("%H:%M:%S",gmtime(t//5)), score))
         sc.set_offsets(zValues[t])
-        sc.set_color(get_color(clusters[t]))
+        sc.set_color(cmap(clusters[t]))
+        lineZ[0].set_data(*zValues[t-100:t+1].T)
         return mplfig_to_npimage(fig) #im, ax
 
     anim = VideoClip(animate, duration=20) # will throw memory error for more than 100.
@@ -90,20 +95,26 @@ def cluster_motion_axes(wshedfile, parameters,fish_key, day, start=0, ax=None, s
         
     return update_line
 
-
-def cluster_motion_video(wshedfile, parameters, cluster_id):
+def cluster_motion_video(wshedfile, parameters, cluster_id, rows=2, cols=2):
     clusters = get_regions_for_fish_key(wshedfile)
-    results = get_cluster_seqences(clusters, [cluster_id], sw=2*60*5, th=0.8)
-    fig, axes = plt.subplots(2, 2, figsize=(10,10))
-    update_functions = list()
-    for (s,e,score),ax in zip(results[cluster_id], axes.flatten()):
-        try:
+    lens = wshedfile['zValLens'].flatten()
+    cumsum_lens = lens.cumsum()[:-1]
+    clusters[cumsum_lens]=-1 # indicate the end of the day
+    results = get_cluster_sequences(clusters, [cluster_id], sw=2*60*5, th=0.8)
+    sequences_of_cid = []
+    for s,e,score in results[cluster_id]:
+        try: 
             fk, day, start, end = get_fish_info_from_wshed_idx(wshedfile,s,e)
-            up_f = cluster_motion_axes(wshedfile, parameters, fk, day,start, ax=ax, score=score)
-            update_functions.append(up_f)
+            sequences_of_cid.append((fk, day, start, end, score))
         except ValueError as e:
-            print(e)
-    
+            pass
+            
+    fig, axes = plt.subplots(rows, cols, figsize=(5*rows,5*cols))
+    update_functions = list()
+    for (fk, day, start, end, score),ax in zip(sequences_of_cid, axes.flatten()):
+        up_f = cluster_motion_axes(wshedfile, parameters, fk, day, start, ax=ax, score=score)
+        update_functions.append(up_f)
+ 
     def animate(t):
         for f in update_functions:
             f(t)

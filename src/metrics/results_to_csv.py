@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 from src.config import (
     CAM_POS,
-    N_DAYS,
     N_SECONDS_OF_DAY,
     HOURS_PER_DAY,
     BLOCK,
@@ -93,9 +92,9 @@ def metric_per_hour_csv(
             % (N_SECONDS_PER_HOUR * HOURS_PER_DAY, N_SECONDS_PER_HOUR, time_interval)
         )
     # initialize table of nan
-    data = np.empty((data_idx.shape[0], N_DAYS))
-    data.fill(np.nan)
     days = get_all_days_of_context()
+    data = np.empty((data_idx.shape[0], len(days)))
+    data.fill(np.nan)
     df = pd.DataFrame(data=data_idx, columns=columns)
     df_d = pd.DataFrame(data=data, columns=days)
     first_key = next(iter(results.keys()))

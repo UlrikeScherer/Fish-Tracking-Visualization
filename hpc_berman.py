@@ -43,9 +43,7 @@ def factory_main():
     startsigma = 4.2 if parameters.method == 'TSNE' else 1.0
     mmpy.findWatershedRegions(parameters, minimum_regions=parameters.kmeans, startsigma=startsigma, pThreshold=[0.33, 0.67],
                          saveplot=True, endident = '*_pcaModes.mat')
-
-    from IPython.display import Image
-    Image(glob.glob('%s/%s/zWshed*.png'%(parameters.projectPath, parameters.method))[0])
+    print("Done!")
     
 def fit_data(parameters):
     #tsne takes 19 mins

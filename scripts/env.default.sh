@@ -1,5 +1,12 @@
 #!/bin/bash
 # src/utile.py imports the paths of this file and the bash scripts in tex/ to generate the pdfs do the same
+
+N_BATCHES=15 # SPECIFY THE NUMBER OF BATCHES TO RUN THE SCRIPT ON
+MIN_IDX_OF_DAY=0 # SPECIFY THE MINIMUM BATCH-INDEX OF THE DAY TO INCLUDE IN THE PDF
+N_BATCHES_FEEDING=8 # SPECIFY THE NUMBER OF BATCHES TO RUN THE SCRIPT ON FOR FEEDING
+HOURS_PER_DAY=8 # SPECIFY THE NUMBER OF HOURS TRACKED PER DAY
+BATCH_SIZE=10000  # Number of data frames per batch
+FRAMES_PER_SECOND=5 # Number of frames per second
 # --- BLOCK -------
 BLOCK="block1" # SPICIFY THE BLOCK TO RUN THE SCRIPT ON (block1, block2,...)
 # -----------------

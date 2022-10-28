@@ -7,6 +7,10 @@ from time import gmtime, strftime
 import motionmapperpy as mmpy
 from src.clustering.clustering import get_results_filepath, boxplot_characteristics_of_cluster
 from src.config import BLOCK, VIS_DIR
+from symbol import parameters
+from .processing import get_regions_for_fish_key
+from .utils import pointsInCircum
+from src.clustering.transitions_cluster import transition_rates, draw_transition_graph
 
 def plot_lines_for_cluster2(
     positions,
@@ -21,11 +25,11 @@ def plot_lines_for_cluster2(
     fig, axs = plt.subplots(
         nrows=nrows, ncols=n_clusters, figsize=(n_clusters * 4, nrows * 4), sharey="row"
     )
-    projections_norm = projections / np.max(np.abs(projections),axis=0)
+    projections_norm = projections / np.std(np.abs(projections),axis=0)
     for cluster_id in range(1,n_clusters+1):
         ax_b = axs[1, cluster_id-1]
         ax = axs[0, cluster_id-1]
-        boxplot_characteristics_of_cluster(projections_norm[clusters == cluster_id], ax_b, metric_names=["speed", " turing angle", "wall distance"])
+        boxplot_characteristics_of_cluster(projections_norm[clusters == cluster_id], ax_b, metric_names=["speed", " turning angle", "wall distance"])
         samples_c_idx = np.where(clusters == cluster_id)[0]
         cluster_share = samples_c_idx.shape[0] / projections.shape[0]
         select = sample(range(len(samples_c_idx)), k=limit)
@@ -38,7 +42,7 @@ def plot_lines_for_cluster2(
         )
         ax_b.yaxis.set_tick_params(which="both", labelbottom=True)
 
-    fig.savefig(get_results_filepath(1, fig_name), bbox_inches="tight")
+    fig.savefig(fig_name, bbox_inches="tight")
     plt.close(fig)
     
 def plot_lines_select(positions, samples_idx, area, ax, title):
@@ -84,3 +88,44 @@ def ethnogram_of_clusters(parameters, clusters, start_time=0, end_time=8*(60**2)
             os.mkdir(path_e)
         fig.savefig(f"{path_e}/ethogram_{name_append}{fish_key}_{day}.pdf")
     return fig
+
+
+def cluster_density_umap(embeddings, clusters, filename=None):
+    m = np.abs(embeddings).max()
+    sigma=2.0
+    off_set = 10
+    _, xx, density = mmpy.findPointDensity(embeddings, sigma, 511, [-m-off_set, m+off_set])
+    subset = sample(range(embeddings.shape[0]), min(5000,embeddings.shape[0]))
+    fig, axes = plt.subplots(1, 2, figsize=(12,6))
+    sc = axes[0].scatter(embeddings[subset][:,0], embeddings[subset][:,1], marker='.', c=clusters[subset], s=0.2)
+    axes[0].set_xlim([-m-off_set, m+off_set])
+    axes[0].set_ylim([-m-off_set, m+off_set])
+    for i in np.unique(clusters):
+            fontsize = 8
+            X_i = embeddings[clusters == i]
+            axes[0].text(*np.mean(X_i,axis=0), str(i), fontsize=fontsize, fontweight='bold')
+            
+    #fig.colorbar(sc)
+    axes[0].axis('off')
+    axes[1].axis('off')
+    axes[1].imshow(density, cmap=mmpy.gencmap(), extent=(xx[0], xx[-1], xx[0], xx[-1]), origin='lower')
+    if filename:
+        fig.tight_layout()
+        fig.savefig(filename, bbox_inches='tight')
+    return fig
+
+def plot_transition_reates(wshedfile, filename, cluster_remap=[(0,1)]):
+    clusters = get_regions_for_fish_key(wshedfile)#sum_data["kmeans_clusters"].flatten()+1
+    if cluster_remap:
+        for c1,c2 in cluster_remap:
+            clusters[np.where(clusters==c1)]=c2
+    t = transition_rates(clusters)
+    n_clusters = t.index.size
+    G = draw_transition_graph(t, n_clusters, pointsInCircum(1,n_clusters), 
+                              output=filename, 
+                              cmap=get_color_map(n_clusters))
+    return G
+
+def get_color_map(n):
+    cmap = mmpy.motionmapper.gencmap()
+    return lambda cid: cmap(cid*64//n)

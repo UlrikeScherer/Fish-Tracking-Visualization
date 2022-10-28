@@ -55,7 +55,7 @@ def combine_ones_and_zeros(ones, zeros, th, size):
             i+=1
     return records
 
-def get_cluster_seqences(clusters, cluster_ids=range(1,6), sw=6*60*5, th=0.6):
+def get_cluster_sequences(clusters, cluster_ids=range(1,6), sw=6*60*5, th=0.6):
     records = dict(zip(cluster_ids, [list() for i in range(len(cluster_ids))]))
     for cid in cluster_ids:
         bits = clusters==cid
@@ -63,7 +63,8 @@ def get_cluster_seqences(clusters, cluster_ids=range(1,6), sw=6*60*5, th=0.6):
         n_zeros = rs[1:] - re[:-1]
         matches = combine_ones_and_zeros(n_ones, n_zeros, th, sw)
         matches.sort(key=lambda x: x["score"], reverse=True)
-        records[cid].extend([(rs[m['idx'][0]],re[m['idx'][1]], m['score']) for m in matches[:15]])
+        results = [(rs[m['idx'][0]],re[m['idx'][1]], m['score']) for m in matches]
+        records[cid].extend(results)
     return records
 
 def create_subset_data(k=25):

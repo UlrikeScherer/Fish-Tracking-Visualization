@@ -32,6 +32,7 @@
 \providecommand{\secfirstplot}{42}
 \providecommand{\posstr}{POSITION_STRING/}
 \providecommand{\maxindex}{14}
+\providecommand{\minindex}{0}
 \providecommand{\subfigwidth}{0.22\textwidth}
 \providecommand{\subfigheight}{0.22\textheight}
 \graphicspath{{../\plots/\starttime/\block/\position/}}
@@ -61,7 +62,7 @@ start time: \starttime\\
     Video: \url{\gettext{\thedaycnt}}\\
     \stepcounter{daycnt}
     CSV: \url{file://\rootcsv/\posstr\camera/#1.\camera/}}\\
-    \parbox[c][3cm]{\subfigwidth}{\StrMid{#1}{0}{4}/\StrMid{#1}{5}{6}/\StrMid{#1}{7}{8}{} at \StrMid{#1}{10}{11}:\StrMid{#1}{12}{13}\\
+    \parbox[c][\subfigheight]{\subfigwidth}{\StrMid{#1}{0}{4}/\StrMid{#1}{5}{6}/\StrMid{#1}{7}{8}{} at \StrMid{#1}{10}{11}:\StrMid{#1}{12}{13}\\
      Trajectory over time of the molly at camera: \camera{}\\ position: \textsc{\position}\\
     \ifthenelse{\equal{\starttime}{140000}}
         {$\Delta$-Feeding Time: \getft{\camera\position#1}\\
@@ -72,33 +73,14 @@ start time: \starttime\\
      }
 }
 
-%\newcommand{\plot_all_days}[1]{%
-%    \foreach \x [count=\xi] in {#1} {
-%        \plotday{\x}
-%    }
-%}
-
-\newcommand{\plotday}[1]{%
-\begin{figure}
-    \firstbox{#1}
-    \foreach \i in {0,1,...,3} {
-        \foreach \j in {0,1,...,3}{
-        \FPeval{\result}{clip(\i+\j)}
-        \ifnum \result>0  {
-            \FPeval{\idx}{clip(\i*4+\j)}
-            \subf{#1}{\i\j}{\idx}
-        }\fi
-        }\vskip\baselineskip
-    }
-    \label{fig: #1}
-\end{figure}
-}
 \newcommand\z[1]{\ifnum#1<10 0\fi#1}
 
 \newcommand{\plotdayupdate}[1]{%
 \begin{figure}
     \firstbox{#1}
-    \foreach \i in {0,1,...,\maxindex} {
+    %\newcounter{xi}
+    %\forloop{xi}{\minindex}{\value{xi}<=\maxindex}{
+    \foreach \i in {\minindex,...,\maxindex} {
         \subf{#1}{0000\z{\i}}{\i}
         %\vskip\baselineskip
     }

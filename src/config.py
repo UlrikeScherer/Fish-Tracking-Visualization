@@ -8,13 +8,11 @@ load_envbash("scripts/env.sh")
 MEAN_GLOBAL = 0.22746102241709162
 SD_GLOBAL = 1.0044248513034164
 # THRESHOLDS for the data set filtered for erroneous frames
-SPIKE_THRESHOLD = 15  # In centimeters. to consider a step as a spike (alternative definition MEAN_GLOBAL + 3 * SD_GLOBAL)
+SPIKE_THRESHOLD = 8  # In centimeters. to consider a step as a spike (alternative definition MEAN_GLOBAL + 3 * SD_GLOBAL)
 DIRT_THRESHOLD = (
     60 * 5
 )  # Threshold for dirt detection, indicates the number of consecutive frames that, when equal, are classified as dirt.
 THRESHOLD_AREA_PX = 50  # The threshold in pixels for the exclusion of data points that are not within the area of the tank.
-BATCH_SIZE = 10000  # 9999
-FRAMES_PER_SECOND = 5
 ROOT = os.environ["rootserver"]
 ROOT_LOCAL = os.environ["root_local"]
 DIR_CSV = os.environ["path_csv"]  #
@@ -38,11 +36,11 @@ dir_feeding_back = os.environ["dir_feeding_back"]
 FEEDINGTIME = os.environ["FEEDINGTIME"]
 START_END_FEEDING_TIMES = f"{DATA_DIR}/DevEx_FE_feeding_times.csv"
 
-N_BATCHES = 15
-N_BATCHES_FEEDING = 8
-N_FISHES = 24
-N_DAYS = 28
-HOURS_PER_DAY = 8
+N_BATCHES = int(os.environ["N_BATCHES"])
+N_BATCHES_FEEDING = int(os.environ["N_BATCHES_FEEDING"])
+HOURS_PER_DAY = int(os.environ["HOURS_PER_DAY"])
+BATCH_SIZE = int(os.environ["BATCH_SIZE"])
+FRAMES_PER_SECOND = int(os.environ["FRAMES_PER_SECOND"])
 N_SECONDS_PER_HOUR = 3600
 N_SECONDS_OF_DAY = 24 * N_SECONDS_PER_HOUR
 

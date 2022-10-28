@@ -3,8 +3,6 @@ from src.config import (
     BACK,
     THRESHOLD_AREA_PX,
     SPIKE_THRESHOLD,
-    N_DAYS,
-    N_FISHES,
     FRAMES_PER_SECOND,
 )
 from src.utils import (
@@ -269,9 +267,9 @@ def turning_angle(data, frame_interval, filter_index):
 
 
 def metric_per_interval(
-    fish_ids=[i for i in range(N_FISHES)],
+    fish_ids=None,
     time_interval=100,
-    day_interval=(0, N_DAYS),
+    day_interval=None,
     metric=activity,
     is_feeding=False,
     write_to_csv=False,
@@ -293,6 +291,8 @@ def metric_per_interval(
     if isinstance(fish_ids, int):
         fish_ids = [fish_ids]
     fish2camera = get_fish2camera_map(is_feeding=is_feeding)
+    if fish_ids is None:
+        fish_ids = [i for i in range(len(fish2camera))]
     area_func = get_area_functions()
     results = dict()
     package = dict(

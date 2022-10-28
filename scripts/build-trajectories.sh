@@ -15,9 +15,7 @@ PREFIX="file://" #run:
 
 STARTTIME=$RECORDINGTIME
 CSV_DIR=$path_csv
-MAX_IDX_OF_DAY=14
-SUBFIGURE_WIDTH="0.24\textwidth"
-SUBFIGURE_HEIGHT="0.24\textheight"
+MAX_IDX_OF_DAY=$((N_BATCHES - 1))
 LEGEND="\trajectorylegend"
 FILES="files"
 mkdir $FILES
@@ -44,7 +42,8 @@ if [ $feeding ]; then
     STARTTIME=$FEEDINGTIME
     POS_STRINGS=($POSITION_STR_FRONT_FEEDING $POSITION_STR_BACK_FEEDING)
     CSV_DIR=$path_csv_feeding
-    MAX_IDX_OF_DAY=7
+    N_BATCHES=$N_BATCHES_FEEDING
+    MAX_IDX_OF_DAY=$((N_BATCHES_FEEDING - 1))
     SUBFIGURE_WIDTH="0.33\textwidth"
     SUBFIGURE_HEIGHT="0.33\textheight"
     LEGEND="\feedinglegend"
@@ -61,14 +60,23 @@ if [ $local ]; then
         CSV_DIR=$path_csv_local
     fi
 fi
+
+SQRT_N=$(echo "sqrt("$N_BATCHES+1-$MIN_IDX_OF_DAY")" | bc -l)
+FIG_WIDTH=$(perl -w -e "use POSIX; print 0.95/ceil($SQRT_N/1.0), qq{\n}")
+SUBFIGURE_WIDTH="${FIG_WIDTH}\textwidth"
+SUBFIGURE_HEIGHT="${FIG_WIDTH}\textheight"
 echo "
 -------------------------
 START generating PDFs for:
 $BLOCK,
 $rootserver,
 $path_recordings,
-$CSV_DIR
-$STARTTIME
+$CSV_DIR,
+$STARTTIME,
+$MIN_IDX_OF_DAY,
+$MAX_IDX_OF_DAY,
+$SQRT_N,
+$FIG_WIDTH
 -------------------------"
 
 mkdir -p trajectory/$STARTTIME/$BLOCK
@@ -96,6 +104,7 @@ for b in ${!position[@]}; do
                     \newcommand\block{$BLOCK}
                     \newcommand\posstr{$POSITION_STR/}
                     \newcommand\starttime{$STARTTIME}
+                    \newcommand\minindex{$MIN_IDX_OF_DAY}
                     \newcommand\maxindex{$MAX_IDX_OF_DAY}
                     \newcommand\subfigwidth{$SUBFIGURE_WIDTH}
                     \newcommand\subfigheight{$SUBFIGURE_HEIGHT}
@@ -178,7 +187,8 @@ for b in ${!position[@]}; do
         END=2
         for k in $(seq 1 $END); do
             #pdflatex "\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}"
-            pdflatex --interaction=nonstopmode "\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}"
+            pdflatex --interaction=nonstopmode "\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}" > log_tex.txt
+            #pdflatex "\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}"
         done
         mv main.pdf trajectory/$STARTTIME/$BLOCK/${STARTTIME}_${BLOCK}_${camera}_${position[$b]}.pdf
     done

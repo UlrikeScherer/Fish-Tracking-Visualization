@@ -152,10 +152,12 @@ def load_summerized_data(wshedfile, parameters, fish_key="", day=""):
     area = proj_data[0]["area"]
     zVals = load_zVals(parameters, fish_key, day=day)
     X_em = np.concatenate([x["zValues"] for x in zVals])
-    kmeans_clusters = np.concatenate([x["clusters"] for x in zVals], axis=1).flatten()
+    kmeans_clusters = []
+    if "clusters" in zVals[0].keys():
+        kmeans_clusters = np.concatenate([x["clusters"] for x in zVals], axis=1).flatten()
     return dict(positions=positions, projections=projections, embeddings=X_em, clusters=clusters, kmeans_clusters=kmeans_clusters,area=area)
 
 def return_normalization_func(parameters):
     data = np.concatenate([d["projections"] for d in load_trajectory_data(parameters)])
-    std = np.abs(data).std(axis=0)
-    return lambda pro: pro/std
+    maxi = np.abs(data).max(axis=0)
+    return lambda pro: pro/maxi
