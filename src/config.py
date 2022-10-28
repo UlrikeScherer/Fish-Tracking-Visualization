@@ -37,7 +37,7 @@ FEEDINGTIME = os.environ["FEEDINGTIME"]
 START_END_FEEDING_TIMES = f"{DATA_DIR}/DevEx_FE_feeding_times.csv"
 
 N_BATCHES = int(os.environ["N_BATCHES"])
-N_BATCHES_FEEDING = int(os.environ["N_BATCHES_FEEDING"])
+#N_BATCHES_FEEDING = int(os.environ["N_BATCHES_FEEDING"])
 HOURS_PER_DAY = int(os.environ["HOURS_PER_DAY"])
 BATCH_SIZE = int(os.environ["BATCH_SIZE"])
 FRAMES_PER_SECOND = int(os.environ["FRAMES_PER_SECOND"])

@@ -15,7 +15,6 @@ PREFIX="file://" #run:
 
 STARTTIME=$RECORDINGTIME
 CSV_DIR=$path_csv
-MAX_IDX_OF_DAY=$((N_BATCHES - 1))
 LEGEND="\trajectorylegend"
 FILES="files"
 mkdir $FILES
@@ -42,8 +41,6 @@ if [ $feeding ]; then
     STARTTIME=$FEEDINGTIME
     POS_STRINGS=($POSITION_STR_FRONT_FEEDING $POSITION_STR_BACK_FEEDING)
     CSV_DIR=$path_csv_feeding
-    N_BATCHES=$N_BATCHES_FEEDING
-    MAX_IDX_OF_DAY=$((N_BATCHES_FEEDING - 1))
     SUBFIGURE_WIDTH="0.33\textwidth"
     SUBFIGURE_HEIGHT="0.33\textheight"
     LEGEND="\feedinglegend"
@@ -61,7 +58,7 @@ if [ $local ]; then
     fi
 fi
 
-SQRT_N=$(echo "sqrt("$N_BATCHES+1-$MIN_IDX_OF_DAY")" | bc -l)
+SQRT_N=$(echo "sqrt("$MAX_BATCH_IDX+2-$MIN_BATCH_IDX")" | bc -l)
 FIG_WIDTH=$(perl -w -e "use POSIX; print 0.95/ceil($SQRT_N/1.0), qq{\n}")
 SUBFIGURE_WIDTH="${FIG_WIDTH}\textwidth"
 SUBFIGURE_HEIGHT="${FIG_WIDTH}\textheight"
@@ -73,8 +70,8 @@ $rootserver,
 $path_recordings,
 $CSV_DIR,
 $STARTTIME,
-$MIN_IDX_OF_DAY,
-$MAX_IDX_OF_DAY,
+$MIN_BATCH_IDX,
+$MAX_BATCH_IDX,
 $SQRT_N,
 $FIG_WIDTH
 -------------------------"
@@ -104,8 +101,8 @@ for b in ${!position[@]}; do
                     \newcommand\block{$BLOCK}
                     \newcommand\posstr{$POSITION_STR/}
                     \newcommand\starttime{$STARTTIME}
-                    \newcommand\minindex{$MIN_IDX_OF_DAY}
-                    \newcommand\maxindex{$MAX_IDX_OF_DAY}
+                    \newcommand\minindex{$MIN_BATCH_IDX}
+                    \newcommand\maxindex{$MAX_BATCH_IDX}
                     \newcommand\subfigwidth{$SUBFIGURE_WIDTH}
                     \newcommand\subfigheight{$SUBFIGURE_HEIGHT}
                     % ---------------------------------------

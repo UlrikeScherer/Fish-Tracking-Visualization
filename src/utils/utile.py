@@ -11,7 +11,6 @@ from src.config import (
     BLOCK,
     HOURS_PER_DAY,
     N_BATCHES,
-    N_BATCHES_FEEDING,
     FRONT,
     BACK,
     FEEDINGTIME,
@@ -81,7 +80,7 @@ def get_directory(is_feeding=None, is_back=None):
 
 
 def get_number_of_batches(is_feeding=False):
-    return N_BATCHES_FEEDING if is_feeding else N_BATCHES
+    return N_BATCHES
 
 
 def get_camera_names(is_feeding=False, is_back=False):
