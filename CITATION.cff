@@ -7,7 +7,7 @@ authors:
 - family-names: "Scherer"
   given-names: "Ulrike"
   orcid: "https://orcid.org/0000-0003-1086-8527"
-title: "Fish Tracking and Visualization"
+title: "Tool for Fish Trajectory Data Visualization and Analysis"
 version: 1.0.0
 date-released: 2022-10-31
 url: "https://github.com/lukastaerk/Fish-Tracking-Visualization"
