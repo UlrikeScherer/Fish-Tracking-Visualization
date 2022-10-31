@@ -4,6 +4,9 @@ authors:
 - family-names: "Stärk"
   given-names: "Luka"
   orcid: "https://orcid.org/0000-0002-1390-7432"
+- family-names: "Scherer"
+  given-names: "Ulrike"
+  orcid: "https://orcid.org/0000-0003-1086-8527"
 title: "Fish Tracking and Visualization"
 version: 1.0.0
 date-released: 2022-10-31
