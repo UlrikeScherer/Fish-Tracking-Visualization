@@ -1,22 +1,21 @@
 #!/bin/bash
 source scripts/config.sh 
+source scripts/env.sh # get the following variables
+PLOTS_TRAJECTORY=$path_csv_local/$PLOTS_DIR
 if [ ! -d "$PLOTS_TRAJECTORY" ]; then
     echo "ERROR $PLOTS_TRAJECTORY does not exists, first generate the plots with the python script"
     exit 1
 fi
-
-source scripts/env.sh # get the following variables
-
 # continue inside the tex directory
 cd tex
 position=("front" "back")
 POS_STRINGS=($POSITION_STR_FRONT $POSITION_STR_BACK)
 PREFIX="file://" #run:
 
-STARTTIME=$RECORDINGTIME
+PROGRAMNAME=$P_TRAJECTORY
 CSV_DIR=$path_csv
 LEGEND="\trajectorylegend"
-FILES="files"
+FILES=$PLOTS_TRAJECTORY/$TEX_DIR
 mkdir $FILES
 
 while [[ "$#" -gt 0 ]]; do
@@ -35,12 +34,10 @@ while [[ "$#" -gt 0 ]]; do
         esac
     fi
     shift
-    
+
 done
 if [ $feeding ]; then
-    STARTTIME=$FEEDINGTIME
-    POS_STRINGS=($POSITION_STR_FRONT_FEEDING $POSITION_STR_BACK_FEEDING)
-    CSV_DIR=$path_csv_feeding
+    PROGRAMNAME=$P_FEEDING
     SUBFIGURE_WIDTH="0.33\textwidth"
     SUBFIGURE_HEIGHT="0.33\textheight"
     LEGEND="\feedinglegend"
@@ -51,11 +48,7 @@ if [ $test ]; then
     echo "Testrun using $cameras, position: $position";
 fi
 if [ $local ]; then
-    if [ $feeding ]; then
-        CSV_DIR=$path_csv_feeding_local
-    else
-        CSV_DIR=$path_csv_local
-    fi
+    CSV_DIR=$path_csv_local
 fi
 
 SQRT_N=$(echo "sqrt("$MAX_BATCH_IDX+2-$MIN_BATCH_IDX")" | bc -l)
@@ -69,14 +62,15 @@ $BLOCK,
 $rootserver,
 $path_recordings,
 $CSV_DIR,
-$STARTTIME,
+$PROGRAMNAME,
 $MIN_BATCH_IDX,
 $MAX_BATCH_IDX,
 $SQRT_N,
 $FIG_WIDTH
 -------------------------"
 
-mkdir -p trajectory/$STARTTIME/$BLOCK
+directory_of_run=$path_csv_local/$VIS_DIR/$PROGRAMNAME/$BLOCK
+mkdir -p $directory_of_run
 
 for b in ${!position[@]}; do
     echo -e "pdf for ${position[$b]} \n"
@@ -90,7 +84,7 @@ for b in ${!position[@]}; do
     for cam in $cameras; do
         camera=$(basename ${cam})
         echo $camera
-        secff="$(ls -d $CSV_DIR/$POSITION_STR/${camera}/*.${camera}/ | sort -V | head -1 | sed 's/.*1550\([^.]*\).*/\1/')"
+        secff="$(ls -d $CSV_DIR/$POSITION_STR/${camera}/*.${camera}*/ | sort -V | head -1 | sed 's/.*1550\([^.]*\).*/\1/')"
 
         texheader="%\usepackage{etoolbox}
                     %% root folders: ---------------------
@@ -99,8 +93,8 @@ for b in ${!position[@]}; do
                     \newcommand\rootrecord{$path_recordings}
                     \newcommand\plots{$PLOTS_TRAJECTORY}
                     \newcommand\block{$BLOCK}
-                    \newcommand\posstr{$POSITION_STR/}
-                    \newcommand\starttime{$STARTTIME}
+                    \newcommand\posstr{$POSITION_STR}
+                    \newcommand\programname{$PROGRAMNAME}
                     \newcommand\minindex{$MIN_BATCH_IDX}
                     \newcommand\maxindex{$MAX_BATCH_IDX}
                     \newcommand\subfigwidth{$SUBFIGURE_WIDTH}
@@ -160,7 +154,8 @@ for b in ${!position[@]}; do
             # MP4 video files
             # ---------
             if [ $local ]; then
-              echo "--local is not reading mp4 file paths \n"
+              skip=1
+              #echo "--local is not reading mp4 file paths \n"
             else
               foldermp4="$(ls -d $path_recordings/${camera}/${day}*/ | head )"
               texheader="$texheader \addtext{$PREFIX$foldermp4}
@@ -184,10 +179,10 @@ for b in ${!position[@]}; do
         END=2
         for k in $(seq 1 $END); do
             #pdflatex "\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}"
-            pdflatex --interaction=nonstopmode "\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}" > log_tex.txt
+            pdflatex --interaction=nonstopmode "\newcommand\arrayoflinks{${FILES}/arrayoflinks}\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}" > log_tex.txt
             #pdflatex "\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}"
         done
-        mv main.pdf trajectory/$STARTTIME/$BLOCK/${STARTTIME}_${BLOCK}_${camera}_${position[$b]}.pdf
+        mv main.pdf ${directory_of_run}/${PROGRAMNAME}_${BLOCK}_${camera}_${position[$b]}.pdf
     done
 done
 

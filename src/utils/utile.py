@@ -7,17 +7,17 @@ import os
 import glob
 from itertools import product
 from src.config import (
-    DATA_DIR,
+    CONFIG_DATA_PATH,
     BLOCK,
     HOURS_PER_DAY,
+    MAX_BATCH_IDX,
+    MIN_BATCH_IDX,
     N_BATCHES,
     FRONT,
     BACK,
-    FEEDINGTIME,
     N_SECONDS_PER_HOUR,
-    STIME,
-    dir_feeding_back,
-    dir_feeding_front,
+    P_FEEDING,
+    P_TRAJECTORY,
     dir_back,
     dir_front,
 )
@@ -54,7 +54,7 @@ def is_valid_dir(directory):
 
 
 def get_start_time_directory(is_feeding):
-    return FEEDINGTIME if is_feeding else STIME
+    return P_FEEDING if is_feeding else P_TRAJECTORY
 
 
 def get_interval_name_from_seconds(seconds):
@@ -65,18 +65,12 @@ def get_interval_name_from_seconds(seconds):
 
 
 def get_directory(is_feeding=None, is_back=None):
-    if is_feeding is None or is_back is None:
-        raise Exception("define kwargs is_feeding and is_back")
-    if is_feeding:
-        if is_back:
-            return dir_feeding_back
-        else:
-            return dir_feeding_front
+    if is_back is None:
+        raise Exception("define kwargs is_back")
+    if is_back:
+        return dir_back
     else:
-        if is_back:
-            return dir_back
-        else:
-            return dir_front
+        return dir_front
 
 
 def get_number_of_batches(is_feeding=False):
@@ -109,7 +103,7 @@ def get_fish_ids():
     """
     # %ROOT
     info_df = pd.read_csv(
-        "{}/DevEx_fingerprint_activity_lifehistory.csv".format(DATA_DIR), delimiter=";"
+        "{}/DevEx_fingerprint_activity_lifehistory.csv".format(CONFIG_DATA_PATH), delimiter=";"
     )
     # info_df = pd.read_csv("data/DevEx_fingerprint_activity_lifehistory.csv", delimiter=";")
     info_df1 = info_df[info_df["block"] == int(BLOCK[-1])]
@@ -299,8 +293,8 @@ def csv_of_the_day(
     LOG, _, filtered_files = filter_files(
         camera, day, filenames_f, get_number_of_batches(is_feeding)
     )  # filters for duplicates in the batches for a day. It takes the LAST one!!!
-    file_keys = list(filtered_files.keys())
-    correct_files = list(filtered_files.values())
+    file_keys = list(filtered_files.keys())[MIN_BATCH_IDX :  MAX_BATCH_IDX + 1]
+    correct_files = list(filtered_files.values())[MIN_BATCH_IDX :  MAX_BATCH_IDX + 1]
     if print_log and len(LOG) > 0:
         print("\n {}/{}/{}*: \n".format(dir_, camera, day), "\n".join(LOG))
     return file_keys, merge_files(correct_files, drop_out_of_scope)

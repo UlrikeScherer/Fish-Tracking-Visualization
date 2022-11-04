@@ -1,7 +1,6 @@
 from src.config import (
     BATCH_SIZE,
     BLOCK,
-    STIME,
     BACK,
     sep,
     VIS_DIR,
@@ -62,7 +61,7 @@ def get_results_filepath(trace_size, file_name, subfolder=None, format="pdf"):
 
 
 def get_trace_file_path(trace_size, format="csv"):
-    return "%s/traces_%s_%s_%s.%s" % (DIR_TRACES, BLOCK, STIME, trace_size, format)
+    return "%s/traces_%s_%s.%s" % (DIR_TRACES, BLOCK, trace_size, format)
 
 
 def load_traces(trace_size):

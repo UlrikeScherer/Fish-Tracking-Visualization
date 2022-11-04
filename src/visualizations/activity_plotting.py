@@ -288,12 +288,12 @@ def plot_metric_figure_for_days(metric_name, measure=None, write_fig=True):
 
 
 def get_filepath_metric_plot(metric_name, measure=None, subdir=None):
-    data_dir = "{}/{}/".format(VIS_DIR, BLOCK)
+    CONFIG_DATA_PATH = "{}/{}/".format(VIS_DIR, BLOCK)
     if subdir is not None:
-        data_dir = "{}/{}/".format(data_dir, subdir)
-    os.makedirs(data_dir, exist_ok=True)
+        CONFIG_DATA_PATH = "{}/{}/".format(CONFIG_DATA_PATH, subdir)
+    os.makedirs(CONFIG_DATA_PATH, exist_ok=True)
     return "{}/{}{}.pdf".format(
-        data_dir, metric_name, "_" + measure if measure is not None else ""
+        CONFIG_DATA_PATH, metric_name, "_" + measure if measure is not None else ""
     )
 
 

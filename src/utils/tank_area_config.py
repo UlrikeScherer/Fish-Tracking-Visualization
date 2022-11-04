@@ -1,11 +1,12 @@
 import glob, json, os
 import matplotlib.pyplot as plt
 import numpy as np
-from src.config import FRONT, BACK, BLOCK, DATA_DIR, BLOCK1, BLOCK2, ROOT_LOCAL
+from src.config import FRONT, BACK, BLOCK, CONFIG_DATA_PATH, BLOCK1, BLOCK2, DIR_CSV_LOCAL
 from .utile import get_camera_pos_keys
 
+DATA_DIR = "data"
 # AREA CONFIG
-AREA_CONFIG = "%s/area_config" % ROOT_LOCAL
+AREA_CONFIG = "%s/area_config" % DIR_CSV_LOCAL
 # area block 1
 area_block1_back = "%s/areas back 10Sep2021" % AREA_CONFIG
 area_block1_front = "%s/areas front 10Sep2021" % AREA_CONFIG
@@ -19,6 +20,7 @@ nov21 = "20211121_060000"
 nov02 = "20211102_060000"
 
 CALIBRATION_DIST_CM = 83.0
+DEFAULT_CALIBRATION = 0.02278
 
 def get_area_functions():  # retruns a function to deliver the area for key and day
     if BLOCK == BLOCK1:
@@ -30,19 +32,22 @@ def get_area_functions():  # retruns a function to deliver the area for key and 
         return lambda key, day: area1[key] if day < nov21 else area2[key]
 
 def get_calibration_functions():
-    if BLOCK == BLOCK1:
-        f = open(f"{DATA_DIR}/{BLOCK}_calibration.json", "r")
-        calibration = json.load(f)
-        return lambda cam, day=None: calibration[cam]
-    elif BLOCK == BLOCK2:
-        f1 = open(f"{DATA_DIR}/{BLOCK}_calibration{nov02}.json", "r")
-        calibration1 = json.load(f1)
-        f2 = open(f"{DATA_DIR}/{BLOCK}_calibration{nov21}.json", "r")
-        calibration2 = json.load(f2)
-        return lambda cam, day: calibration1[cam] if day < nov21 else calibration2[cam]
-    else:
-        raise Exception("{} is not a valid block".format(BLOCK))  
-
+    try:
+        if BLOCK == BLOCK1:
+            f = open(f"{DATA_DIR}/{BLOCK}_calibration.json", "r")
+            calibration = json.load(f)
+            return lambda cam, day=None: calibration[cam]
+        elif BLOCK == BLOCK2:
+            f1 = open(f"{DATA_DIR}/{BLOCK}_calibration{nov02}.json", "r")
+            calibration1 = json.load(f1)
+            f2 = open(f"{DATA_DIR}/{BLOCK}_calibration{nov21}.json", "r")
+            calibration2 = json.load(f2)
+            return lambda cam, day: calibration1[cam] if day < nov21 else calibration2[cam]
+        else:
+            raise Exception("{} is not a valid block".format(BLOCK))  
+    except Exception as e:
+        print(e, "no calibration file found, will use default calibration")
+        return lambda cam, day=None: DEFAULT_CALIBRATION
 
 def read_area_data_from_json(day=None):
     if day is None:

@@ -6,9 +6,8 @@ from src.config import (
     CAM_POS,
     N_SECONDS_OF_DAY,
     HOURS_PER_DAY,
-    BLOCK,
     N_SECONDS_PER_HOUR,
-    DATA_results,
+    RESULTS_PATH,
     float_format,
     sep,
 )
@@ -144,9 +143,8 @@ def get_filename_for_metric_csv(
 
 
 def get_results_directory(metric_name, is_feeding):
-    directory = "%s/%s/%s/%s" % (
-        DATA_results,
-        BLOCK,
+    directory = "%s/%s/%s" % (
+        RESULTS_PATH,
         get_start_time_directory(is_feeding),
         metric_name,
     )

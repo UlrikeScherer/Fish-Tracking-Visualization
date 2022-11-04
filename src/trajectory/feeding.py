@@ -3,30 +3,33 @@ import pandas as pd
 import os
 import numpy as np
 from time import gmtime, strftime
-from src.config import BACK, BATCH_SIZE, FRAMES_PER_SECOND, FRONT, BLOCK, START_END_FEEDING_TIMES, DATA_results, FEEDINGTIME, DATA_DIR, sep
+from src.config import BACK, BATCH_SIZE, FEEDING_SHAPE, FRAMES_PER_SECOND, FRONT, BLOCK, PLOTS_DIR, START_END_FEEDING_TIMES_FILE, RESULTS_PATH, FEEDINGTIME, CONFIG_DATA_PATH, TEX_DIR, sep
 from src.metrics.metrics import calc_length_of_steps, num_of_spikes
+from src.trajectory.feeding_shape import FeedingEllipse, FeedingRectangle
 from src.utils import get_days_in_order, get_all_days_of_context, get_camera_pos_keys
 from src.utils.utile import month_abbr2num
 from .trajectory import Trajectory
 from src.utils.transformation import pixel_to_cm
 
+map_shape = {"rectangle":FeedingRectangle, "ellipse":FeedingEllipse}
+FT_BLOCK, FT_DATE, FT_START, FT_END = "block","day","time_in_start","time_out_stop" # time_in_stop, time_out_start
 
 class FeedingTrajectory(Trajectory):
 
     is_feeding = True
-    dir_data_feeding = "%s/%s/feeding" % (DATA_results, BLOCK)
-    dir_tex_feeding = "tex/files"
+    dir_data_feeding = "%s/%s/feeding" % (RESULTS_PATH, BLOCK)
+    dir_tex_feeding = TEX_DIR
 
-    def __init__(self, **kwargs):
+    def __init__(self, shape=FEEDING_SHAPE, **kwargs):
         super().__init__(**kwargs)
-        self.PATCHES = self.get_feeding_patches()
         self.set_feeding_box(is_back=False)
         self.set_feeding_box(is_back=True)
         self.feeding_times = []
         self.visits = []
         self.num_df_feeding = []
-        self.start_end_times = start_end_dict()
+        self.start_end_times = feeding_times_start_end_dict()
         self.reset_data()
+        self.FeedingShape = map_shape[shape]()
 
     def reset_data(self):
         self.feeding_times = [dict() for i in range(self.N_fishes)]
@@ -74,12 +77,11 @@ class FeedingTrajectory(Trajectory):
         batchxy = pixel_to_cm(batch[["xpx", "ypx"]].to_numpy())
         F.line.set_data(*batchxy.T)
 
-        feeding_b, box = self.feeding_data(
-            batch[feeding_filter], fish_id
+        fish_key = "%s_%s"%tuple(self.fish2camera[fish_id])
+        feeding_b, box = self.FeedingShape.contains(
+            batch[feeding_filter], fish_key, date
         )  # feeding_b: array of data frames that are inside the feeding box.
-        feeding_size = feeding_b.shape[
-            0
-        ]  # size of the feeding box gives us the time spent in the box in number of frames.
+        feeding_size = feeding_b.shape[0]  # size of the feeding box gives us the time spent in the box in number of frames.
         # The next line identifies the indices of feeding_b array where the fish swims from in to out of the box in the next frame
         index_visits = []
         n_entries = 0
@@ -191,85 +193,14 @@ class FeedingTrajectory(Trajectory):
         text_file.write(text)
         text_file.close()
 
-    def feeding_data(self, data, fish_id):
-        return get_feeding_box(data, *self.PATCHES[fish_id])
-
-    def get_feeding_patches(self):
-        patches = pd.read_csv("data/feeding_patch_coords.csv", delimiter=";")
-        return dict(
-            [
-                (i, find_cords(*self.fish2camera[i], patches))
-                for i in range(self.N_fishes)
-            ]
-        )
-
-
-def find_cords(camera_id, position, csv):
-    f1 = csv["camera_id"] == int(camera_id)
-    f2 = csv["front_or_back"] == position
-    cords = csv[f1 & f2][["TL_x", "TL_y", "TR_x", "TR_y"]]
-    if cords.empty:
-        raise Exception(
-            "camera: %s with position %s is not known" % (camera_id, position)
-        )
-    return cords.to_numpy()[0]
-
-
-def get_feeding_cords(data, camera_id, is_back):
-    pos = BACK if is_back else FRONT
-    patches = pd.read_csv("data/feeding_patch_coords.csv", delimiter=";")
-    return get_feeding_box(data, *find_cords(camera_id, pos, patches))
-
-
-def get_feeding_box(data, TL_x, TL_y, TR_x, TR_y):
-    scale = 2
-    # if x has the same value.
-    if abs(TL_x - TR_x) < abs(TL_y - TR_y):
-        # FRONT
-        p_len = abs(TL_y - TR_y) * scale
-        f1 = data["xpx"] > TL_x - p_len
-        f2 = data["ypx"] < TL_y + p_len
-        f3 = data["ypx"] > TR_y - p_len
-        TL_y += p_len
-        TR_y -= p_len
-        box = np.array(
-            [
-                (TL_x, TL_y),
-                (TL_x - p_len, TL_y),
-                (TR_x - p_len, TR_y),
-                (TR_x, TR_y),
-                (TL_x, TL_y),
-            ]
-        )
-    else:
-        # BACK
-        p_len = abs(TL_x - TR_x) * scale
-        f1 = data["ypx"] > TR_y - p_len
-        f2 = data["xpx"] > TL_x - p_len
-        f3 = data["xpx"] < TR_x + p_len
-        TL_x -= p_len
-        TR_x += p_len
-        box = np.array(
-            [
-                (TL_x, TL_y),
-                (TL_x, TL_y - p_len),
-                (TR_x, TR_y - p_len),
-                (TR_x, TR_y),
-                (TL_x, TL_y),
-            ]
-        )
-    feeding = data[f1 & f2 & f3]
-    return feeding, box
-
-def start_end_dict():
-    ft_df = pd.read_csv(START_END_FEEDING_TIMES, sep=sep)
-    block_ft = ft_df[(ft_df["block"]==int(BLOCK[5:])) & ~ft_df["feeding_start_analyses"].isna()]
-    feeding_times = dict([("%s%02d%02d_%s"%(y,month_abbr2num[m.lower()],d,FEEDINGTIME), 
-                           (get_df_idx_from_time(s),get_df_idx_from_time(e))) for (y,m,d,s,e) in zip(block_ft["year"],
-        block_ft["month"],
-        block_ft["day_of_month"],
-        block_ft["feeding_start_analyses"],
-        block_ft["feeding_end_analyses"])
+def feeding_times_start_end_dict():
+    ft_df = pd.read_csv(START_END_FEEDING_TIMES_FILE, sep=sep)
+    block_ft = ft_df[(ft_df[FT_BLOCK]==int(BLOCK[5:])) & ~ft_df[FT_START].isna()]
+    feeding_times = dict([("20%s%02d%02d_%s"%(*list(map(int,reversed(d.split(".")))),FEEDINGTIME), 
+                           (get_df_idx_from_time(s),get_df_idx_from_time(e))) for (d,s,e) in zip(
+        block_ft[FT_DATE],
+        block_ft[FT_START],
+        block_ft[FT_END])
                          ])
     return feeding_times
 

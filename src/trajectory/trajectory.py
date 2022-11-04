@@ -2,7 +2,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import os
 import sys
-from src.config import BLOCK, PLOTS_TRAJECTORY, BACK
+from src.config import BATCH_SIZE, BLOCK, PLOTS_DIR, BACK
 from src.utils import (
     csv_of_the_day,
     get_position_string,
@@ -214,15 +214,15 @@ class Trajectory:
 
     def plot_day_camera_fast(self, data, keys, camera_id, date, fish_id, is_back):
         position = get_position_string(is_back)
-        time_dir = get_start_time_directory(self.is_feeding)
-        data_dir = "{}/{}/{}/{}/{}/{}".format(
-            PLOTS_TRAJECTORY, time_dir, BLOCK, position, camera_id, date
+        prog_name = get_start_time_directory(self.is_feeding)
+        plots_dir = "{}/{}/{}/{}/{}/{}".format(
+            PLOTS_DIR, prog_name, BLOCK, position, camera_id, date
         )
 
         if len(data) == 0:
             return None
 
-        nr_of_frames = 0
+        nr_of_frames = int(keys[0])*BATCH_SIZE
         for idx in range(len(data)):
             batch = data[idx]
             up = len(batch.x) - 1
@@ -235,7 +235,7 @@ class Trajectory:
             fig = self.subplot_function(
                 batch,
                 date,
-                data_dir,
+                plots_dir,
                 keys[idx],
                 fish_id,
                 time_span=time_span,

@@ -20,7 +20,7 @@
 \usepackage{nopageno}
 \usepackage{tabularx}
 
-\input{files/arrayoflinks.tex}
+\input{\arrayoflinks}
 
 \newcounter{daycnt}
 \newcounter{subcnt}
@@ -28,23 +28,24 @@
 \providecommand{\camera}{default-error}
 \providecommand{\position}{position}
 \providecommand{\block}{blockX}
-\providecommand{\starttime}{"060000"}
+\providecommand{\programname}{trajectory}
 \providecommand{\secfirstplot}{42}
-\providecommand{\posstr}{POSITION_STRING/}
+\providecommand{\posstr}{POSITION_STRING}
 \providecommand{\maxindex}{14}
 \providecommand{\minindex}{0}
 \providecommand{\subfigwidth}{0.22\textwidth}
 \providecommand{\subfigheight}{0.22\textheight}
-\graphicspath{{../\plots/\starttime/\block/\position/}}
+\graphicspath{{/\plots/\programname/\block/\position/}}
 \providecommand{\rootserver}{/ROOT_DIRECTORY}
 \providecommand{\rootrecord}{/RECORING_DIRECTORY}
 \providecommand{\rootcsv}{/CSV_DIRECTORY}
+\providecommand{\arrayoflinks}{arrayoflinks.tex}
 
 \title{Developing exploration behavior\\
 Trajectory over time of the molly at camera: \camera{} and position: \textsc{\position}\\
 From the 10th of September to the 8th of November.\\
 \textsc{\block}\\
-start time: \starttime\\
+Program Name: \programname\\
 }
 \author{Research Unit 1, SCIoI Project 21}
 \date{\today}
@@ -64,7 +65,7 @@ start time: \starttime\\
     CSV: \url{file://\rootcsv/\posstr\camera/#1.\camera/}}\\
     \parbox[c][\subfigheight]{\subfigwidth}{\StrMid{#1}{0}{4}/\StrMid{#1}{5}{6}/\StrMid{#1}{7}{8}{} at \StrMid{#1}{10}{11}:\StrMid{#1}{12}{13}\\
      Trajectory over time of the molly at camera: \camera{}\\ position: \textsc{\position}\\
-    \ifthenelse{\equal{\starttime}{140000}}
+    \ifthenelse{\equal{\programname}{feeding}}
         {$\Delta$-Feeding Time: \getft{\camera\position#1}\\
         Number of Visits: \getft{\camera\position#1v}\\
         Considered Feeding Time: \getft{\camera\position#1num}\\

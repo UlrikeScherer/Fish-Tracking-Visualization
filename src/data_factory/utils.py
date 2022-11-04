@@ -1,6 +1,6 @@
 import math
 import numpy as np
-from src.config import ROOT_LOCAL, DIR_CSV_LOCAL
+from src.config import DIR_CSV_LOCAL, DIR_CSV_LOCAL
 
 def pointsInCircum(r,n=100):
     return [(math.cos(2*math.pi/n*x)*r,math.sin(2*math.pi/n*x)*r) for x in range(0,n+1)]
@@ -69,7 +69,7 @@ def get_cluster_sequences(clusters, cluster_ids=range(1,6), sw=6*60*5, th=0.6):
 
 def create_subset_data(k=25):
     import glob, random, shutil
-    list_of_files = random.choices(glob.glob(f"{ROOT_LOCAL}/{DIR_CSV_LOCAL}/*/*/*/*.csv"), k=k)
+    list_of_files = random.choices(glob.glob(f"{DIR_CSV_LOCAL}/{DIR_CSV_LOCAL}/*/*/*/*.csv"), k=k)
 
     for file in list_of_files:
         dist = file.replace(DIR_CSV_LOCAL.split("/")[-1],"FE_tracks_subset", 1)

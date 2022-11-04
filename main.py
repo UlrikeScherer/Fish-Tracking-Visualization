@@ -9,9 +9,10 @@ from src.config import (
     HOURS_PER_DAY,
     MEAN_GLOBAL,
     N_SECONDS_PER_HOUR,
-    dir_feeding_back,
-    PLOTS_TRAJECTORY,
-    DATA_results,
+    dir_back,
+    PLOTS_DIR,
+    RESULTS_PATH,
+    create_directories
 )
 from src.trajectory import Trajectory, FeedingTrajectory
 from src.metrics import (
@@ -209,7 +210,7 @@ def main(
     """
     is_feeding = bool(int(feeding))
     if is_feeding:
-        if not is_valid_dir(dir_feeding_back):
+        if not is_valid_dir(dir_back):
             return None
     else:
         if not is_valid_dir(DIR_CSV_LOCAL):
@@ -234,7 +235,7 @@ def main(
         for p in metric_names:
             main_metrics(p, **kwargs_metrics)
     elif program == CLEAR:  # clear all data remove directories DANGEROUS!
-        for path in [PLOTS_TRAJECTORY, DATA_results]:  # VIS_DIR
+        for path in [PLOTS_DIR, RESULTS_PATH]:  # VIS_DIR
             if os.path.isdir(path):
                 shutil.rmtree(path)
                 print("Removed directory: %s" % path)
@@ -248,6 +249,7 @@ def main(
 
 if __name__ == "__main__":
     tstart = time.time()
+    create_directories()
     main_kwargs = dict(inspect.signature(main).parameters)
     try:
         kwargs = dict(arg.split("=") for arg in sys.argv[1:])

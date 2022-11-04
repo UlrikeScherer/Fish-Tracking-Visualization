@@ -1,11 +1,11 @@
 import numpy as np
 import pandas as pd
-from src.config import ROOT_LOCAL
+from src.config import DIR_CSV_LOCAL
 from src.utils import get_fish_ids
 
 
 def update_livehistory_means_and_std(m_s):
-    path, filename = ROOT_LOCAL, "DevEx_fingerprint_activity_lifehistory.csv"
+    path, filename = DIR_CSV_LOCAL, "DevEx_fingerprint_activity_lifehistory.csv"
     fileupdate = "DevEx_fingerprint_activity_lifehistory_update.csv"
     columns_m_s = ["mean_activity", "std_activity", "fish_id"]
     info_df = pd.read_csv("%s/%s" % (path, filename), delimiter=";")

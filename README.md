@@ -20,6 +20,14 @@ use of the links to the mp4 and csv-files -- connect to the server
     run:
     -   `python3 setup.py build_ext --inplace`
 
+## File Structure
+The variable *path_csv_local* in [scripts/env.sh](scripts/env.sh) is the root of the project and the place where all generated data is stored. 
+In addition to the front an back directory where all the tracking data is stored you will find the following directories after the corresponding program executes.
+- visualizations/trajectory
+- visualizations/feeding
+- config_data - where we store feeding times, area coordinates, calibration, etc.
+- results 
+
 ## 1. Trajectory Visualization PDFs
 
 [scripts/env.sh](scripts/env.sh) contains the paths to the trajectory
