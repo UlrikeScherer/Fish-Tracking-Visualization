@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Stärk"
+  given-names: "Luka"
+  orcid: "https://orcid.org/0000-0002-1390-7432"
+- family-names: "Scherer"
+  given-names: "Ulrike"
+  orcid: "https://orcid.org/0000-0003-1086-8527"
+title: "Tool for Fish Trajectory Data Visualization and Analysis"
+version: 1.0.0
+date-released: 2022-10-31
+url: "https://github.com/lukastaerk/Fish-Tracking-Visualization"
