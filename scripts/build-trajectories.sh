@@ -15,7 +15,7 @@ PREFIX="file://" #run:
 PROGRAMNAME=$P_TRAJECTORY
 CSV_DIR=$path_csv
 LEGEND="\trajectorylegend"
-FILES=$PLOTS_TRAJECTORY/$TEX_DIR
+FILES="$PLOTS_TRAJECTORY/$TEX_DIR"
 mkdir $FILES
 
 while [[ "$#" -gt 0 ]]; do
@@ -61,6 +61,7 @@ START generating PDFs for:
 $BLOCK,
 $rootserver,
 $path_recordings,
+$PLOTS_TRAJECTORY,
 $CSV_DIR,
 $PROGRAMNAME,
 $MIN_BATCH_IDX,
@@ -99,6 +100,7 @@ for b in ${!position[@]}; do
                     \newcommand\maxindex{$MAX_BATCH_IDX}
                     \newcommand\subfigwidth{$SUBFIGURE_WIDTH}
                     \newcommand\subfigheight{$SUBFIGURE_HEIGHT}
+                    \newcommand\files{$FILES}
                     % ---------------------------------------
                     \newcounter{cnt}
                     \newcommand\textlist{}

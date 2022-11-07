@@ -1,6 +1,7 @@
 import shutil
 from envbash import load_envbash
-import os
+import os, warnings
+import pandas as pd
 
 load_envbash("scripts/config.sh")
 load_envbash("scripts/env.sh")
@@ -29,10 +30,12 @@ PLOTS_DIR = f"{DIR_CSV_LOCAL}/" + os.environ["PLOTS_DIR"]
 RESULTS_PATH = f"{DIR_CSV_LOCAL}/" + os.environ["RESULTS"]
 P_TRAJECTORY = os.environ["P_TRAJECTORY"]
 P_FEEDING = os.environ["P_FEEDING"]
-DIR_TRACES = "%s/%s" % (RESULTS_PATH, "traces")
+DIR_TRACES = "%s/%s/%s" % (RESULTS_PATH, BLOCK, "traces")
 TEX_DIR = f"{PLOTS_DIR}/" + os.environ["TEX_DIR"]
 SERVER_FEEDING_TIMES_FILE= os.environ["SERVER_FEEDING_TIMES_FILE"]
-START_END_FEEDING_TIMES_FILE = f"{CONFIG_DATA_PATH}/recordings_feeding_times.csv" #
+
+START_END_FEEDING_TIMES_FILE = f"{CONFIG_DATA_PATH}/{BLOCK}_recordings_feeding_times.json" #
+MAZE_FILE = f"{BLOCK}_maze_data.json"
 
 FEEDINGTIME="060000"
 FEEDING_SHAPE = os.environ["FEEDING_SHAPE"] #"square", "ellipse"
@@ -68,9 +71,3 @@ def create_directories():
     for d in [VIS_DIR, PLOTS_DIR, RESULTS_PATH, DIR_TRACES, TEX_DIR]:
         if not os.path.exists(d):
             os.makedirs(d, exist_ok=True)
-
-    if not os.path.exists(START_END_FEEDING_TIMES_FILE):
-        if not os.path.exists(SERVER_FEEDING_TIMES_FILE):
-            raise FileNotFoundError(f"File {SERVER_FEEDING_TIMES_FILE} not found, please check the path in scripts/env.sh")
-        else:
-            shutil.copyfile(SERVER_FEEDING_TIMES_FILE, START_END_FEEDING_TIMES_FILE)

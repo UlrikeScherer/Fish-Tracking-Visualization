@@ -1,9 +1,10 @@
-import imp
+import json
 import pandas as pd
 import os
 import numpy as np
+import warnings
 from time import gmtime, strftime
-from src.config import BACK, BATCH_SIZE, FEEDING_SHAPE, FRAMES_PER_SECOND, FRONT, BLOCK, PLOTS_DIR, START_END_FEEDING_TIMES_FILE, RESULTS_PATH, FEEDINGTIME, CONFIG_DATA_PATH, TEX_DIR, sep
+from src.config import BACK, BATCH_SIZE, FEEDING_SHAPE, FRAMES_PER_SECOND, FRONT, BLOCK, PLOTS_DIR, SERVER_FEEDING_TIMES_FILE, START_END_FEEDING_TIMES_FILE, RESULTS_PATH, FEEDINGTIME, CONFIG_DATA_PATH, TEX_DIR, sep
 from src.metrics.metrics import calc_length_of_steps, num_of_spikes
 from src.trajectory.feeding_shape import FeedingEllipse, FeedingRectangle
 from src.utils import get_days_in_order, get_all_days_of_context, get_camera_pos_keys
@@ -13,6 +14,7 @@ from src.utils.transformation import pixel_to_cm
 
 map_shape = {"rectangle":FeedingRectangle, "ellipse":FeedingEllipse}
 FT_BLOCK, FT_DATE, FT_START, FT_END = "block","day","time_in_start","time_out_stop" # time_in_stop, time_out_start
+
 
 class FeedingTrajectory(Trajectory):
 
@@ -40,6 +42,26 @@ class FeedingTrajectory(Trajectory):
         F = self.fig_back if is_back else self.fig_front
         _ = F.ax.plot([0, 0], [0, 0], "y--")
 
+    def get_start_end_index(self, date, batch_number):
+        if self.start_end_times is None:
+            return 0, BATCH_SIZE
+        (f_start, f_end) = self.start_end_times[date]
+        # get start index
+        if f_start * FRAMES_PER_SECOND < int(batch_number)* BATCH_SIZE:
+            start_idx = 0
+        elif f_start * FRAMES_PER_SECOND > (int(batch_number)+1)* BATCH_SIZE:
+            start_idx = BATCH_SIZE
+        else:
+            start_idx = f_start * FRAMES_PER_SECOND - int(batch_number)* BATCH_SIZE
+        # get end index
+        if f_end * FRAMES_PER_SECOND < int(batch_number)* BATCH_SIZE:
+            end_idx = 0
+        elif f_end * FRAMES_PER_SECOND > (int(batch_number)+1)* BATCH_SIZE:
+            end_idx = BATCH_SIZE
+        else:
+            end_idx = f_end * FRAMES_PER_SECOND - int(batch_number)* BATCH_SIZE
+        return start_idx, end_idx
+
     def subplot_function(
         self,
         batch,
@@ -51,22 +73,8 @@ class FeedingTrajectory(Trajectory):
         is_back=False,
     ):
         F = self.fig_back if is_back else self.fig_front
-        (f_start, f_end) = self.start_end_times[date]
 
-        if f_start * FRAMES_PER_SECOND < int(batch_number)* BATCH_SIZE:
-            start_idx = 0
-        elif f_start * FRAMES_PER_SECOND > (int(batch_number)+1)* BATCH_SIZE:
-            start_idx = BATCH_SIZE
-        else:
-            start_idx = f_start * FRAMES_PER_SECOND - int(batch_number)* BATCH_SIZE
-        
-        if f_end * FRAMES_PER_SECOND < int(batch_number)* BATCH_SIZE:
-            end_idx = 0
-        elif f_end * FRAMES_PER_SECOND > (int(batch_number)+1)* BATCH_SIZE:
-            end_idx = BATCH_SIZE
-        else:
-            end_idx = f_end * FRAMES_PER_SECOND - int(batch_number)* BATCH_SIZE
-
+        start_idx, end_idx = self.get_start_end_index(date, batch_number)
         F.ax.set_title(time_span, fontsize=10)
         last_frame = batch.FRAME.array[-1]
         if batch.x.array[-1] <= -1:
@@ -194,15 +202,23 @@ class FeedingTrajectory(Trajectory):
         text_file.close()
 
 def feeding_times_start_end_dict():
-    ft_df = pd.read_csv(START_END_FEEDING_TIMES_FILE, sep=sep)
-    block_ft = ft_df[(ft_df[FT_BLOCK]==int(BLOCK[5:])) & ~ft_df[FT_START].isna()]
-    feeding_times = dict([("20%s%02d%02d_%s"%(*list(map(int,reversed(d.split(".")))),FEEDINGTIME), 
-                           (get_df_idx_from_time(s),get_df_idx_from_time(e))) for (d,s,e) in zip(
-        block_ft[FT_DATE],
-        block_ft[FT_START],
-        block_ft[FT_END])
-                         ])
-    return feeding_times
+    if os.path.exists(START_END_FEEDING_TIMES_FILE):
+        return json.load(open(START_END_FEEDING_TIMES_FILE, "r"))
+    else:
+        if not os.path.exists(SERVER_FEEDING_TIMES_FILE):
+            warnings.warn(f"File {SERVER_FEEDING_TIMES_FILE} not found, thus feeding times will be calculated over all provided batches, if this is not intended please check the path in scripts/env.sh")
+            return None
+        else:
+            ft_df = pd.read_csv(SERVER_FEEDING_TIMES_FILE, usecols=[FT_BLOCK, FT_DATE, FT_START, FT_END], sep=sep)
+            block_ft = ft_df[(ft_df[FT_BLOCK]==int(BLOCK[5:])) & ~ft_df[FT_START].isna()]
+            start_end = dict([("20%s%02d%02d_%s"%(*list(map(int,reversed(d.split(".")))),FEEDINGTIME), 
+                                (get_df_idx_from_time(s),get_df_idx_from_time(e))) for (d,s,e) in zip(
+                block_ft[FT_DATE],
+                block_ft[FT_START],
+                block_ft[FT_END])
+                                ])
+            json.dump(start_end, open(START_END_FEEDING_TIMES_FILE, "w"))
+            return start_end
 
 def get_df_idx_from_time(time,start_time=FEEDINGTIME): 
     """

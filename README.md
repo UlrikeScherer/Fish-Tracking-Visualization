@@ -2,8 +2,7 @@
 
 Project 21: Developing Exploration Behavior
 
-Holds the scripts to visualize the molly's trajectory. The folder
-[tex/trajectory](tex/trajectory) contains the resulting pdfs. To make
+Holds the scripts to visualize the molly's trajectory. To make
 use of the links to the mp4 and csv-files -- connect to the server
 `loopbio_data`. Currently the links work for MacOS systems and best with
 [Adobe Reader](https://get.adobe.com/de/reader/).
@@ -42,9 +41,16 @@ Accessing the data from the server is very slow.
 
 -   Trajectories: `python3 main.py program=trajectory`
 -   Feeding Trajectories: `python3 main.py program=trajectory feeding=1`
-        The CSV-file for time spend feeding and number of visits are stored at [results/block{i}/feeding](results/block1/feeding/).
+        The CSV-file for time spend feeding and number of visits are stored at `results/block{i}/feeding`.
 -   optional arguments: `fish_id=<<cam_pos or index in {0,...,23}>>`,
     `feeding={0,1}`
+-   Requirements: Provide a csv-file (;-separated) with start and end time for the feeding measures with columns in the following format: 
+
+| block | day | time_in_start | time_in_stop | time_out_start | time_out_stop |
+|-------|-----|---------------|--------------|----------------|---------------|
+| blocki| dd.mm.yy| hh:mm | hh:mm | hh:mm | hh:mm |
+
+An example template can be found at [data/recordings_feeding_times_template.csv](data/recordings_feeding_times_template.csv)
 
 ##### Then run the `bash`-script:
 

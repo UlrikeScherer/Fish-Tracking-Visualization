@@ -66,7 +66,7 @@ def check_foldersystem(path, n_files=15, delete=0):
     return LOG_msg
 
 
-def filter_files(c, d, files, n_files):
+def filter_files(c, d, files, n_files=15, min_idx=0):
     """
     @params:
     c: camera_id
@@ -82,7 +82,7 @@ def filter_files(c, d, files, n_files):
     missing_numbers = []
     duplicate_f = []
     correct_f = dict()
-    for i in range(n_files):
+    for i in range(min_idx,n_files):
         key_i = "{:06d}".format(i)
         pattern = re.compile(
             ".*{}_{}.{}_{}_\d*-\d*-\d*T\d*_\d*_\d*_\d*.csv".format(c, d[:15], c, key_i)

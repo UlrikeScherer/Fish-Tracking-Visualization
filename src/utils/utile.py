@@ -291,10 +291,10 @@ def csv_of_the_day(
     ]
 
     LOG, _, filtered_files = filter_files(
-        camera, day, filenames_f, get_number_of_batches(is_feeding)
+        camera, day, filenames_f, n_files=MAX_BATCH_IDX + 1, min_idx=MIN_BATCH_IDX
     )  # filters for duplicates in the batches for a day. It takes the LAST one!!!
-    file_keys = list(filtered_files.keys())[MIN_BATCH_IDX :  MAX_BATCH_IDX + 1]
-    correct_files = list(filtered_files.values())[MIN_BATCH_IDX :  MAX_BATCH_IDX + 1]
+    file_keys = list(filtered_files.keys())
+    correct_files = list(filtered_files.values())
     if print_log and len(LOG) > 0:
         print("\n {}/{}/{}*: \n".format(dir_, camera, day), "\n".join(LOG))
     return file_keys, merge_files(correct_files, drop_out_of_scope)
