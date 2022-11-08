@@ -4,7 +4,7 @@ import os
 import numpy as np
 import warnings
 from time import gmtime, strftime
-from src.config import BACK, BATCH_SIZE, FEEDING_SHAPE, FRAMES_PER_SECOND, FRONT, BLOCK, PLOTS_DIR, SERVER_FEEDING_TIMES_FILE, START_END_FEEDING_TIMES_FILE, RESULTS_PATH, FEEDINGTIME, CONFIG_DATA_PATH, TEX_DIR, sep
+from src.config import BACK, BATCH_SIZE, FEEDING_SHAPE, FRAMES_PER_SECOND, BLOCK, SERVER_FEEDING_TIMES_FILE, START_END_FEEDING_TIMES_FILE, RESULTS_PATH, TEX_DIR, sep
 from src.metrics.metrics import calc_length_of_steps, num_of_spikes
 from src.trajectory.feeding_shape import FeedingEllipse, FeedingRectangle
 from src.utils import get_days_in_order, get_all_days_of_context, get_camera_pos_keys
@@ -42,24 +42,31 @@ class FeedingTrajectory(Trajectory):
         F = self.fig_back if is_back else self.fig_front
         _ = F.ax.plot([0, 0], [0, 0], "y--")
 
-    def get_start_end_index(self, date, batch_number):
+    def get_start_end_index(self, day_key, batch_number):
         if self.start_end_times is None:
             return 0, BATCH_SIZE
-        (f_start, f_end) = self.start_end_times[date]
+        (day, track_start) = day_key.split("_")[:2]
+        ts_sec = start_time_of_day_to_seconds(track_start)
+        (f_start, f_end) = self.start_end_times[day]
+        if f_start is None or f_end is None:
+            warnings.warn("No start or end time for day %s" % day)
+            return 0, BATCH_SIZE
+        start = int((f_start - ts_sec) * FRAMES_PER_SECOND)
+        end = int((f_end - ts_sec) * FRAMES_PER_SECOND)
         # get start index
-        if f_start * FRAMES_PER_SECOND < int(batch_number)* BATCH_SIZE:
+        if start < int(batch_number)* BATCH_SIZE:
             start_idx = 0
-        elif f_start * FRAMES_PER_SECOND > (int(batch_number)+1)* BATCH_SIZE:
+        elif start > (int(batch_number)+1)* BATCH_SIZE:
             start_idx = BATCH_SIZE
         else:
-            start_idx = f_start * FRAMES_PER_SECOND - int(batch_number)* BATCH_SIZE
+            start_idx = start - int(batch_number)* BATCH_SIZE
         # get end index
-        if f_end * FRAMES_PER_SECOND < int(batch_number)* BATCH_SIZE:
+        if end < int(batch_number)* BATCH_SIZE:
             end_idx = 0
-        elif f_end * FRAMES_PER_SECOND > (int(batch_number)+1)* BATCH_SIZE:
+        elif end > (int(batch_number)+1)* BATCH_SIZE:
             end_idx = BATCH_SIZE
         else:
-            end_idx = f_end * FRAMES_PER_SECOND - int(batch_number)* BATCH_SIZE
+            end_idx = end - int(batch_number)* BATCH_SIZE
         return start_idx, end_idx
 
     def subplot_function(
@@ -211,8 +218,8 @@ def feeding_times_start_end_dict():
         else:
             ft_df = pd.read_csv(SERVER_FEEDING_TIMES_FILE, usecols=[FT_BLOCK, FT_DATE, FT_START, FT_END], sep=sep)
             block_ft = ft_df[(ft_df[FT_BLOCK]==int(BLOCK[5:])) & ~ft_df[FT_START].isna()]
-            start_end = dict([("20%s%02d%02d_%s"%(*list(map(int,reversed(d.split(".")))),FEEDINGTIME), 
-                                (get_df_idx_from_time(s),get_df_idx_from_time(e))) for (d,s,e) in zip(
+            start_end = dict([("20%s%02d%02d"%tuple(map(int,reversed(d.split(".")))), 
+                                (get_seconds_from_time(s),get_seconds_from_time(e))) for (d,s,e) in zip(
                 block_ft[FT_DATE],
                 block_ft[FT_START],
                 block_ft[FT_END])
@@ -220,11 +227,17 @@ def feeding_times_start_end_dict():
             json.dump(start_end, open(START_END_FEEDING_TIMES_FILE, "w"))
             return start_end
 
-def get_df_idx_from_time(time,start_time=FEEDINGTIME): 
+def get_seconds_from_time(time): 
     """
     @time hh:mm
-    @start_time hhmmss 
     """
-    time_sec = sum([int(t)*f for (t, f) in zip(time.split(":"),[3600, 60])])
-    start_time_sec = sum([int(t)*f for (t, f) in zip([start_time[i:i+2] for i in range(0,len(start_time),2)],[3600, 60, 1])])
-    return time_sec - start_time_sec
+    return sum([int(t)*f for (t, f) in zip(time.split(":"),[3600, 60])])
+
+def start_time_of_day_to_seconds(START_TIME):
+    """
+    @start_time hhmmss
+    """
+    if len(START_TIME) == 6:
+        return int(START_TIME[:2]) * 3600 + int(START_TIME[2:4]) * 60 + int(START_TIME[4:])
+    else:
+        raise ValueError("START_TIME must be of length 6")

@@ -32,18 +32,15 @@ P_TRAJECTORY = os.environ["P_TRAJECTORY"]
 P_FEEDING = os.environ["P_FEEDING"]
 DIR_TRACES = "%s/%s/%s" % (RESULTS_PATH, BLOCK, "traces")
 TEX_DIR = f"{PLOTS_DIR}/" + os.environ["TEX_DIR"]
-SERVER_FEEDING_TIMES_FILE= os.environ["SERVER_FEEDING_TIMES_FILE"]
+SERVER_FEEDING_TIMES_FILE= "/Volumes/Extreme_SSD/SE_tracks_final/SE_recordings_phasell_maze_trials_times.csv" # os.environ["SERVER_FEEDING_TIMES_FILE"]
 
 START_END_FEEDING_TIMES_FILE = f"{CONFIG_DATA_PATH}/{BLOCK}_recordings_feeding_times.json" #
 MAZE_FILE = f"{BLOCK}_maze_data.json"
 
-FEEDINGTIME="060000"
 FEEDING_SHAPE = os.environ["FEEDING_SHAPE"] #"square", "ellipse"
 # TRAJECTORY
 dir_front = os.environ["dir_front"]
 dir_back = os.environ["dir_back"]
-STIME = "060000"
-
 
 N_BATCHES = int(os.environ["N_BATCHES"])
 MIN_BATCH_IDX = int(os.environ["MIN_BATCH_IDX"])

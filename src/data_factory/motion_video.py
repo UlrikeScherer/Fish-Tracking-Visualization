@@ -12,9 +12,9 @@ import motionmapperpy as mmpy
 from src.data_factory.plotting import get_color_map
 from .processing import load_summerized_data, get_fish_info_from_wshed_idx, get_regions_for_fish_key
 from .utils import get_cluster_sequences
-from src.config import STIME
 from src.utils import get_date_string, get_seconds_from_day, get_camera_pos_keys, get_all_days_of_context
 
+STIME = "060000"
 VIDEOS_DIR = "videos"
 def motion_video(wshedfile, parameters,fish_key, day, start=0, end=None, save=False, filename="", score=""):
     try:
