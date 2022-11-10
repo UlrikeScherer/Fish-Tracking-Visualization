@@ -3,6 +3,7 @@ import time
 import sys, os, inspect
 import matplotlib.pyplot as plt
 import numpy as np
+from src.metrics.exploration_trials import exploration_trials
 from src.utils import print_tex_table, get_camera_pos_keys
 from src.config import (
     DIR_CSV_LOCAL,
@@ -31,6 +32,7 @@ from src.visualizations.activity_plotting import (
 from src.utils import is_valid_dir
 
 TRAJECTORY = "trajectory"
+TRIAL_TIMES = "trial_times"
 ACTIVITY = "activity"
 TURNING_ANGLE = "turning_angle"
 ABS_ANGLE = "abs_angle"
@@ -40,7 +42,7 @@ WALL_DISTANCE = "wall_distance"
 ALL_METRICS = "all"
 CLEAR = "clear"
 metric_names = [ACTIVITY, TURNING_ANGLE, ABS_ANGLE, TORTUOSITY, ENTROPY, WALL_DISTANCE]
-programs = [TRAJECTORY, *metric_names, ALL_METRICS, CLEAR]
+programs = [TRAJECTORY, TRIAL_TIMES, *metric_names, ALL_METRICS, CLEAR]
 
 
 def plotting_odd_even(
@@ -229,6 +231,8 @@ def main(
     # PROGRAM METRICS or TRAJECTORY or CLEAR
     if program == TRAJECTORY:
         main_trajectory(is_feeding, fish_ids)
+    elif program == TRIAL_TIMES:
+        exploration_trials()
     elif program in metric_names:
         main_metrics(program, **kwargs_metrics)
     elif program == ALL_METRICS:

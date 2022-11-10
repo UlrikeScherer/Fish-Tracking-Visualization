@@ -30,10 +30,9 @@ PLOTS_DIR = f"{DIR_CSV_LOCAL}/" + os.environ["PLOTS_DIR"]
 RESULTS_PATH = f"{DIR_CSV_LOCAL}/" + os.environ["RESULTS"]
 P_TRAJECTORY = os.environ["P_TRAJECTORY"]
 P_FEEDING = os.environ["P_FEEDING"]
-DIR_TRACES = "%s/%s/%s" % (RESULTS_PATH, BLOCK, "traces")
 TEX_DIR = f"{PLOTS_DIR}/" + os.environ["TEX_DIR"]
-SERVER_FEEDING_TIMES_FILE= "/Volumes/Extreme_SSD/SE_tracks_final/SE_recordings_phasell_maze_trials_times.csv" # os.environ["SERVER_FEEDING_TIMES_FILE"]
-
+SERVER_FEEDING_TIMES_FILE = os.environ["SERVER_FEEDING_TIMES_FILE"] # "/Volumes/Extreme_SSD/SE_tracks_final/SE_recordings_phasell_maze_trials_times.csv" 
+TRIAL_TIMES_CSV = os.environ["TRIAL_TIMES_CSV"]
 START_END_FEEDING_TIMES_FILE = f"{CONFIG_DATA_PATH}/{BLOCK}_recordings_feeding_times.json" #
 MAZE_FILE = f"{BLOCK}_maze_data.json"
 
@@ -41,6 +40,9 @@ FEEDING_SHAPE = os.environ["FEEDING_SHAPE"] #"square", "ellipse"
 # TRAJECTORY
 dir_front = os.environ["dir_front"]
 dir_back = os.environ["dir_back"]
+PROJECT_ID = dir_front.split("/")[-1].split("front")[0]
+print("PROJECTID:",PROJECT_ID)
+DIR_TRACES = "%s/%s/%s" % (RESULTS_PATH, PROJECT_ID, "traces")
 
 N_BATCHES = int(os.environ["N_BATCHES"])
 MIN_BATCH_IDX = int(os.environ["MIN_BATCH_IDX"])

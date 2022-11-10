@@ -25,6 +25,7 @@ dir_back=$path_csv_local/$POSITION_STR_BACK
 
 FEEDING_SHAPE="ellipse" # ellipse or rectangle
 SERVER_FEEDING_TIMES_FILE="/Volumes/data/loopbio_data/02_SE_(superstition_experiment)_JunNov2022/SE_recordings_phasell_maze_trials_times.csv"
+TRIAL_TIMES_CSV="/Volumes/Extreme_SSD/SE_tracks_final/SE_phase4_trial_times.csv"
 
 export BLOCK
 export rootserver

@@ -11,6 +11,8 @@ from .utile import (
     get_seconds_from_day,
     print_tex_table,
     is_valid_dir,
+    get_seconds_from_time,
+    start_time_of_day_to_seconds,
 )
 
 from .error_filter import all_error_filters
@@ -31,4 +33,6 @@ __all__ = [
     "all_error_filters",
     "is_valid_dir",
     "normalize_origin_of_compartment",
+    "get_seconds_from_time",
+    "start_time_of_day_to_seconds",
 ]

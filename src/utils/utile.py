@@ -192,6 +192,22 @@ def get_all_days_of_context(is_feeding=False):
             )
     return sorted(days)
 
+def get_seconds_from_time(time): 
+    """
+    @time string hh:mm
+    return seconds (int)
+    """
+    return sum([int(t)*f for (t, f) in zip(time.split(":"),[3600, 60])])
+
+def start_time_of_day_to_seconds(START_TIME):
+    """
+    @start_time hhmmss
+    return seconds (int)
+    """
+    if len(START_TIME) == 6:
+        return int(START_TIME[:2]) * 3600 + int(START_TIME[2:4]) * 60 + int(START_TIME[4:])
+    else:
+        raise ValueError("START_TIME must be of length 6")
 
 def get_time_for_day(day, nrF):
     # dateiso = "{}-{}-{}T{}:{}:{}+02:00".format(day[:4],day[4:6],day[6:8],day[9:11],day[11:13],day[13:15])

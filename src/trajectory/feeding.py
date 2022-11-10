@@ -4,11 +4,11 @@ import os
 import numpy as np
 import warnings
 from time import gmtime, strftime
-from src.config import BACK, BATCH_SIZE, FEEDING_SHAPE, FRAMES_PER_SECOND, BLOCK, SERVER_FEEDING_TIMES_FILE, START_END_FEEDING_TIMES_FILE, RESULTS_PATH, TEX_DIR, sep
+from src.config import BACK, BATCH_SIZE, FEEDING_SHAPE, FRAMES_PER_SECOND, BLOCK, P_FEEDING, PROJECT_ID, SERVER_FEEDING_TIMES_FILE, START_END_FEEDING_TIMES_FILE, RESULTS_PATH, TEX_DIR, sep
 from src.metrics.metrics import calc_length_of_steps, num_of_spikes
 from src.trajectory.feeding_shape import FeedingEllipse, FeedingRectangle
 from src.utils import get_days_in_order, get_all_days_of_context, get_camera_pos_keys
-from src.utils.utile import month_abbr2num
+from src.utils.utile import month_abbr2num, start_time_of_day_to_seconds, get_seconds_from_time
 from .trajectory import Trajectory
 from src.utils.transformation import pixel_to_cm
 
@@ -19,7 +19,7 @@ FT_BLOCK, FT_DATE, FT_START, FT_END = "block","day","time_in_start","time_out_st
 class FeedingTrajectory(Trajectory):
 
     is_feeding = True
-    dir_data_feeding = "%s/%s/feeding" % (RESULTS_PATH, BLOCK)
+    dir_data_feeding = "%s/%s/%s" % (RESULTS_PATH, PROJECT_ID, P_FEEDING)
     dir_tex_feeding = TEX_DIR
 
     def __init__(self, shape=FEEDING_SHAPE, **kwargs):
@@ -227,17 +227,3 @@ def feeding_times_start_end_dict():
             json.dump(start_end, open(START_END_FEEDING_TIMES_FILE, "w"))
             return start_end
 
-def get_seconds_from_time(time): 
-    """
-    @time hh:mm
-    """
-    return sum([int(t)*f for (t, f) in zip(time.split(":"),[3600, 60])])
-
-def start_time_of_day_to_seconds(START_TIME):
-    """
-    @start_time hhmmss
-    """
-    if len(START_TIME) == 6:
-        return int(START_TIME[:2]) * 3600 + int(START_TIME[2:4]) * 60 + int(START_TIME[4:])
-    else:
-        raise ValueError("START_TIME must be of length 6")

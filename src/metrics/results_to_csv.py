@@ -7,6 +7,7 @@ from src.config import (
     N_SECONDS_OF_DAY,
     HOURS_PER_DAY,
     N_SECONDS_PER_HOUR,
+    PROJECT_ID,
     RESULTS_PATH,
     float_format,
     sep,
@@ -145,7 +146,7 @@ def get_filename_for_metric_csv(
 def get_results_directory(metric_name, is_feeding):
     directory = "%s/%s/%s" % (
         RESULTS_PATH,
-        get_start_time_directory(is_feeding),
+        PROJECT_ID,
         metric_name,
     )
     if os.path.exists(directory):

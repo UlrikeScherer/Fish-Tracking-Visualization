@@ -257,7 +257,7 @@ def activity(data, frame_interval, filter_index, include_median=False):
         frame_interval,
         mean_std_median if include_median else mean_std,
         filter_index,
-        4 if include_median else 3,
+        NDIM=4 if include_median else 3,
     )
 
 
