@@ -8,7 +8,7 @@ import time
 
 def factory_main():
     projectRoot = 'content'
-    projectPath = '%s/Fish_moves_stw3'%projectRoot
+    projectPath = '%s/Fish_moves_data'%projectRoot
     
     parameters = mmpy.setRunParameters()
     parameters.pcaModes = 3
