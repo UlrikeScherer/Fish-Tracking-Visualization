@@ -39,9 +39,9 @@ def compute_projections(fish_key, day, area_tuple):
     for k, df in zip(keys,data_in_batches):
         df.index = df.FRAME+(int(k)*BATCH_SIZE)+daytime_DF
     data = pd.concat(data_in_batches)
-    data_px = data[["FRAME","xpx", "ypx"]].to_numpy()
-    filter_index = all_error_filters(data_px[:,1:], area_tuple)
-    X, new_area = transform_to_traces_high_dim(data_px[:,1:],data_px[:,0], filter_index, area_tuple)
+    data_px = data[["xpx", "ypx"]].to_numpy()
+    filter_index = all_error_filters(data_px, area_tuple)
+    X, new_area = transform_to_traces_high_dim(data_px,data.index, filter_index, area_tuple)
     return X, new_area
 
 def compute_all_projections(projectPath, fish_keys=None, recompute=False):
@@ -154,7 +154,7 @@ def load_summerized_data(wshedfile, parameters, fish_key="", day=""):
     clusters = get_regions_for_fish_key(wshedfile, fish_key, day=day)
     positions = np.concatenate([trj["positions"] for trj in proj_data])
     projections = np.concatenate([trj["projections"] for trj in proj_data])
-    daily_df = get_num_tracked_frames_per_day()
+    daily_df = 0 #5*(60**2)*8 #get_num_tracked_frames_per_day()
     days = sorted(list(set(map(lambda d: d.split("_")[0], get_all_days_of_context()))))
     df_time_index = np.concatenate([trj["df_time_index"].flatten()+(daily_df*days.index(trj["day"].flatten()[0].split("_")[0])) for trj in proj_data])
     area = proj_data[0]["area"]
