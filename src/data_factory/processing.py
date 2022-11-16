@@ -5,18 +5,18 @@ from src.utils.tank_area_config import get_area_functions
 from src.utils.error_filter import all_error_filters
 from src.utils.transformation import px2cm, normalize_origin_of_compartment
 from src.metrics.metrics import update_filter_three_points
-from src.config import BACK, BLOCK
+from src.config import BACK, BATCH_SIZE, BLOCK, FRAMES_PER_SECOND, HOURS_PER_DAY
 import numpy as np
 import hdf5storage
 import motionmapperpy as mmpy
 from motionmapperpy.motionmapper import mm_findWavelets
 
 from src.utils import csv_of_the_day
-from src.utils.utile import get_camera_pos_keys, get_days_in_order
+from src.utils.utile import get_all_days_of_context, get_camera_pos_keys, get_days_in_order, start_time_of_day_to_seconds
 
 WAVELET = 'wavelet'
 
-def transform_to_traces_high_dim(data, filter_index, area_tuple):
+def transform_to_traces_high_dim(data,frame_idx, filter_index, area_tuple):
     L = data.shape[0]
     fk, area = area_tuple
     data, new_area = normalize_origin_of_compartment(data, area, BACK in fk)
@@ -25,20 +25,23 @@ def transform_to_traces_high_dim(data, filter_index, area_tuple):
     t_a = turning_directions(data)
     wall = px2cm(distance_to_wall_chunk(data, new_area))
     f3 = update_filter_three_points(steps, filter_index)
-    X = np.array((np.arange(1,L-1),steps[:-1], t_a, wall[1:-1], data[1:-1,0], data[1:-1,1])).T 
+    X = np.array((frame_idx[1:-1],steps[:-1], t_a, wall[1:-1], data[1:-1,0], data[1:-1,1])).T 
     return X[~f3], new_area
 
 def compute_projections(fish_key, day, area_tuple):
     cam, pos = fish_key.split("_")
     is_back = pos==BACK
-    data_in_batches = csv_of_the_day(cam,day, is_back=is_back)[1]
+    keys,data_in_batches = csv_of_the_day(cam,day, is_back=is_back)
     if len(data_in_batches)==0:
         print("%s for day %s is empty! "%(fish_key,day))
         return None,None
+    daytime_DF = start_time_of_day_to_seconds(day.split("_")[1])*FRAMES_PER_SECOND
+    for k, df in zip(keys,data_in_batches):
+        df.index = df.FRAME+(int(k)*BATCH_SIZE)+daytime_DF
     data = pd.concat(data_in_batches)
-    data_px = data[["xpx", "ypx"]].to_numpy()
-    filter_index = all_error_filters(data_px, area_tuple)
-    X, new_area = transform_to_traces_high_dim(data_px, filter_index, area_tuple)
+    data_px = data[["FRAME","xpx", "ypx"]].to_numpy()
+    filter_index = all_error_filters(data_px[:,1:], area_tuple)
+    X, new_area = transform_to_traces_high_dim(data_px[:,1:],data_px[:,0], filter_index, area_tuple)
     return X, new_area
 
 def compute_all_projections(projectPath, fish_keys=None, recompute=False):
@@ -61,7 +64,9 @@ def compute_all_projections(projectPath, fish_keys=None, recompute=False):
             hdf5storage.write(data={'projections': X[:,1:4], 
                                     'positions': X[:,4:], 
                                     'area':new_area, 
-                                    'index':X[:,0]},
+                                    'df_time_index':X[:,0],
+                                    'day':day,
+                                    'fish_key':fk},
                               path='/', truncate_existing=True,
                         filename=filename,
                         store_python_metadata=False, matlab_compatible=True)
@@ -149,15 +154,22 @@ def load_summerized_data(wshedfile, parameters, fish_key="", day=""):
     clusters = get_regions_for_fish_key(wshedfile, fish_key, day=day)
     positions = np.concatenate([trj["positions"] for trj in proj_data])
     projections = np.concatenate([trj["projections"] for trj in proj_data])
+    daily_df = get_num_tracked_frames_per_day()
+    days = sorted(list(set(map(lambda d: d.split("_")[0], get_all_days_of_context()))))
+    df_time_index = np.concatenate([trj["df_time_index"].flatten()+(daily_df*days.index(trj["day"].flatten()[0].split("_")[0])) for trj in proj_data])
     area = proj_data[0]["area"]
     zVals = load_zVals(parameters, fish_key, day=day)
     X_em = np.concatenate([x["zValues"] for x in zVals])
     kmeans_clusters = []
     if "clusters" in zVals[0].keys():
         kmeans_clusters = np.concatenate([x["clusters"] for x in zVals], axis=1).flatten()
-    return dict(positions=positions, projections=projections, embeddings=X_em, clusters=clusters, kmeans_clusters=kmeans_clusters,area=area)
+    return dict(positions=positions, projections=projections, embeddings=X_em, 
+    clusters=clusters, kmeans_clusters=kmeans_clusters,area=area, df_time_index=df_time_index)
 
 def return_normalization_func(parameters):
     data = np.concatenate([d["projections"] for d in load_trajectory_data(parameters)])
     maxi = np.abs(data).max(axis=0)
     return lambda pro: pro/maxi
+
+def get_num_tracked_frames_per_day():
+    return HOURS_PER_DAY * (60**2) * FRAMES_PER_SECOND
