@@ -1,7 +1,7 @@
 import motionmapperpy as mmpy
-from src.data_factory.processing import *
+from src.data_factory.processing import compute_all_projections
+from src.data_factory.processing import return_normalization_func
 from src.utils import *
-from src.config import BLOCK, ROOT_LOCAL
 from src.utils.tank_area_config import *
 import h5py, hdf5storage, pickle, glob
 import time
