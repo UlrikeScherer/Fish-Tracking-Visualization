@@ -154,7 +154,7 @@ def load_summerized_data(wshedfile, parameters, fish_key="", day=""):
     clusters = get_regions_for_fish_key(wshedfile, fish_key, day=day)
     positions = np.concatenate([trj["positions"] for trj in proj_data])
     projections = np.concatenate([trj["projections"] for trj in proj_data])
-    daily_df = 0 #5*(60**2)*8 #get_num_tracked_frames_per_day()
+    daily_df = 5*(60**2)*8 #get_num_tracked_frames_per_day()
     days = sorted(list(set(map(lambda d: d.split("_")[0], get_all_days_of_context()))))
     df_time_index = np.concatenate([trj["df_time_index"].flatten()+(daily_df*days.index(trj["day"].flatten()[0].split("_")[0])) for trj in proj_data])
     area = proj_data[0]["area"]
@@ -168,8 +168,9 @@ def load_summerized_data(wshedfile, parameters, fish_key="", day=""):
 
 def return_normalization_func(parameters):
     data = np.concatenate([d["projections"] for d in load_trajectory_data(parameters)])
-    maxi = np.abs(data).max(axis=0)
-    return lambda pro: pro/maxi
+    #maxi = np.abs(data).max(axis=0)
+    std = data.std(axis=0)
+    return lambda pro: pro/std
 
 def get_num_tracked_frames_per_day():
     return HOURS_PER_DAY * (60**2) * FRAMES_PER_SECOND
