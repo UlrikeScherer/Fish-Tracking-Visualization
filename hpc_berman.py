@@ -35,9 +35,9 @@ def factory_main():
     
     os.makedirs(parameters.projectPath,exist_ok=True)
     mmpy.createProjectDirectory(parameters.projectPath)
-    fish_keys = get_camera_pos_keys()
+    #fish_keys = get_camera_pos_keys()
 
-    compute_all_projections(parameters.projectPath,fish_keys, recompute=False)
+    #compute_all_projections(parameters.projectPath,fish_keys, recompute=False)
     #normalize 
     parameters.normalize_func = return_normalization_func(parameters)
     print("Subsample from projections")
