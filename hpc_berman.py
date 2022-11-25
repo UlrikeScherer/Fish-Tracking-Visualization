@@ -6,9 +6,10 @@ from src.utils.tank_area_config import *
 import h5py, hdf5storage, pickle, glob
 import time
 
+
 def factory_main():
     projectRoot = 'content'
-    projectPath = '%s/Fish_moves_stw3'%projectRoot
+    projectPath = '%s/Fish_moves_new'%projectRoot
     
     parameters = mmpy.setRunParameters()
     parameters.pcaModes = 3
@@ -21,13 +22,17 @@ def factory_main():
     parameters.method="UMAP"
     parameters.useGPU=0
     parameters.training_numPoints = 5000    #% Number of points in mini-trainings.
-    parameters.trainingSetSize = 10000  #% Total number of training set points to find. 
+    parameters.trainingSetSize = 72000  #% Total number of training set points to find. 
                                  #% Increase or decrease based on
                                  #% available RAM. For reference, 36k is a 
                                  #% good number with 64GB RAM.
     parameters.embedding_batchSize = 30000  #% Lower this if you get a memory error when 
                                             #% re-embedding points on a learned map.
-    parameters.kmeans = 10
+    parameters.n_clusters = 10
+    parameters.kmeans_list = [5, 7, 10, 20, 50, 100]
+    from cuml import UMAP
+    parameters.umap_module = UMAP
+    
     os.makedirs(parameters.projectPath,exist_ok=True)
     mmpy.createProjectDirectory(parameters.projectPath)
     fish_keys = get_camera_pos_keys()
@@ -41,8 +46,9 @@ def factory_main():
     fit_data(parameters)
     print("Find Watershed...")
     startsigma = 4.2 if parameters.method == 'TSNE' else 1.0
-    mmpy.findWatershedRegions(parameters, minimum_regions=parameters.kmeans, startsigma=startsigma, pThreshold=[0.33, 0.67],
-                         saveplot=True, endident = '*_pcaModes.mat')
+
+    for k in parameters.kmeans_list:
+        mmpy.findWatershedRegions(parameters, minimum_regions=k, startsigma=startsigma, pThreshold=[0.33, 0.67], saveplot=True, endident = '*_pcaModes.mat')
     print("Done!")
     
 def fit_data(parameters):
@@ -54,6 +60,10 @@ def fit_data(parameters):
     with h5py.File(tfolder + 'training_data.mat', 'r') as hfile:
         trainingSetData = hfile['trainingSetData'][:].T
     trainingSetData[trainingSetData==0] = 1e-12 # replace 0 with 1e-12
+
+    # initialize the kmeans model on training data for different values of k
+    for k in parameters.kmeans_list:
+        mmpy.set_kmeans_model(k, tfolder, trainingSetData)
     # Loading training embedding
     with h5py.File(tfolder+ 'training_embedding.mat', 'r') as hfile:
         trainingEmbedding= hfile['trainingEmbedding'][:].T
@@ -69,7 +79,11 @@ def fit_data(parameters):
         t1 = time.time()
         print('%i/%i : %s'%(i+1,len(projectionFiles), projectionFiles[i]))
 
-
+        clusters_dict = dict([(f"clusters_{k}", mmpy.findClusters(projections, parameters, k=k)) for k in parameters.kmeans_list])
+        hdf5storage.write(data = clusters_dict, path = '/', truncate_existing = True,
+                        filename = projectionFiles[i][:-4]+'_%s.mat'% ("clusters"), store_python_metadata = False,
+                          matlab_compatible = True)
+        del clusters_dict      
         # Skip if embeddings already found.
         if os.path.exists(projectionFiles[i][:-4] +'_%s.mat'%(zValstr)):
             print('Already done. Skipping.\n')
@@ -79,12 +93,14 @@ def fit_data(parameters):
         projections = hdf5storage.loadmat(projectionFiles[i])['projections']
         print(projections.shape, trainingSetData.shape)
         # Find Embeddings
-        zValues, outputStatistics, clusters = mmpy.findEmbeddings(projections,trainingSetData,trainingEmbedding,parameters)
+        zValues, outputStatistics = mmpy.findEmbeddings(projections,trainingSetData,trainingEmbedding,parameters)
 
         # Save embeddings
-        hdf5storage.write(data = {'zValues':zValues, 'clusters':clusters}, path = '/', truncate_existing = True,
+        hdf5storage.write(data = {'zValues':zValues}, path = '/', truncate_existing = True,
                         filename = projectionFiles[i][:-4]+'_%s.mat'%(zValstr), store_python_metadata = False,
                           matlab_compatible = True)
+        
+        
 
         # Save output statistics
         with open(projectionFiles[i][:-4] + '_%s_outputStatistics.pkl'%(zValstr), 'wb') as hfile:

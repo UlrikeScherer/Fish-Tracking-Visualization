@@ -9,7 +9,7 @@ from moviepy.editor import VideoClip, VideoFileClip
 from moviepy.video.io.bindings import mplfig_to_npimage
 import motionmapperpy as mmpy
 
-from src.data_factory.plotting import get_color_map
+from .plotting import get_color_map
 from .processing import load_summerized_data, get_fish_info_from_wshed_idx, get_regions_for_fish_key
 from .utils import get_cluster_sequences
 from src.utils import get_date_string, get_seconds_from_day, get_camera_pos_keys, get_all_days_of_context
@@ -62,7 +62,7 @@ def motion_video(wshedfile, parameters,fish_key, day, start=0, end=None, save=Fa
     anim = VideoClip(animate, duration=20) # will throw memory error for more than 100.
     plt.close()
     if save:
-        dir_v = f'{parameters.projectPath}/{VIDEOS_DIR}'
+        dir_v = f'{parameters.projectPath}/{VIDEOS_DIR}/{parameters.kmeans}_clusters'
         if not os.path.exists(dir_v):
             os.mkdir(dir_v)
         anim.write_videofile(f'{dir_v}/{filename}{fish_key}_{day}.mp4', fps=10, audio=False, threads=1)
@@ -95,12 +95,11 @@ def cluster_motion_axes(wshedfile, parameters,fish_key, day, start=0, ax=None, s
         
     return update_line
 
-def cluster_motion_video(wshedfile, parameters, cluster_id, rows=2, cols=2):
-    clusters = get_regions_for_fish_key(wshedfile)
+def cluster_motion_video(wshedfile, parameters, clusters, cluster_id, rows=2, cols=2, th=0.5):
     lens = wshedfile['zValLens'].flatten()
     cumsum_lens = lens.cumsum()[:-1]
     clusters[cumsum_lens]=-1 # indicate the end of the day
-    results = get_cluster_sequences(clusters, [cluster_id], sw=2*60*5, th=0.8)
+    results = get_cluster_sequences(clusters, [cluster_id], sw=2*60*5, th=th)
     sequences_of_cid = []
     for s,e,score in results[cluster_id]:
         try: 
@@ -122,7 +121,7 @@ def cluster_motion_video(wshedfile, parameters, cluster_id, rows=2, cols=2):
     
     anim = VideoClip(animate, duration=30) # will throw memory error for more than 100.
     plt.close()
-    dir_v = f'{parameters.projectPath}/{VIDEOS_DIR}'
+    dir_v = f'{parameters.projectPath}/{VIDEOS_DIR}/{parameters.kmeans}_clusters'
     if not os.path.exists(dir_v):
         os.mkdir(dir_v)
     anim.write_videofile(f'{dir_v}/cluster_{str(cluster_id)}.mp4', fps=10, audio=False, threads=4)
