@@ -10,7 +10,7 @@ from .processing import get_regions_for_fish_key, load_zVals_concat, load_trajec
 
 DIR_PLASTCITY = "plasticity"
 
-def cluster_entropy_plot(parameters, wshedfile, fish_keys, n_clusters, name="cluster_entropy_for_days",
+def cluster_entropy_plot(parameters, get_clusters_func, fish_keys, n_clusters, name="cluster_entropy_for_days",
                                  by_the_hour=False, kmean_clusters=False):
     fig = plt.figure(figsize=(10,5))
     ax = fig.subplots()
@@ -23,7 +23,7 @@ def cluster_entropy_plot(parameters, wshedfile, fish_keys, n_clusters, name="clu
             if kmean_clusters:
                 clusters = load_zVals_concat(parameters, fk,d)["kmeans_clusters"]
             else:
-                clusters = get_regions_for_fish_key(wshedfile,fk,d)
+                clusters = get_clusters_func(fk,d)# get_regions_for_fish_key(wshedfile,fk,d)
             if clusters is not None:
                 if by_the_hour:
                     time_df = load_trajectory_data_concat(parameters, fk, d)["df_time_index"]

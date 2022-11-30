@@ -15,24 +15,6 @@ def runs_of_ones_array(bits):
     run_ends, = np.where(difs < 0)
     return run_ends - run_starts, run_starts, run_ends
 
-# slow function 
-""" 
-def find_cluster_seqences(clusters, cluster_ids=range(1,6), sw=5*60*5, th=0.9):
-    couter = dict(zip(cluster_ids, [sum(clusters[:sw]==cid) for cid in cluster_ids]))
-    record = dict()
-    i = sw
-    while i < clusters.shape[0]:
-        couter[clusters[i]] += 1
-        couter[clusters[i-sw]] -= 1
-        if couter[clusters[i]]/sw > th:
-            record[(i-sw,i)]=clusters[i]
-            couter = dict(zip(cluster_ids, [sum(clusters[i:i+sw]==cid) for cid in cluster_ids]))
-            i+=sw
-        else:
-            i+=1
-    return record
-"""
-
 def combine_ones_and_zeros(ones, zeros, th, size):
     block = 0
     hits = 0
@@ -78,11 +60,12 @@ def create_subset_data(k=25):
         os.makedirs(dist ,exist_ok=True)
         shutil.copy(file, dist)
 
-def get_individuals_keys(parameters):
-    files = glob.glob(parameters.projectPath+"/Projections/*_pcaModes.mat")
+def get_individuals_keys(parameters, block=""):
+    files = glob.glob(parameters.projectPath+f"/Projections/{block}*_pcaModes.mat")
     return sorted(list(set(map(lambda f: "_".join(f.split("/")[-1].split("_")[:3]),files))))
-def get_days(parameters):
-    files = glob.glob(parameters.projectPath+"/Projections/*_pcaModes.mat")
-    return sorted(list(set(map(lambda f: f.split("/")[-1].split("_")[3],files))))
+
+def get_days(parameters, prefix=""):
+    files = glob.glob(parameters.projectPath+f"/Projections/{prefix}*_pcaModes.mat")
+    return sorted(list(set(map(lambda f: "_".join(f.split("/")[-1].split("_")[3:5]),files))))
 
 

@@ -2,6 +2,7 @@ import os, glob
 import time
 import pandas as pd
 import multiprocessing as mp
+from .utils import get_days
 from src.methods import turning_directions, distance_to_wall_chunk, calc_steps
 from src.utils.tank_area_config import get_area_functions
 from src.utils.error_filter import all_error_filters
@@ -17,6 +18,7 @@ from src.utils import csv_of_the_day
 from src.utils.utile import get_all_days_of_context, get_camera_pos_keys, get_days_in_order, start_time_of_day_to_seconds
 
 WAVELET = 'wavelet'
+clusterStr = 'clusters'
 
 def transform_to_traces_high_dim(data,frame_idx, filter_index, area_tuple):
     L = data.shape[0]
@@ -81,40 +83,9 @@ def compute_all_projections(projectPath, fish_keys=None, recompute=False):
         pool.join()
         print('\t Processed fish #%4i %s out of %4i in %0.02fseconds.\n'%(i+1, fk, len(fish_keys), time.time()-t1))
 
-def subsample_train_dataset(parameters, fish_keys=None):
-    area_f = get_area_functions()
-    train_list = []
-    if fish_keys is None:
-        fish_keys = get_camera_pos_keys()
-    for fk in fish_keys:
-        days = get_days_in_order(camera=fk.split("_")[0], is_back=fk.split("_")[1]==BACK)
-        for day in days:
-            area_tuple = (fk, area_f(fk,day))
-            X = compute_projections(fk, day, area_tuple, write_file=True)
-            print(f"{fk} {fish_keys.index(fk)} {day} {days.index(day)} {X.shape}", flush=True)
-            wlets, _ = mm_findWavelets(X[:,1:], parameters.pcaModes, parameters)
-            select = np.random.choice(wlets.shape[0], parameters.training_points_of_day, replace=False)
-            train_list.append((fk, day, wlets[select]))
-    return train_list
-
-def subsample_wavelet_and_embeddings(parameters, fish_keys=None):
-    training_data_file = f"{parameters.projectPath}/{parameters.method}/{BLOCK}_{WAVELET}_"
-    if not os.path.exists(training_data_file):
-        train_list = subsample_train_dataset(parameters, fish_keys)
-        trainingSetData = np.concatenate([w[2] for w in train_list])
-        if parameters.method == "TSNE":
-            X_em = mmpy.run_tSne(trainingSetData, parameters)
-        elif parameters.method == "UMAP":
-            X_em = mmpy.run_UMAP(trainingSetData, parameters)
-        else:
-            raise NotImplementedError("use TSNE or UMAP")
-        hdf5storage.write(data={'trainingSetData': trainingSetData}, path='/', truncate_existing=True,
-                          filename=training_data_file + 'training_data.mat', store_python_metadata=False,
-                          matlab_compatible=True)
-
 def load_trajectory_data(parameters,fk="", day=""):
     data_by_day = []
-    pfile = glob.glob(parameters.projectPath+f'/Projections/{BLOCK}_{fk}*_{day}*_pcaModes.mat')
+    pfile = glob.glob(parameters.projectPath+f'/Projections/{fk}*_{day}*_pcaModes.mat')
     pfile.sort()
     for f in pfile: 
         data = hdf5storage.loadmat(f)
@@ -128,7 +99,7 @@ def load_trajectory_data_concat(parameters,fk="", day=""):
     daily_df = 5*(60**2)*8 #get_num_tracked_frames_per_day()
     positions = np.concatenate([trj["positions"] for trj in data_by_day])
     projections = np.concatenate([trj["projections"] for trj in data_by_day])
-    days = sorted(list(set(map(lambda d: d.split("_")[0], get_all_days_of_context()))))
+    days = sorted(list(set(map(lambda d: d.split("_")[0], get_days(parameters, prefix=fk.split("_")[0] if fk else "")))))
     df_time_index = np.concatenate([trj["df_time_index"].flatten()+(daily_df*days.index(trj["day"].flatten()[0].split("_")[0])) for trj in data_by_day])
     area = data_by_day[0]["area"]
     return dict(positions=positions, projections=projections, df_time_index=df_time_index, area=area)
@@ -136,7 +107,7 @@ def load_trajectory_data_concat(parameters,fk="", day=""):
 def load_zVals(parameters,fk="", day=""):
     data_by_day = []
     zValstr = get_zValues_str(parameters)
-    pfile = glob.glob(parameters.projectPath+f'/Projections/{BLOCK}_{fk}*_{day}*_pcaModes_{zValstr}.mat')
+    pfile = glob.glob(parameters.projectPath+f'/Projections/{fk}*_{day}*_pcaModes_{zValstr}.mat')
     pfile.sort()
     for f in pfile: 
         data = hdf5storage.loadmat(f)
@@ -145,13 +116,27 @@ def load_zVals(parameters,fk="", day=""):
 
 def load_zVals_concat(parameters,fk="", day=""):
     zVals_by_day = load_zVals(parameters,fk, day)
-    kmeans_clusters, embeddings = None,None
+    embeddings = None
     if len(zVals_by_day)==0:
-        return dict(embeddings=embeddings, kmeans_clusters=kmeans_clusters)
+        return dict(embeddings=embeddings)
     embeddings = np.concatenate([x["zValues"] for x in zVals_by_day])
-    if "clusters" in zVals_by_day[0].keys():
-        kmeans_clusters = np.concatenate([x["clusters"] for x in zVals_by_day], axis=1).flatten()
-    return dict(embeddings=embeddings, kmeans_clusters=kmeans_clusters)
+    return dict(embeddings=embeddings)
+
+def load_clusters(parameters,fk="", day=""):
+    data_by_day = []
+    pfile = glob.glob(parameters.projectPath+f'/Projections/{fk}*_{day}*_pcaModes_{clusterStr}.mat')
+    pfile.sort()
+    for f in pfile: 
+        data = hdf5storage.loadmat(f)
+        data_by_day.append(data)
+    return data_by_day
+
+def load_clusters_concat(parameters,fk="", day=""):
+    clusters_by_day = load_clusters(parameters,fk, day)
+    if len(clusters_by_day)==0:
+        return None
+    clusters = {key: np.concatenate([x[key] for x in clusters_by_day], axis=1).flatten() for key in clusters_by_day[0].keys()}
+    return clusters
 
 def get_zValues_str(parameters):
     if parameters.method == 'TSNE':
