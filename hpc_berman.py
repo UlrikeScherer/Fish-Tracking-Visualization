@@ -36,7 +36,6 @@ def factory_main():
     os.makedirs(parameters.projectPath,exist_ok=True)
     mmpy.createProjectDirectory(parameters.projectPath)
     #fish_keys = get_camera_pos_keys()
-
     #compute_all_projections(parameters.projectPath,fish_keys, recompute=False)
     #normalize 
     parameters.normalize_func = return_normalization_func(parameters)
@@ -79,7 +78,11 @@ def fit_data(parameters):
         t1 = time.time()
         print('%i/%i : %s'%(i+1,len(projectionFiles), projectionFiles[i]))
 
-        clusters_dict = dict([(f"clusters_{k}", mmpy.findClusters(projections, parameters, k=k)) for k in parameters.kmeans_list])
+        # load projections for a dataset
+        projections = hdf5storage.loadmat(projectionFiles[i])['projections']
+        print(projections.shape, trainingSetData.shape)
+
+        clusters_dict = mmpy.findClusters(projections, parameters)
         hdf5storage.write(data = clusters_dict, path = '/', truncate_existing = True,
                         filename = projectionFiles[i][:-4]+'_%s.mat'% ("clusters"), store_python_metadata = False,
                           matlab_compatible = True)
@@ -89,9 +92,6 @@ def fit_data(parameters):
             print('Already done. Skipping.\n')
             continue
 
-        # load projections for a dataset
-        projections = hdf5storage.loadmat(projectionFiles[i])['projections']
-        print(projections.shape, trainingSetData.shape)
         # Find Embeddings
         zValues, outputStatistics = mmpy.findEmbeddings(projections,trainingSetData,trainingEmbedding,parameters)
 
