@@ -1,5 +1,7 @@
 import os, glob
+import time
 import pandas as pd
+import multiprocessing as mp
 from src.methods import turning_directions, distance_to_wall_chunk, calc_steps
 from src.utils.tank_area_config import get_area_functions
 from src.utils.error_filter import all_error_filters
@@ -44,33 +46,40 @@ def compute_projections(fish_key, day, area_tuple):
     X, new_area = transform_to_traces_high_dim(data_px,data.index, filter_index, area_tuple)
     return X, new_area
 
+def compute_and_write_projection(fk, day, area_tuple, filename, recompute=False):
+    if not recompute and os.path.exists(filename):
+        return None
+    X, new_area = compute_projections(fk, day, area_tuple)
+    if X is None: return None
+    print(f"{fk} {day} {X.shape}")
+    if X.shape[0]<1000:
+        print("Skipe number of datapoints to small")
+        return None
+    hdf5storage.write(data={'projections': X[:,1:4], 
+                            'positions': X[:,4:], 
+                            'area':new_area, 
+                            'df_time_index':X[:,0],
+                            'day':day,
+                            'fish_key':fk},
+                        path='/', truncate_existing=True,
+                filename=filename,
+                store_python_metadata=False, matlab_compatible=True)
+    return None
+
 def compute_all_projections(projectPath, fish_keys=None, recompute=False):
     area_f = get_area_functions()
     if fish_keys is None:
         fish_keys = get_camera_pos_keys()
-    for fk in fish_keys:
+    numProcessors = mp.cpu_count()
+    for i, fk in enumerate(fish_keys):
+        t1 = time.time()
+        pool = mp.Pool(numProcessors)
         days = get_days_in_order(camera=fk.split("_")[0], is_back=fk.split("_")[1]==BACK)
-        for day in days:
-            filename = projectPath + f'/Projections/{BLOCK}_{fk}_{day}_pcaModes.mat'
-            if not recompute and os.path.exists(filename):
-                continue
-            area_tuple = (fk, area_f(fk,day))
-            X, new_area = compute_projections(fk, day, area_tuple)
-            if X is None: continue
-            print(f"{fk} {fish_keys.index(fk)} {day} {days.index(day)} {X.shape}", flush=True)
-            if X.shape[0]<1000:
-                print("Skipe number of datapoints to small")
-                continue
-            hdf5storage.write(data={'projections': X[:,1:4], 
-                                    'positions': X[:,4:], 
-                                    'area':new_area, 
-                                    'df_time_index':X[:,0],
-                                    'day':day,
-                                    'fish_key':fk},
-                              path='/', truncate_existing=True,
-                        filename=filename,
-                        store_python_metadata=False, matlab_compatible=True)
-            
+        outs = pool.starmap(compute_and_write_projection, 
+                [(fk, day, (fk, area_f(fk,day)), projectPath + f'/Projections/{BLOCK}_{fk}_{day}_pcaModes.mat', recompute) for day in days])
+        pool.close()
+        pool.join()
+        print('\t Processed fish #%4i %s out of %4i in %0.02fseconds.\n'%(i+1, fk, len(fish_keys), time.time()-t1))
 
 def subsample_train_dataset(parameters, fish_keys=None):
     area_f = get_area_functions()
@@ -112,6 +121,18 @@ def load_trajectory_data(parameters,fk="", day=""):
         data_by_day.append(data)
     return data_by_day
 
+def load_trajectory_data_concat(parameters,fk="", day=""):
+    data_by_day = load_trajectory_data(parameters,fk, day)
+    if len(data_by_day)==0:
+        return None
+    daily_df = 5*(60**2)*8 #get_num_tracked_frames_per_day()
+    positions = np.concatenate([trj["positions"] for trj in data_by_day])
+    projections = np.concatenate([trj["projections"] for trj in data_by_day])
+    days = sorted(list(set(map(lambda d: d.split("_")[0], get_all_days_of_context()))))
+    df_time_index = np.concatenate([trj["df_time_index"].flatten()+(daily_df*days.index(trj["day"].flatten()[0].split("_")[0])) for trj in data_by_day])
+    area = data_by_day[0]["area"]
+    return dict(positions=positions, projections=projections, df_time_index=df_time_index, area=area)
+
 def load_zVals(parameters,fk="", day=""):
     data_by_day = []
     zValstr = get_zValues_str(parameters)
@@ -121,6 +142,16 @@ def load_zVals(parameters,fk="", day=""):
         data = hdf5storage.loadmat(f)
         data_by_day.append(data)
     return data_by_day
+
+def load_zVals_concat(parameters,fk="", day=""):
+    zVals_by_day = load_zVals(parameters,fk, day)
+    kmeans_clusters, embeddings = None,None
+    if len(zVals_by_day)==0:
+        return dict(embeddings=embeddings, kmeans_clusters=kmeans_clusters)
+    embeddings = np.concatenate([x["zValues"] for x in zVals_by_day])
+    if "clusters" in zVals_by_day[0].keys():
+        kmeans_clusters = np.concatenate([x["clusters"] for x in zVals_by_day], axis=1).flatten()
+    return dict(embeddings=embeddings, kmeans_clusters=kmeans_clusters)
 
 def get_zValues_str(parameters):
     if parameters.method == 'TSNE':
@@ -148,23 +179,14 @@ def get_fish_info_from_wshed_idx(wshedfile, idx_s, idx_e):
         raise ValueError("%s,%s < %s are not from the same day"%(idx_s, idx_e, cumsum_lens[hit_idx]))
     file_name = wshedfile['zValNames'].flatten()[hit_idx].flatten()[0].split("_")
     return "_".join(file_name[1:3]), file_name[3], idx_s-cumsum_lens[hit_idx]+lens[hit_idx], idx_e-cumsum_lens[hit_idx]+lens[hit_idx]
-    
+  
 def load_summerized_data(wshedfile, parameters, fish_key="", day=""):
-    proj_data = load_trajectory_data(parameters, fish_key, day=day)
+    data_dict = load_trajectory_data_concat(parameters, fish_key, day=day)
     clusters = get_regions_for_fish_key(wshedfile, fish_key, day=day)
-    positions = np.concatenate([trj["positions"] for trj in proj_data])
-    projections = np.concatenate([trj["projections"] for trj in proj_data])
-    daily_df = 5*(60**2)*8 #get_num_tracked_frames_per_day()
-    days = sorted(list(set(map(lambda d: d.split("_")[0], get_all_days_of_context()))))
-    df_time_index = np.concatenate([trj["df_time_index"].flatten()+(daily_df*days.index(trj["day"].flatten()[0].split("_")[0])) for trj in proj_data])
-    area = proj_data[0]["area"]
-    zVals = load_zVals(parameters, fish_key, day=day)
-    X_em = np.concatenate([x["zValues"] for x in zVals])
-    kmeans_clusters = []
-    if "clusters" in zVals[0].keys():
-        kmeans_clusters = np.concatenate([x["clusters"] for x in zVals], axis=1).flatten()
-    return dict(positions=positions, projections=projections, embeddings=X_em, 
-    clusters=clusters, kmeans_clusters=kmeans_clusters,area=area, df_time_index=df_time_index)
+    zVals_dict = load_zVals_concat(parameters, fish_key, day=day)
+    data_dict.update(dict(clusters=clusters))
+    data_dict.update(zVals_dict)
+    return data_dict
 
 def return_normalization_func(parameters):
     data = np.concatenate([d["projections"] for d in load_trajectory_data(parameters)])
@@ -174,3 +196,14 @@ def return_normalization_func(parameters):
 
 def get_num_tracked_frames_per_day():
     return HOURS_PER_DAY * (60**2) * FRAMES_PER_SECOND
+
+def rename_clusters(clusters, rating_feature):
+    n_clusters = clusters.max()
+    avg_feature = np.zeros(n_clusters)
+    for i in range(n_clusters):
+        avg_feature[i] = np.mean(rating_feature[clusters == i])
+    index_map = np.argsort(avg_feature)
+    renamed_clusters = np.empty(clusters.shape, dtype=int)
+    for i, j in enumerate(index_map):
+        renamed_clusters[clusters == j] = i
+    return renamed_clusters

@@ -1,3 +1,4 @@
+import glob
 import math
 import numpy as np
 from src.config import DIR_CSV_LOCAL, DIR_CSV_LOCAL
@@ -68,7 +69,7 @@ def get_cluster_sequences(clusters, cluster_ids=range(1,6), sw=6*60*5, th=0.6):
     return records
 
 def create_subset_data(k=25):
-    import glob, random, shutil
+    import glob, random, shutil, os
     list_of_files = random.choices(glob.glob(f"{DIR_CSV_LOCAL}/{DIR_CSV_LOCAL}/*/*/*/*.csv"), k=k)
 
     for file in list_of_files:
@@ -76,5 +77,12 @@ def create_subset_data(k=25):
         dist = "/".join(dist.split("/")[:-1])
         os.makedirs(dist ,exist_ok=True)
         shutil.copy(file, dist)
+
+def get_individuals_keys(parameters):
+    files = glob.glob(parameters.projectPath+"/Projections/*_pcaModes.mat")
+    return sorted(list(set(map(lambda f: "_".join(f.split("/")[-1].split("_")[:3]),files))))
+def get_days(parameters):
+    files = glob.glob(parameters.projectPath+"/Projections/*_pcaModes.mat")
+    return sorted(list(set(map(lambda f: f.split("/")[-1].split("_")[3],files))))
 
 

@@ -7,7 +7,6 @@ from time import gmtime, strftime
 import motionmapperpy as mmpy
 from src.clustering.clustering import get_results_filepath, boxplot_characteristics_of_cluster
 from src.config import BLOCK, VIS_DIR
-from symbol import parameters
 from .processing import get_regions_for_fish_key
 from .utils import pointsInCircum
 from src.clustering.transitions_cluster import transition_rates, draw_transition_graph
@@ -90,32 +89,34 @@ def ethnogram_of_clusters(parameters, clusters, start_time=0, end_time=8*(60**2)
     return fig
 
 
-def cluster_density_umap(embeddings, clusters, filename=None):
+def cluster_density_umap(embeddings, clusters, filename=None,n_select=10000):
     m = np.abs(embeddings).max()
+    cmap= get_color_map(clusters.max())
     sigma=2.0
     off_set = 10
     _, xx, density = mmpy.findPointDensity(embeddings, sigma, 511, [-m-off_set, m+off_set])
-    subset = sample(range(embeddings.shape[0]), min(5000,embeddings.shape[0]))
+    subset = sample(range(embeddings.shape[0]), min(n_select,embeddings.shape[0]))
     fig, axes = plt.subplots(1, 2, figsize=(12,6))
-    sc = axes[0].scatter(embeddings[subset][:,0], embeddings[subset][:,1], marker='.', c=clusters[subset], s=0.2)
+    sc = axes[0].scatter(embeddings[subset][:,0], embeddings[subset][:,1], marker='.', c=cmap(clusters[subset]), s=0.2)
     axes[0].set_xlim([-m-off_set, m+off_set])
     axes[0].set_ylim([-m-off_set, m+off_set])
+    
     for i in np.unique(clusters):
             fontsize = 8
             X_i = embeddings[clusters == i]
-            axes[0].text(*np.mean(X_i,axis=0), str(i), fontsize=fontsize, fontweight='bold')
+            axes[0].text(*np.mean(X_i,axis=0), str(i), fontsize=fontsize, fontweight='bold', backgroundcolor=cmap(i))
             
     #fig.colorbar(sc)
-    axes[0].axis('off')
-    axes[1].axis('off')
+    for ax in axes:
+        ax.axis('off')
+
     axes[1].imshow(density, cmap=mmpy.gencmap(), extent=(xx[0], xx[-1], xx[0], xx[-1]), origin='lower')
     if filename:
         fig.tight_layout()
         fig.savefig(filename, bbox_inches='tight')
     return fig
 
-def plot_transition_reates(wshedfile, filename, cluster_remap=[(0,1)]):
-    clusters = get_regions_for_fish_key(wshedfile)#sum_data["kmeans_clusters"].flatten()+1
+def plot_transition_rates(clusters, filename, cluster_remap=[(0,1)]):
     if cluster_remap:
         for c1,c2 in cluster_remap:
             clusters[np.where(clusters==c1)]=c2
