@@ -85,9 +85,8 @@ def fit_data(parameters):
         clusters_dict = mmpy.findClusters(projections, parameters)
         for key, value in clusters_dict.items():
             hdf5storage.write(data = {"clusters":value, "k":int(key.split("_")[1])}, path = '/', truncate_existing = True,
-                        filename = projectionFiles[i][:-4]+'_%s.mat'% (key), store_python_metadata = False,
-                          matlab_compatible = True)
-        del clusters_dict      
+                        filename = projectionFiles[i][:-4]+'_%s.mat'% (key), store_python_metadata = False, matlab_compatible = True)
+        #del clusters_dict      
         # Skip if embeddings already found.
         if os.path.exists(projectionFiles[i][:-4] +'_%s.mat'%(zValstr)):
             print('Already done. Skipping.\n')

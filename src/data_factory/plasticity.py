@@ -1,5 +1,6 @@
 
 import os
+import pandas as pd
 from scipy.stats import entropy as entropy_m
 from scipy.stats import pearsonr
 import numpy as np
@@ -10,41 +11,34 @@ from .processing import get_regions_for_fish_key, load_zVals_concat, load_trajec
 
 DIR_PLASTCITY = "plasticity"
 
-def cluster_entropy_plot(parameters, get_clusters_func, fish_keys, n_clusters, name="cluster_entropy_for_days",
-                                 by_the_hour=False, kmean_clusters=False):
+def cluster_entropy_plot(parameters, get_clusters_func, fish_keys, n_clusters, name="cluster_entropy_for_days", by_the_hour=False):
     fig = plt.figure(figsize=(10,5))
     ax = fig.subplots()
     days = get_all_days_of_context()
     colors_map = plt.cm.get_cmap(lut=len(fish_keys))
-    all_vals = list()
+    all_vals_df = df.DataFrame(columns=fish_keys, index=len(days)*HOURS_PER_DAY if by_the_hour else days)
     for j,fk in enumerate(fish_keys):
-        ent_vals = list()
         for i,d in enumerate(days):
-            if kmean_clusters:
-                clusters = load_zVals_concat(parameters, fk,d)["kmeans_clusters"]
-            else:
-                clusters = get_clusters_func(fk,d)# get_regions_for_fish_key(wshedfile,fk,d)
+            clusters = get_clusters_func(fk,d)# get_regions_for_fish_key(wshedfile,fk,d)
             if clusters is not None:
                 if by_the_hour:
                     time_df = load_trajectory_data_concat(parameters, fk, d)["df_time_index"]
                     time_df=time_df-time_df[0]
                     idx_s = 0
-                    for h in range(1,HOURS_PER_DAY):
+                    for h in range(1,HOURS_PER_DAY+1):
                         where_hour_ends = np.where(time_df >= (h*5*(60**2)))[0]
-                        if len(where_hour_ends)==0:
-                            print(h, time_df.shape,fk, d, (h*5*(60**2)))
+                        if HOURS_PER_DAY!=h and len(where_hour_ends)==0:
+                            print(h,"is not recorded", time_df.shape,fk, d, (h*5*(60**2)))
                             break
-                        idx_e = where_hour_ends[0]
+                        if HOURS_PER_DAY ==h:idx_e = len(clusters)
+                        else: idx_e = where_hour_ends[0]
                         dist = compute_cluster_distribution(clusters[idx_s:idx_e],n_clusters)
-                        ent_vals.append((i*HOURS_PER_DAY+h,entropy_m(dist)))
+                        all_vals_df.loc[(i+1)*HOURS_PER_DAY,fk] = entropy_m(dist)
                         idx_s=idx_e
-                    dist = compute_cluster_distribution(clusters[idx_s:],n_clusters)
-                    ent_vals.append(((i+1)*HOURS_PER_DAY,entropy_m(dist)))
                 else:
                     dist = compute_cluster_distribution(clusters,n_clusters)
-                    ent_vals.append((i,entropy_m(dist)))
-        ax.scatter(*zip(*ent_vals), color=colors_map(j))
-        all_vals.extend(ent_vals)
+                    all_vals_df.loc[i,fk]= entropy_m(dist)
+            all_vals_df.plot(kind="scatter",x="index", y=fk,color=colors_map(j))
     a,c = np.polyfit(*zip(*all_vals), 1)
     time = np.arange(len(days)*(HOURS_PER_DAY if by_the_hour else 1))
     corrcof = pearsonr(*zip(*all_vals))
