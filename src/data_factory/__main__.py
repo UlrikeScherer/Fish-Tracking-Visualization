@@ -45,5 +45,5 @@ def for_all_cluster_entrophy(parameters, fish_ids):
 
 if __name__ == "__main__":
     parameters = set_parameters()
-    for_all_cluster_entrophy(parameters, get_individuals_keys(parameters)[:2])
+    for_all_cluster_entrophy(parameters, get_individuals_keys(parameters))
     #main_factory(parameters)
