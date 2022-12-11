@@ -2,6 +2,7 @@ import glob
 import math
 import numpy as np
 from src.config import DIR_CSV_LOCAL, DIR_CSV_LOCAL
+import motionmapperpy as mmpy
 
 def pointsInCircum(r,n=100):
     return [(math.cos(2*math.pi/n*x)*r,math.sin(2*math.pi/n*x)*r) for x in range(0,n+1)]
@@ -68,4 +69,16 @@ def get_days(parameters, prefix=""):
     files = glob.glob(parameters.projectPath+f"/Projections/{prefix}*_pcaModes.mat")
     return sorted(list(set(map(lambda f: "_".join(f.split("/")[-1].split("_")[3:5]),files))))
 
-
+def set_parameters(parameters=None):
+    parameters = mmpy.setRunParameters(parameters)
+    parameters.pcaModes = 3
+    parameters.samplingFreq = 5
+    parameters.maxF = 2.5
+    parameters.minF = 0.01
+    parameters.omega0 = 5
+    parameters.numProcessors = 16
+    parameters.method="UMAP"
+    parameters.kmeans = 10
+    parameters.kmeans_list = [5, 7, 10, 20, 50, 100]
+    parameters.projectPath = f"/Volumes/Extreme_SSD/content/Fish_moves_new"
+    return parameters

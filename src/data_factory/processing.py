@@ -99,8 +99,8 @@ def load_trajectory_data_concat(parameters,fk="", day=""):
     daily_df = 5*(60**2)*8 #get_num_tracked_frames_per_day()
     positions = np.concatenate([trj["positions"] for trj in data_by_day])
     projections = np.concatenate([trj["projections"] for trj in data_by_day])
-    days = sorted(list(set(map(lambda d: d.split("_")[0], get_days(parameters, prefix=fk.split("_")[0] if fk else "")))))
-    df_time_index = np.concatenate([trj["df_time_index"].flatten()+(daily_df*days.index(trj["day"].flatten()[0].split("_")[0])) for trj in data_by_day])
+    days = sorted(list(set(map(lambda d: d.split("_")[0], get_days(parameters, prefix=fk.split("_")[0])))))
+    df_time_index = np.concatenate([trj["df_time_index"].flatten()+(daily_df*days.index(trj["day"].flatten()[0].split("_")[0])) for trj in data_by_day]) # 6h plus in the beginning ? TODO
     area = data_by_day[0]["area"]
     return dict(positions=positions, projections=projections, df_time_index=df_time_index, area=area)
 
@@ -122,20 +122,22 @@ def load_zVals_concat(parameters,fk="", day=""):
     embeddings = np.concatenate([x["zValues"] for x in zVals_by_day])
     return dict(embeddings=embeddings)
 
-def load_clusters(parameters,fk="", day=""):
+def load_clusters(parameters,fk="", day="", k=None):
+    if k is None:
+        k = parameters.kmeans
     data_by_day = []
-    pfile = glob.glob(parameters.projectPath+f'/Projections/{fk}*_{day}*_pcaModes_{clusterStr}.mat')
+    pfile = glob.glob(parameters.projectPath+f'/Projections/{fk}*_{day}*_pcaModes_{clusterStr}_{k}.mat')
     pfile.sort()
     for f in pfile: 
         data = hdf5storage.loadmat(f)
         data_by_day.append(data)
     return data_by_day
 
-def load_clusters_concat(parameters,fk="", day=""):
-    clusters_by_day = load_clusters(parameters,fk, day)
+def load_clusters_concat(parameters,fk="", day="", k=None):
+    clusters_by_day = load_clusters(parameters,fk, day, k)
     if len(clusters_by_day)==0:
         return None
-    clusters = {key: np.concatenate([x[key] for x in clusters_by_day], axis=1).flatten() for key in clusters_by_day[0].keys()}
+    clusters = np.concatenate([x["clusters"] for x in clusters_by_day], axis=1).flatten()
     return clusters
 
 def get_zValues_str(parameters):

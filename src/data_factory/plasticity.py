@@ -5,21 +5,74 @@ from scipy.stats import entropy as entropy_m
 from scipy.stats import pearsonr
 import numpy as np
 import matplotlib.pyplot as plt
-from src.config import HOURS_PER_DAY
+from src.config import BLOCK1, BLOCK2, HOURS_PER_DAY
+from .utils import get_days
 from src.utils.utile import get_all_days_of_context
 from .processing import get_regions_for_fish_key, load_zVals_concat, load_trajectory_data_concat
 
 DIR_PLASTCITY = "plasticity"
 
-def cluster_entropy_plot(parameters, get_clusters_func, fish_keys, n_clusters, name="cluster_entropy_for_days", by_the_hour=False):
-    fig = plt.figure(figsize=(10,5))
-    ax = fig.subplots()
-    days = get_all_days_of_context()
-    colors_map = plt.cm.get_cmap(lut=len(fish_keys))
-    all_vals_df = df.DataFrame(columns=fish_keys, index=len(days)*HOURS_PER_DAY if by_the_hour else days)
+def correlation_fit(x,y,deg=1):
+    if x.shape[0] < deg:
+        return [], [], np.nan, [np.nan for i in range(deg+1)]
+    abc = np.polyfit(x,y, deg)
+    corrcof = pearsonr(x,y)
+    time = np.linspace(x.min(),x.max(),100)
+    fit_y = np.polyval(abc,time)
+    return time, fit_y, corrcof[0], abc
+
+def plot_index_columns(df=None, columns=None, title=None, xlabel="index", ylabel="entropy", filename=None, ax=None, forall=True, fit_degree=1):
+    if df is None:
+        if filename is None:
+            raise ValueError("filename must be provided if df is not provided")
+        df = pd.read_csv(filename+".csv")
+    if ax is None:
+        fig = plt.figure(figsize=(10,5))
+        axis = fig.subplots()
+    else:
+        axis = ax
+
+    colors_map = plt.cm.get_cmap(lut=len(columns))
+    df = df[columns]
+    leg_h = []
+    for i,col in enumerate(columns):
+        time = df.index.to_numpy()
+        y = df[col].to_numpy().astype(np.float64)
+        #print(y, col)
+        f_nan = ~ np.isnan(y)
+        x,y=time[f_nan],y[f_nan]
+        axis.scatter(x=x,y=y,color=colors_map(i))
+        if not forall: 
+            t,f_y, corr, abc = correlation_fit(x,y,deg=fit_degree)
+            line, = axis.plot(t, f_y, "-", color=colors_map(i))
+            leg_h.append((line,"%s - pearsonr: %0.3f"%(col[13:17], corr)))
+
+    if forall:
+        x = np.column_stack((df.index.to_numpy() for i in range(len(columns)))).reshape(-1).astype(np.int)
+        y = df.to_numpy().reshape(-1).astype(np.float64)
+        is_not_nan = ~ np.isnan(y)
+        x,y = x[is_not_nan],y[is_not_nan]
+        t,f_y, corr, abc = correlation_fit(x,y,deg=fit_degree)
+        line, = axis.plot(t, f_y, "-", color="k", markersize=12)
+        leg_h.append((line,"pearsonr: %0.3f"%(corr)))
+    axis.legend(*zip(*leg_h), loc="best")
+    axis.set_title(title)
+    axis.set_ylabel(ylabel)
+    axis.set_xlabel(xlabel)
+
+    if ax is not None:
+        return None
+    fig.tight_layout()
+    if filename is not None:
+        fig.savefig(filename+".png")
+    return fig
+
+def cluster_entropy_plot(parameters, get_clusters_func, fish_keys, n_clusters, name="cluster_entropy_for_days", by_the_hour=False, fit_degree=1, forall=True):
+    days = get_days(parameters,prefix=fish_keys[0].split("_")[0])
+    all_vals_df = pd.DataFrame(columns=fish_keys, index=range(1,1+(len(days)*HOURS_PER_DAY if by_the_hour else len(days))))
     for j,fk in enumerate(fish_keys):
-        for i,d in enumerate(days):
-            clusters = get_clusters_func(fk,d)# get_regions_for_fish_key(wshedfile,fk,d)
+        for i,d in enumerate(get_days(parameters=parameters, prefix=fk)):
+            clusters = get_clusters_func(fk,d)
             if clusters is not None:
                 if by_the_hour:
                     time_df = load_trajectory_data_concat(parameters, fk, d)["df_time_index"]
@@ -30,27 +83,25 @@ def cluster_entropy_plot(parameters, get_clusters_func, fish_keys, n_clusters, n
                         if HOURS_PER_DAY!=h and len(where_hour_ends)==0:
                             print(h,"is not recorded", time_df.shape,fk, d, (h*5*(60**2)))
                             break
-                        if HOURS_PER_DAY ==h:idx_e = len(clusters)
+                        if HOURS_PER_DAY==h:idx_e = len(clusters)
                         else: idx_e = where_hour_ends[0]
                         dist = compute_cluster_distribution(clusters[idx_s:idx_e],n_clusters)
-                        all_vals_df.loc[(i+1)*HOURS_PER_DAY,fk] = entropy_m(dist)
+                        all_vals_df.loc[(HOURS_PER_DAY*(i)+h),fk] = entropy_m(dist)
                         idx_s=idx_e
                 else:
                     dist = compute_cluster_distribution(clusters,n_clusters)
-                    all_vals_df.loc[i,fk]= entropy_m(dist)
-            all_vals_df.plot(kind="scatter",x="index", y=fk,color=colors_map(j))
-    a,c = np.polyfit(*zip(*all_vals), 1)
-    time = np.arange(len(days)*(HOURS_PER_DAY if by_the_hour else 1))
-    corrcof = pearsonr(*zip(*all_vals))
-    ax.plot(time, a*time+c, "-", color="k", markersize=12, label="pearsonr: %0.3f"%(corrcof[0]))
-    ax.legend()
-    ax.set_ylabel("entropy")
-    ax.set_xlabel("hours" if by_the_hour else "days")
-    fig.tight_layout()
-    dir_p = f"{parameters.projectPath}/{DIR_PLASTCITY}"
+                    all_vals_df.loc[i+1,fk]= entropy_m(dist)
+    
+    dir_p = f"{parameters.projectPath}/{DIR_PLASTCITY}/{name}"
     os.makedirs(dir_p, exist_ok=True)
-    fig.savefig(f"{dir_p}/{name}.pdf")
-    return fig
+    day2date = lambda d: "%s.%s.%s" % (d[4:6], d[6:8],d[:4])
+    if not by_the_hour:
+        all_vals_df = all_vals_df.join(pd.DataFrame({f"date_{BLOCK1}":map(day2date,get_days(parameters, prefix=BLOCK1)), f"date_{BLOCK2}":map(day2date, get_days(parameters, prefix=BLOCK2))}, index=all_vals_df.index), how="left")
+    time_str = "hourly" if by_the_hour else "daily"
+    filename = f"{dir_p}/{name}_{time_str}_{n_clusters}"
+    all_vals_df.to_csv(f"{filename}.csv")
+    fig = plot_index_columns(df=all_vals_df, columns=fish_keys, title=f"{name} {time_str} {n_clusters}", filename=filename, ylabel="entropy", xlabel=time_str, fit_degree=fit_degree, forall=forall)
+    return fig, all_vals_df
 
 def compute_cluster_distribution(clusters, n):
     uqs, counts = np.unique(clusters, return_counts=True)
@@ -73,19 +124,19 @@ def plot_feature_distribution(input_data, name="distributions_step_angle_dist", 
                      color = 'blue', edgecolor = 'black')
             # Title and labels
             ax.set_xlabel(names[i])
-    plt.tight_layout()
+    #plt.tight_layout()
     fig.savefig(f"{name}.pdf")
     return fig
 
-def plasticity_cv_fig(parameters, wshedfile, fish_keys, name=None,n_df=50, forall=False):
+def plasticity_cv_fig(parameters, fish_keys, name=None,n_df=50, forall=False, fit_degree=1):
     fig = plt.figure(figsize=(10,10))
     axes = fig.subplots(3,1)
     fig.suptitle("Coefficient of Variation for %0.1f sec data"%(n_df/5))
     names = ["step length", "turning angle", "distance to wall"]
-    colors_map = plt.cm.get_cmap(lut=len(fish_keys))
-    sum_data = [{'time': [], 'cv': []}, {'time': [], 'cv': []}, {'time': [], 'cv': []}]
+    days = get_days(parameters, prefix=BLOCK1)
+    sum_data = [np.full((len(days)*(HOURS_PER_DAY+1),len(fish_keys)),np.nan) for i in range(3)]
     for j, fk in enumerate(fish_keys):
-        sum_data_fk = load_trajectory_data_concat(wshedfile, parameters, fish_key=fk)
+        sum_data_fk = load_trajectory_data_concat(parameters, fk=fk)
         data = sum_data_fk["projections"]
         time_idx = sum_data_fk["df_time_index"].flatten()
         for i, ax in enumerate(axes):
@@ -100,26 +151,15 @@ def plasticity_cv_fig(parameters, wshedfile, fish_keys, name=None,n_df=50, foral
             if time.shape!=cv.shape:
                 print(time.shape,cv.shape, fk)
                 continue
-            corrcof = pearsonr(time,cv)
-            if forall:
-                sum_data[i]["time"].append(time)
-                sum_data[i]["cv"].append(cv)
-            ax.plot(time, cv, "o",color=colors_map(j), label="%s - pearsonr: %0.3f"%(fk[6:10], corrcof[0]) if not forall else None)
-            ax.set_ylabel(names[i])
-            if not forall: 
-                a,c = np.polyfit(time,cv, 1)
-                ax.plot(time, a*time+c, "-", color=colors_map(j))
-                ax.legend(ncol=1)
-    if forall:
-        for i, ax in enumerate(axes):
-            time = np.concatenate(sum_data[i]["time"])
-            cv = np.concatenate(sum_data[i]["cv"])
-            corrcof = pearsonr(time,cv)
-            a,b,c = np.polyfit(time,cv, 2)
-            t_range = np.arange(0, time.max())
-            ax.plot(t_range, a*(t_range**2)+b*t_range+c, "-", color="k", markersize=12, label="pearsonr: %0.3f"%(corrcof[0]))
-            ax.legend(ncol=1)
-    ax.set_xlabel("tracked data frames")
+            sum_data[i][(time//(5*(60**2))).astype(int),j]=cv
+
+    filename = f"{parameters.projectPath}/{DIR_PLASTCITY}/cv"
+    os.makedirs(filename, exist_ok=True)
+    for i in range(3):
+        df = pd.DataFrame(sum_data[i], columns=fish_keys)
+        _ = plot_index_columns(df, ax=axes[i], columns=fish_keys, ylabel="cv", xlabel="hour", title=names[i], forall=forall, fit_degree=fit_degree)
+        df.to_csv(f"{filename}/cv_{names[i]}.csv")
+
     fig.tight_layout()
     if name:
         fig.savefig(f"{name}.pdf")
