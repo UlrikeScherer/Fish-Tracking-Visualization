@@ -125,7 +125,7 @@ class Trajectory:
 
     def __init__(self, marker_char="", write_fig=True):
         self.write_fig = write_fig
-        self.fish2camera = get_fish2camera_map(is_feeding=self.is_feeding)
+        self.fish2camera = get_fish2camera_map()
         self.N_fishes = self.fish2camera.shape[0]
         self.fig_front = Figure(is_back=False, marker_char=marker_char)
         self.fig_back = Figure(is_back=True, marker_char=marker_char)
@@ -189,7 +189,7 @@ class Trajectory:
             camera_id, pos = self.fish2camera[fish_idx]
             is_back = pos == BACK
             day_list = get_days_in_order(
-                is_feeding=self.is_feeding, camera=camera_id, is_back=is_back
+                camera=camera_id, is_back=is_back
             )
             N_days = len(day_list)
             for j, day in enumerate(day_list):
@@ -205,8 +205,7 @@ class Trajectory:
                     camera_id,
                     day,
                     is_back=is_back,
-                    drop_out_of_scope=True,
-                    is_feeding=self.is_feeding,
+                    drop_out_of_scope=True
                 )
                 self.plot_day_camera_fast(
                     day_df, keys, camera_id, day, fish_idx, is_back=is_back

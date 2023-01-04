@@ -36,7 +36,7 @@ def get_csv_columns_from_results_dim(dimension, metric_name):
 
 
 def metric_data_to_csv(
-    results=None, metric_name=None, time_interval=None, is_feeding=None
+    results=None, metric_name=None, time_interval=None
 ):
     for i, (cam_pos, days) in enumerate(results.items()):
         time = list()
@@ -67,7 +67,7 @@ def metric_data_to_csv(
         )
         df.to_csv(
             get_filename_for_metric_csv(
-                metric_name, time_interval, is_feeding, cam_pos=cam_pos
+                metric_name, time_interval, cam_pos=cam_pos
             ),
             sep=sep,
             float_format=float_format,
@@ -75,7 +75,7 @@ def metric_data_to_csv(
 
 
 def metric_per_hour_csv(
-    results=None, metric_name=None, time_interval=None, is_feeding=None
+    results=None, metric_name=None, time_interval=None
 ):
     columns = [CAM_POS]
     entities_per_day = 1
@@ -113,7 +113,7 @@ def metric_per_hour_csv(
     for mi, df_m in enumerate(dfs_measures):
         df_m.to_csv(
             get_filename_for_metric_csv(
-                metric_name, interval_name, is_feeding, measure_name=measures[mi]
+                metric_name, interval_name, measure_name=measures[mi]
             ),
             sep=sep,
             float_format=float_format,
@@ -122,17 +122,16 @@ def metric_per_hour_csv(
 
 # generates csv file name for a metric and a time interval
 def get_filename_for_metric_csv(
-    metric_name, time_interval, is_feeding, measure_name=None, cam_pos=None
+    metric_name, time_interval, measure_name=None, cam_pos=None
 ):
     """
     :param metric_name: name of the metric
     :param time_interval: in seconds our string representation of the time interval
-    :param is_feeding:
     :param measure_name:
     :param cam_pos:
     :return: filename for csv file
     """
-    directory = get_results_directory(metric_name, is_feeding)
+    directory = get_results_directory(metric_name)
     if measure_name:
         if metric_name == measure_name:
             return "%s/%s_%s.csv" % (directory, time_interval, metric_name)
@@ -143,7 +142,7 @@ def get_filename_for_metric_csv(
         return "%s/%s_%s.csv" % (directory, time_interval, metric_name)
 
 
-def get_results_directory(metric_name, is_feeding):
+def get_results_directory(metric_name):
     directory = "%s/%s/%s" % (
         RESULTS_PATH,
         PROJECT_ID,

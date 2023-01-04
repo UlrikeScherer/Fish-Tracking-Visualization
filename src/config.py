@@ -24,6 +24,7 @@ BLOCK1 = "block1"
 BLOCK2 = "block2"
 FRONT, BACK = "front", "back"
 
+projectPath = "/Volumes/Extreme_SSD/content/Fish_moves_final"
 CONFIG_DATA_PATH = f"{DIR_CSV_LOCAL}/" + os.environ["CONFIG_DATA"]
 VIS_DIR = f"{DIR_CSV_LOCAL}/" + os.environ["VIS_DIR"]
 PLOTS_DIR = f"{DIR_CSV_LOCAL}/" + os.environ["PLOTS_DIR"]
@@ -41,7 +42,7 @@ FEEDING_SHAPE = os.environ["FEEDING_SHAPE"] #"square", "ellipse"
 dir_front = os.environ["dir_front"]
 dir_back = os.environ["dir_back"]
 PROJECT_ID = dir_front.split("/")[-1].split("front")[0]
-print("PROJECTID:",PROJECT_ID)
+#print("PROJECTID:",PROJECT_ID)
 DIR_TRACES = "%s/%s/%s" % (RESULTS_PATH, PROJECT_ID, "traces")
 
 N_BATCHES = int(os.environ["N_BATCHES"])

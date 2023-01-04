@@ -8,7 +8,7 @@ from src.config import BACK, BATCH_SIZE, FEEDING_SHAPE, FRAMES_PER_SECOND, BLOCK
 from src.metrics.metrics import calc_length_of_steps, num_of_spikes
 from src.trajectory.feeding_shape import FeedingEllipse, FeedingRectangle
 from src.utils import get_days_in_order, get_all_days_of_context, get_camera_pos_keys
-from src.utils.utile import month_abbr2num, start_time_of_day_to_seconds, get_seconds_from_time
+from src.utils.utile import start_time_of_day_to_seconds, get_seconds_from_time
 from .trajectory import Trajectory
 from src.utils.transformation import pixel_to_cm
 
@@ -166,8 +166,8 @@ class FeedingTrajectory(Trajectory):
         self.num_df_feeding[fish_id][date] += num_df_feeding
 
     def feeding_data_to_csv(self):
-        fish_names = get_camera_pos_keys(is_feeding=self.is_feeding)
-        days = get_all_days_of_context(is_feeding=self.is_feeding)
+        fish_names = get_camera_pos_keys()
+        days = get_all_days_of_context()
         df_feeding = pd.DataFrame(columns=[fish_names], index=days)
         df_visits = pd.DataFrame(columns=[fish_names], index=days)
         df_num_df_feeding = pd.DataFrame(columns=[fish_names], index=days)
@@ -192,7 +192,7 @@ class FeedingTrajectory(Trajectory):
 
         for i, (c, p) in enumerate(self.fish2camera):
             days = get_days_in_order(
-                is_feeding=self.is_feeding, camera=c, is_back=p == BACK
+                camera=c, is_back=p == BACK
             )
             for d in days:
                 if d in self.feeding_times[i]:

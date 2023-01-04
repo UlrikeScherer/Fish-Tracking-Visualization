@@ -23,21 +23,6 @@ from src.config import (
 )
 from path_validation import filter_files
 
-month_abbr2num = {
-        'jan': 1,
-        'feb': 2,
-        'mar': 3,
-        'apr':4,
-         'may':5,
-         'jun':6,
-         'jul':7,
-         'aug':8,
-         'sep':9,
-         'oct':10,
-         'nov':11,
-         'dec':12
-        }
-
 def flatten_list(list_of_lists):
     return [item for sublist in list_of_lists for item in sublist]
 
@@ -64,7 +49,7 @@ def get_interval_name_from_seconds(seconds):
         return "DAY"
 
 
-def get_directory(is_feeding=None, is_back=None):
+def get_directory(is_back=None):
     if is_back is None:
         raise Exception("define kwargs is_back")
     if is_back:
@@ -73,27 +58,27 @@ def get_directory(is_feeding=None, is_back=None):
         return dir_front
 
 
-def get_number_of_batches(is_feeding=False):
+def get_number_of_batches():
     return N_BATCHES
 
 
-def get_camera_names(is_feeding=False, is_back=False):
-    dir_ = get_directory(is_feeding, is_back)
+def get_camera_names(is_back=False):
+    dir_ = get_directory(is_back)
     return sorted(
         [name for name in os.listdir(dir_) if len(name) == 8 and name.isnumeric()]
     )
 
 
-def get_fish2camera_map(is_feeding=False):
+def get_fish2camera_map():
     l_front = list(
-        product(get_camera_names(is_feeding, is_back=BACK == FRONT), [FRONT])
+        product(get_camera_names(is_back=BACK == FRONT), [FRONT])
     )
-    l_back = list(product(get_camera_names(is_feeding, is_back=BACK == BACK), [BACK]))
+    l_back = list(product(get_camera_names(is_back=BACK == BACK), [BACK]))
     return np.array(l_back + l_front)
 
 
-def get_camera_pos_keys(is_feeding=False):
-    m = get_fish2camera_map(is_feeding=is_feeding)
+def get_camera_pos_keys():
+    m = get_fish2camera_map()
     return ["%s_%s" % (c, p) for (c, p) in m]
 
 
@@ -148,17 +133,16 @@ def verify_day_directory(name, camera):
         return False
 
 
-def get_days_in_order(interval=None, is_feeding=False, is_back=None, camera=None):
+def get_days_in_order(interval=None, is_back=None, camera=None):
     """
     @params
     interval tuple (int i,int j) i < j, to return only days from i to j
-    is_feeding: select feeding directory if True, default False.
     camera: concider days of the cameras folder, default: first camera, that expects all cameras to have the same number of cameras.
     """
     if camera is None or is_back is None:
         raise ValueError("provid kwargs is_back and camera")
-        # camera = get_camera_names(is_feeding=is_feeding, is_back=is_back)[0]
-    dir_ = get_directory(is_feeding, is_back)
+        # camera = get_camera_names(is_back=is_back)[0]
+    dir_ = get_directory(is_back)
     days = [
         name[:15]
         for name in os.listdir(dir_ + "/" + camera)
@@ -175,17 +159,17 @@ def get_days_in_order(interval=None, is_feeding=False, is_back=None, camera=None
     return days_unique
 
 
-def get_all_days_of_context(is_feeding=False):
+def get_all_days_of_context():
     days = list()
     for p in [BACK, FRONT]:
         is_back = p == BACK
-        cameras = get_camera_names(is_feeding=is_feeding, is_back=is_back)
+        cameras = get_camera_names(is_back=is_back)
         for c in cameras:
             days.extend(
                 [
                     d
                     for d in get_days_in_order(
-                        is_feeding=is_feeding, is_back=is_back, camera=c
+                        is_back=is_back, camera=c
                     )
                     if d not in days
                 ]
@@ -287,15 +271,15 @@ def csv_of_the_day(
     day,
     is_back=False,
     drop_out_of_scope=False,
-    is_feeding=False,
     print_log=False,
+    batch_keys_remove=[]
 ):
     """
     @params: camera, day, is_back, drop_out_of_scope
     returns csv of the day for camera: front or back
     """
 
-    dir_ = get_directory(is_feeding=is_feeding, is_back=is_back)
+    dir_ = get_directory(is_back=is_back)
 
     filenames_f = [
         f
@@ -309,8 +293,11 @@ def csv_of_the_day(
     LOG, _, filtered_files = filter_files(
         camera, day, filenames_f, n_files=MAX_BATCH_IDX + 1, min_idx=MIN_BATCH_IDX
     )  # filters for duplicates in the batches for a day. It takes the LAST one!!!
+    for key in batch_keys_remove:
+        filtered_files.pop(key, None)
     file_keys = list(filtered_files.keys())
     correct_files = list(filtered_files.values())
     if print_log and len(LOG) > 0:
         print("\n {}/{}/{}*: \n".format(dir_, camera, day), "\n".join(LOG))
     return file_keys, merge_files(correct_files, drop_out_of_scope)
+

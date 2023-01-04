@@ -25,3 +25,9 @@ pipreqs --force
 + start BioTracker from link. Install BioTracker on Mac?
 + How to start the BioTracker
 `.\BioTracker.lnk --video="X:\path-to-file.mp4"`
+
+From https://drive.google.com/file/d/1Mk60wdSzPvFUZUe940Y2p0GmNknu33m1/view?usp=drive_web
+--video= <path-to-video-file>
+--usePlugin= <path-to-tracker-file> (is also in the zip)
+--loadTrack= <path-to-track-file>
+--cfg=<path-to-BioTracker-config>

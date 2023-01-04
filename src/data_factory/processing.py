@@ -2,7 +2,9 @@ import os, glob
 import time
 import pandas as pd
 import multiprocessing as mp
-from .utils import get_days
+
+from src.utils.excluded_days import get_excluded_days, block1_remove
+from .utils import get_days, set_parameters
 from src.methods import turning_directions, distance_to_wall_chunk, calc_steps
 from src.utils.tank_area_config import get_area_functions
 from src.utils.error_filter import all_error_filters
@@ -11,11 +13,8 @@ from src.metrics.metrics import update_filter_three_points
 from src.config import BACK, BATCH_SIZE, BLOCK, FRAMES_PER_SECOND, HOURS_PER_DAY
 import numpy as np
 import hdf5storage
-import motionmapperpy as mmpy
-from motionmapperpy.motionmapper import mm_findWavelets
-
 from src.utils import csv_of_the_day
-from src.utils.utile import get_all_days_of_context, get_camera_pos_keys, get_days_in_order, start_time_of_day_to_seconds
+from src.utils.utile import get_camera_pos_keys, get_days_in_order, start_time_of_day_to_seconds
 
 WAVELET = 'wavelet'
 clusterStr = 'clusters'
@@ -32,10 +31,12 @@ def transform_to_traces_high_dim(data,frame_idx, filter_index, area_tuple):
     X = np.array((frame_idx[1:-1],steps[:-1], t_a, wall[1:-1], data[1:-1,0], data[1:-1,1])).T 
     return X[~f3], new_area
 
-def compute_projections(fish_key, day, area_tuple):
+def compute_projections(fish_key, day, area_tuple, excluded_days=dict()):
     cam, pos = fish_key.split("_")
     is_back = pos==BACK
-    keys,data_in_batches = csv_of_the_day(cam,day, is_back=is_back)
+    keys,data_in_batches = csv_of_the_day(cam,day,is_back=is_back, 
+            batch_keys_remove=excluded_days.get(f"{BLOCK}_{fish_key}_{day}",[])
+            )
     if len(data_in_batches)==0:
         print("%s for day %s is empty! "%(fish_key,day))
         return None,None
@@ -44,14 +45,14 @@ def compute_projections(fish_key, day, area_tuple):
         df.index = df.FRAME+(int(k)*BATCH_SIZE)+daytime_DF
     data = pd.concat(data_in_batches)
     data_px = data[["xpx", "ypx"]].to_numpy()
-    filter_index = all_error_filters(data_px, area_tuple)
+    filter_index = all_error_filters(data_px, area_tuple, fish_key=fish_key, day=day)
     X, new_area = transform_to_traces_high_dim(data_px,data.index, filter_index, area_tuple)
     return X, new_area
 
-def compute_and_write_projection(fk, day, area_tuple, filename, recompute=False):
+def compute_and_write_projection(fk, day, area_tuple, filename, recompute=False, excluded_days=dict()):
     if not recompute and os.path.exists(filename):
         return None
-    X, new_area = compute_projections(fk, day, area_tuple)
+    X, new_area = compute_projections(fk, day, area_tuple, excluded_days=excluded_days)
     if X is None: return None
     print(f"{fk} {day} {X.shape}")
     if X.shape[0]<1000:
@@ -68,7 +69,7 @@ def compute_and_write_projection(fk, day, area_tuple, filename, recompute=False)
                 store_python_metadata=False, matlab_compatible=True)
     return None
 
-def compute_all_projections(projectPath, fish_keys=None, recompute=False):
+def compute_all_projections(projectPath, fish_keys=None, recompute=False, excluded_days=dict()):
     area_f = get_area_functions()
     if fish_keys is None:
         fish_keys = get_camera_pos_keys()
@@ -78,7 +79,7 @@ def compute_all_projections(projectPath, fish_keys=None, recompute=False):
         pool = mp.Pool(numProcessors)
         days = get_days_in_order(camera=fk.split("_")[0], is_back=fk.split("_")[1]==BACK)
         outs = pool.starmap(compute_and_write_projection, 
-                [(fk, day, (fk, area_f(fk,day)), projectPath + f'/Projections/{BLOCK}_{fk}_{day}_pcaModes.mat', recompute) for day in days])
+                [(fk, day, (fk, area_f(fk,day)), projectPath + f'/Projections/{BLOCK}_{fk}_{day}_pcaModes.mat', recompute, excluded_days) for day in days])
         pool.close()
         pool.join()
         print('\t Processed fish #%4i %s out of %4i in %0.02fseconds.\n'%(i+1, fk, len(fish_keys), time.time()-t1))
@@ -194,3 +195,14 @@ def rename_clusters(clusters, rating_feature):
     for i, j in enumerate(index_map):
         renamed_clusters[clusters == j] = i
     return renamed_clusters
+
+
+if __name__ == "__main__":
+    print("Start computation for: ", BLOCK)
+    parameters = set_parameters()
+    fish_keys = get_camera_pos_keys() # get all fish keys
+    for key in block1_remove:
+        if BLOCK in key:
+            fish_keys.remove("_".join(key.split("_")[1:]))
+    excluded=get_excluded_days(list(map(lambda f: f"{BLOCK}_{f}", fish_keys)))
+    compute_all_projections(parameters.projectPath,fish_keys,excluded_days=excluded,recompute=True)

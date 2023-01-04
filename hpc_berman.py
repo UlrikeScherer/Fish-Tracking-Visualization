@@ -1,6 +1,7 @@
 import motionmapperpy as mmpy
 from src.data_factory.processing import compute_all_projections
 from src.data_factory.processing import return_normalization_func
+from src.data_factory.utils import set_parameters
 from src.utils import *
 from src.utils.tank_area_config import *
 import h5py, hdf5storage, pickle, glob
@@ -8,18 +9,7 @@ import time
 
 
 def factory_main():
-    projectRoot = 'content'
-    projectPath = '%s/Fish_moves_new'%projectRoot
-    
-    parameters = mmpy.setRunParameters()
-    parameters.pcaModes = 3
-    parameters.samplingFreq = 5
-    parameters.maxF = 2.5
-    parameters.minF = 0.01
-    parameters.omega0 = 5
-    parameters.projectPath = projectPath
-    parameters.numProcessors = 16
-    parameters.method="UMAP"
+    parameters = set_parameters()
     parameters.useGPU=0
     parameters.training_numPoints = 5000    #% Number of points in mini-trainings.
     parameters.trainingSetSize = 72000  #% Total number of training set points to find. 
@@ -28,13 +18,10 @@ def factory_main():
                                  #% good number with 64GB RAM.
     parameters.embedding_batchSize = 30000  #% Lower this if you get a memory error when 
                                             #% re-embedding points on a learned map.
-    parameters.n_clusters = 10
-    parameters.kmeans_list = [5, 7, 10, 20, 50, 100]
     from cuml import UMAP
     parameters.umap_module = UMAP
     
-    os.makedirs(parameters.projectPath,exist_ok=True)
-    mmpy.createProjectDirectory(parameters.projectPath)
+    #mmpy.createProjectDirectory(parameters.projectPath)
     #fish_keys = get_camera_pos_keys()
     #compute_all_projections(parameters.projectPath,fish_keys, recompute=False)
     #normalize 

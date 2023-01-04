@@ -1,8 +1,13 @@
 import numpy as np
-from src.config import THRESHOLD_AREA_PX, BACK, DIRT_THRESHOLD, SPIKE_THRESHOLD
+from src.config import THRESHOLD_AREA_PX, BACK, DIRT_THRESHOLD, SPIKE_THRESHOLD, BLOCK
 from src.methods import distance_to_wall_chunk, calc_steps
 from src.utils.transformation import px2cm
+import os
 
+err_file = f"log_error_{BLOCK}.csv"
+if not os.path.exists(err_file):
+    with open(err_file, "w") as f:
+        f.write(";".join(["fish_key", "day", "duration", "xpx","ypx","start_idx", "end_idx"])+"\n")
 
 def all_error_filters(data, area_tuple, **kwargs):
     """
@@ -12,7 +17,7 @@ def all_error_filters(data, area_tuple, **kwargs):
     """
     return error_default_points(data) | error_points_out_of_area(
         data, area_tuple
-    )  # | error_dirt_points(data, **kwargs)
+    )# | error_dirt_points(data, **kwargs)
 
 
 def error_dirt_points(data, threshold=DIRT_THRESHOLD, fish_key="", day=""):  #
@@ -57,7 +62,17 @@ def error_dirt_points(data, threshold=DIRT_THRESHOLD, fish_key="", day=""):  #
                     "%.2f" % px2cm(spike_s),
                     "%.2f" % px2cm(spike_e),
                 )
-
+                print("dirt threshold: %.02f"%(threshold/(5*60)), "min","Dirt Sequence %.02f"%((end - start)/(5*60)), "min" )
+                with open(err_file, "a") as f:
+                    f.write(";".join([
+                                fish_key,
+                                day,
+                                str((end - start)/(5*60)),
+                                str(data[start][0]),
+                                str(data[start][1]),
+                                str(start),
+                                str(end)
+                            ])+ "\n")
         start = end - 1
     return flt
 

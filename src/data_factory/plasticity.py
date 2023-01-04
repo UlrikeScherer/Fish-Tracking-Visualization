@@ -11,6 +11,8 @@ from src.utils.utile import get_all_days_of_context
 from .processing import get_regions_for_fish_key, load_zVals_concat, load_trajectory_data_concat
 
 DIR_PLASTCITY = "plasticity"
+def day2date(d):
+    return "%s.%s.%s" % (d[4:6], d[6:8],d[:4])
 
 def correlation_fit(x,y,deg=1):
     if x.shape[0] < deg:
@@ -79,12 +81,8 @@ def cluster_entropy_plot(parameters, get_clusters_func, fish_keys, n_clusters, n
                     time_df=time_df-time_df[0]
                     idx_s = 0
                     for h in range(1,HOURS_PER_DAY+1):
-                        where_hour_ends = np.where(time_df >= (h*5*(60**2)))[0]
-                        if HOURS_PER_DAY!=h and len(where_hour_ends)==0:
-                            print(h,"is not recorded", time_df.shape,fk, d, (h*5*(60**2)))
-                            break
-                        if HOURS_PER_DAY==h:idx_e = len(clusters)
-                        else: idx_e = where_hour_ends[0]
+                        idx_e = get_where_hour_ends(time_df,h,fk,d)
+                        if idx_e is None: break
                         dist = compute_cluster_distribution(clusters[idx_s:idx_e],n_clusters)
                         all_vals_df.loc[(HOURS_PER_DAY*(i)+h),fk] = entropy_m(dist)
                         idx_s=idx_e
@@ -94,7 +92,6 @@ def cluster_entropy_plot(parameters, get_clusters_func, fish_keys, n_clusters, n
     
     dir_p = f"{parameters.projectPath}/{DIR_PLASTCITY}/{name}"
     os.makedirs(dir_p, exist_ok=True)
-    day2date = lambda d: "%s.%s.%s" % (d[4:6], d[6:8],d[:4])
     if not by_the_hour:
         all_vals_df = all_vals_df.join(pd.DataFrame({f"date_{BLOCK1}":map(day2date,get_days(parameters, prefix=BLOCK1)), f"date_{BLOCK2}":map(day2date, get_days(parameters, prefix=BLOCK2))}, index=all_vals_df.index), how="left")
     time_str = "hourly" if by_the_hour else "daily"
@@ -102,6 +99,15 @@ def cluster_entropy_plot(parameters, get_clusters_func, fish_keys, n_clusters, n
     all_vals_df.to_csv(f"{filename}.csv")
     fig = plot_index_columns(df=all_vals_df, columns=fish_keys, title=f"{name} {time_str} {n_clusters}", filename=filename, ylabel="entropy", xlabel=time_str, fit_degree=fit_degree, forall=forall)
     return fig, all_vals_df
+
+def get_where_hour_ends(time_df, h, fish_key="", day=""):
+    where_hour_ends = np.where(time_df >= (h*5*(60**2)))[0]
+    if HOURS_PER_DAY!=h and len(where_hour_ends)==0:
+        print("hour", h, "is not recorded", fish_key, day, (h*5*(60**2)), ">", time_df.shape[0], time_df[-1], time_df[0])
+        return None
+    if HOURS_PER_DAY==h:idx_e = len(time_df)
+    else: idx_e = where_hour_ends[0]
+    return idx_e
 
 def compute_cluster_distribution(clusters, n):
     uqs, counts = np.unique(clusters, return_counts=True)
@@ -128,40 +134,50 @@ def plot_feature_distribution(input_data, name="distributions_step_angle_dist", 
     fig.savefig(f"{name}.pdf")
     return fig
 
-def plasticity_cv_fig(parameters, fish_keys, name=None,n_df=50, forall=False, fit_degree=1):
+def plasticity_cv_fig(parameters, fish_keys, n_df=50, forall=False, by_the_hour=True, fit_degree=1):
     fig = plt.figure(figsize=(10,10))
     axes = fig.subplots(3,1)
     fig.suptitle("Coefficient of Variation for %0.1f sec data"%(n_df/5))
     names = ["step length", "turning angle", "distance to wall"]
     days = get_days(parameters, prefix=BLOCK1)
-    sum_data = [np.full((len(days)*(HOURS_PER_DAY+1),len(fish_keys)),np.nan) for i in range(3)]
+    size = len(days)*(HOURS_PER_DAY) if by_the_hour else len(days)
+    sum_data = [np.full((size,len(fish_keys)),np.nan) for i in range(3)]
     for j, fk in enumerate(fish_keys):
-        sum_data_fk = load_trajectory_data_concat(parameters, fk=fk)
-        data = sum_data_fk["projections"]
-        time_idx = sum_data_fk["df_time_index"].flatten()
-        for i, ax in enumerate(axes):
-            data_in = data[:,i] if i != 1 else data[:,i]+np.pi # shift for turning angle 
-            new_len = data_in.size//n_df
-            data_in = data_in[:n_df*new_len].reshape((new_len, n_df)).mean(axis=1)
-            n_means = (5*(60**2))//n_df
-            sw_len = data_in.size//n_means
-            sw_view = data_in[:sw_len*n_means].reshape(sw_len,n_means)
-            cv = sw_view.std(axis=1)/sw_view.mean(axis=1)
-            time = time_idx[::n_df][:sw_len*n_means:n_means]
-            if time.shape!=cv.shape:
-                print(time.shape,cv.shape, fk)
-                continue
-            sum_data[i][(time//(5*(60**2))).astype(int),j]=cv
-
+        for di, day in enumerate(get_days(parameters=parameters, prefix=fk.split("_")[0])):
+            sum_data_fk = load_trajectory_data_concat(parameters, fk=fk, day=day)
+            if sum_data_fk is None: continue
+            data = sum_data_fk["projections"]
+            time_df = sum_data_fk["df_time_index"].flatten()
+            time_df = time_df - time_df[0] # start at 0
+            for i, ax in enumerate(axes):
+                if by_the_hour:
+                    idx_s = 0
+                    for h in range(HOURS_PER_DAY):
+                        idx_e = get_where_hour_ends(time_df,h+1,fk,day)
+                        if idx_e is None: break
+                        data_in = data[idx_s:idx_e,i] if i != 1 else data[idx_s:idx_e,i]+np.pi # shift for turning angle 
+                        new_len = data_in.size//n_df
+                        data_means = data_in[:n_df*new_len].reshape((new_len, n_df)).mean(axis=1)
+                        cv = data_means.std()/data_means.mean()
+                        sum_data[i][(di*HOURS_PER_DAY)+(h),j]=cv
+                        idx_s = idx_e
+                else:
+                    data_in = data[:,i] if i != 1 else data[:,i]+np.pi
+                    new_len = data_in.size//n_df
+                    data_means = data_in[:n_df*new_len].reshape((new_len, n_df)).mean(axis=1)
+                    cv = data_means.std()/data_means.mean()
+                    sum_data[i][di,j]=cv
     filename = f"{parameters.projectPath}/{DIR_PLASTCITY}/cv"
     os.makedirs(filename, exist_ok=True)
+    time_str = "hourly" if by_the_hour else "daily"
     for i in range(3):
-        df = pd.DataFrame(sum_data[i], columns=fish_keys)
+        df = pd.DataFrame(sum_data[i], columns=fish_keys, index=range(1, size+1))
+        if not by_the_hour:
+            df = df.join(pd.DataFrame({f"date_{BLOCK1}":map(day2date,get_days(parameters, prefix=BLOCK1)), f"date_{BLOCK2}":map(day2date, get_days(parameters, prefix=BLOCK2))}, index=df.index), how="left")
         _ = plot_index_columns(df, ax=axes[i], columns=fish_keys, ylabel="cv", xlabel="hour", title=names[i], forall=forall, fit_degree=fit_degree)
-        df.to_csv(f"{filename}/cv_{names[i]}.csv")
+        df.to_csv(f"{filename}/cv_{names[i]}_{time_str}.csv")
 
     fig.tight_layout()
-    if name:
-        fig.savefig(f"{name}.pdf")
+    fig.savefig(f"{filename}/cv_{time_str}.pdf")
     return fig
 

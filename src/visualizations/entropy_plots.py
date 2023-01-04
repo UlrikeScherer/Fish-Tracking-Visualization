@@ -18,9 +18,9 @@ from src.utils.utile import flatten_list
 FIG_NAME = "entropy_density"
 
 
-def entropy_density_main(is_feeding=False):
-    fish_keys = get_camera_pos_keys(is_feeding=is_feeding)
-    days = get_all_days_of_context(is_feeding=is_feeding)
+def entropy_density_main():
+    fish_keys = get_camera_pos_keys()
+    days = get_all_days_of_context()
     area_f = get_area_functions()
     for fk in fish_keys:
         cam, pos = fk.split("_")
@@ -119,4 +119,4 @@ def draw_density_entropy(
 
 
 if __name__ == "__main__":
-    entropy_density_main(is_feeding=bool(sys.argv[1]) if len(sys.argv) > 1 else False)
+    entropy_density_main()

@@ -271,7 +271,6 @@ def metric_per_interval(
     time_interval=100,
     day_interval=None,
     metric=activity,
-    is_feeding=False,
     write_to_csv=False,
     drop_out_of_scope=False,
     out_dim=3,
@@ -290,7 +289,7 @@ def metric_per_interval(
     """
     if isinstance(fish_ids, int):
         fish_ids = [fish_ids]
-    fish2camera = get_fish2camera_map(is_feeding=is_feeding)
+    fish2camera = get_fish2camera_map()
     if fish_ids is None:
         fish_ids = [i for i in range(len(fish2camera))]
     area_func = get_area_functions()
@@ -298,7 +297,6 @@ def metric_per_interval(
     package = dict(
         metric_name=metric.__name__,
         time_interval=time_interval,
-        is_feeding=is_feeding,
         results=results,
     )
     metric_kwargs = dict()
@@ -312,7 +310,6 @@ def metric_per_interval(
         day_dict = dict()
         days = get_days_in_order(
             interval=day_interval,
-            is_feeding=is_feeding,
             camera=camera_id,
             is_back=is_back,
         )
@@ -321,7 +318,7 @@ def metric_per_interval(
                 camera_id,
                 day,
                 is_back=is_back,
-                is_feeding=is_feeding,
+                
                 drop_out_of_scope=drop_out_of_scope,
             )  # True or False testing needed
             if len(df_day) > 0:
