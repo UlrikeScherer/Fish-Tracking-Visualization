@@ -2,6 +2,7 @@ import glob
 import math
 import os
 import numpy as np
+import bisect
 from src.config import DIR_CSV_LOCAL, DIR_CSV_LOCAL, projectPath
 import motionmapperpy as mmpy
 
@@ -61,6 +62,16 @@ def create_subset_data(k=25):
         dist = "/".join(dist.split("/")[:-1])
         os.makedirs(dist ,exist_ok=True)
         shutil.copy(file, dist)
+
+def split_into_batches(time, data, batch_size_minutes=60):
+    t = time-time[0]
+    step = batch_size_minutes*60*5 # 5 df per second
+    hours_end = [bisect.bisect_left(t, h) for h in range(step,int(t[-1]), step)]
+    batches = np.split(data, hours_end)
+    times = np.split(time, hours_end)
+    batches = list(filter(lambda v: len(v)>step/4, batches))
+    times = list(filter(lambda v: len(v)>step/4, times))
+    return times, batches
 
 def get_individuals_keys(parameters, block=""):
     files = glob.glob(parameters.projectPath+f"/Projections/{block}*_pcaModes.mat")
