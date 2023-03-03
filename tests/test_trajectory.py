@@ -1,7 +1,7 @@
-from src.utils.error_filter import error_dirt_points
-from src.trajectory import Trajectory
-from src.utils import csv_of_the_day
-from src.metrics import metric_per_interval
+from fishproviz.utils.error_filter import error_dirt_points
+from fishproviz.trajectory import Trajectory
+from fishproviz.utils import csv_of_the_day
+from fishproviz.metrics import metric_per_interval
 from array_for_test import a1, sol1
 import unittest
 import time

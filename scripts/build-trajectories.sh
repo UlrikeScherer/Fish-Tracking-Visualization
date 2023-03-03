@@ -1,6 +1,5 @@
 #!/bin/bash
-source scripts/config.sh 
-source scripts/env.sh # get the following variables
+source fishproviz/config.env # get the following variables
 PLOTS_TRAJECTORY=$path_csv_local/$PLOTS_DIR
 if [ ! -d "$PLOTS_TRAJECTORY" ]; then
     echo "ERROR $PLOTS_TRAJECTORY does not exists, first generate the plots with the python script"

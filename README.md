@@ -1,4 +1,4 @@
-# Fish-Tracking-Visualization
+# fishproviz: Fish Tracking Data Processing and Visualization Module
 
 Project 21: Developing Exploration Behavior
 
@@ -69,16 +69,16 @@ feeding trajectories in parallel as they use the same files.
 
 ## 2. Data File and Path Validation
 
-The python script `path_validation.py` is used to validate the filenames
+The python script `fishproviz/path_validation.py` is used to validate the filenames
 and paths of the data files. It logs all error messages into
 `log-path-validation.txt`.
 
 ##### 2.1 Run the script:
 
--   `python path_validation.py path="path/to/root"` -- where you would
+-   `python -m fishproviz.path_validation path="path/to/root"` -- where you would
     find the directories for front and back position.
 -   for example:
-    `python path_validation.py path="/Volumes/Extreme_SSD/FE_tracks"`
+    `python -m fishproviz.path_validation path="/Volumes/Extreme_SSD/FE_tracks"`
 -   Optional arguments:
     -   `delete=1` -- to delete duplicated filenames
     -   `n_files=<<number of files>>` -- to change the expected number

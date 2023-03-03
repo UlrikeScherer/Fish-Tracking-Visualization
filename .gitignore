@@ -7,7 +7,8 @@ Metrics.ipynb
 !README.pdf
 *.mp4
 core.*
-
+*/config.env 
+log*.csv
 # MacOS
 .DS_Store
 **/.vscode

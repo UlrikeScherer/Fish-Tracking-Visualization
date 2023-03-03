@@ -3,9 +3,10 @@ import time
 import sys, os, inspect
 import matplotlib.pyplot as plt
 import numpy as np
-from src.metrics.exploration_trials import exploration_trials
-from src.utils import print_tex_table, get_camera_pos_keys
-from src.config import (
+import argparse
+from fishproviz.metrics.exploration_trials import exploration_trials
+from fishproviz.utils import get_camera_pos_keys
+from fishproviz.config import (
     DIR_CSV_LOCAL,
     HOURS_PER_DAY,
     MEAN_GLOBAL,
@@ -15,8 +16,8 @@ from src.config import (
     RESULTS_PATH,
     create_directories
 )
-from src.trajectory import Trajectory, FeedingTrajectory
-from src.metrics import (
+from fishproviz.trajectory import Trajectory, FeedingTrajectory
+from fishproviz.metrics import (
     activity_per_interval,
     turning_angle_per_interval,
     tortuosity_per_interval,
@@ -25,13 +26,14 @@ from src.metrics import (
     distance_to_wall_per_interval,
     absolute_angle_per_interval,
 )
-from src.visualizations.activity_plotting import (
+from fishproviz.visualizations.activity_plotting import (
     sliding_window,
     sliding_window_figures_for_tex,
 )
-from src.utils import is_valid_dir
+from fishproviz.utils import is_valid_dir
 
 TRAJECTORY = "trajectory"
+FEEDING = "feeding"
 TRIAL_TIMES = "trial_times"
 ACTIVITY = "activity"
 TURNING_ANGLE = "turning_angle"
@@ -42,144 +44,40 @@ WALL_DISTANCE = "wall_distance"
 ALL_METRICS = "all"
 CLEAR = "clear"
 metric_names = [ACTIVITY, TURNING_ANGLE, ABS_ANGLE, TORTUOSITY, ENTROPY, WALL_DISTANCE]
-programs = [TRAJECTORY, TRIAL_TIMES, *metric_names, ALL_METRICS, CLEAR]
+programs = [TRAJECTORY,FEEDING, TRIAL_TIMES, *metric_names, ALL_METRICS, CLEAR]
 
-
-def plotting_odd_even(
-    results, time_interval=None, name=None, ylabel=None, sw=10, visualize=None, **kwargs
-):
-    if visualize is None:
-        return None
-    fish_keys = list(results.keys())
-    fk_len = len(fish_keys)
-    batch_size = 6
-    fish_batches = []
-    for start in range(0, fk_len, batch_size):
-        end = min(start + batch_size, fk_len)
-        fish_batches.append(list(range(start, end)))
-    kwargs["write_fig"] = True
-
-    fish_labels = get_camera_pos_keys()
-    positions = ["front_1", "front_2", "back_1", "back_2"]
-    names = ["%s_%s" % (name, p) for p in positions]
-
-    for i, batch in enumerate(fish_batches):
-        print("Plotting %s %s" % (names[i], batch))
-        print_tex_table(batch, positions[i])
-        batch_keys = [fish_keys[i] for i in batch]
-        f_ = sliding_window(
-            results,
-            time_interval,
-            sw=sw,
-            fish_keys=batch_keys,
-            fish_labels=fish_labels[batch],
-            ylabel=ylabel,
-            name=names[i],
-            **kwargs
-        )
-        plt.close(f_)
-        sliding_window_figures_for_tex(
-            results,
-            time_interval,
-            sw=sw,
-            fish_keys=batch_keys,
-            fish_labels=fish_labels[batch],
-            ylabel=ylabel,
-            name=names[i],
-            **kwargs
-        )
-
-
-def main_trajectory(is_feeding, fish_ids):
-    if is_feeding:
-        FT = FeedingTrajectory()
-        FT.plots_for_tex(fish_ids)
-        FT.feeding_data_to_csv()
-        FT.feeding_data_to_tex()
-    else:
-        T = Trajectory()
-        T.plots_for_tex(fish_ids)
-
-
-def main_metrics(
-    program,
-    time_interval=100,
-    sw=10,
-    visualize=False,
-    include_median=None,
-    **kwargs_metrics
-):
-
-    # TIME INTERVAL for the metrics
-    if time_interval in [
-        "hour",
-        "day",
-    ]:  # change of parameters when computing metrics by hour or day
-        sw = 1
-        if time_interval == "hour":
-            time_interval = N_SECONDS_PER_HOUR
-        if time_interval == "day":
-            time_interval = N_SECONDS_PER_HOUR * HOURS_PER_DAY
+def main_metrics(program, time_interval=100, include_median=None, **kwargs_metrics):
+    if time_interval in ["hour", "day"]:
+        time_interval = {"hour": N_SECONDS_PER_HOUR, "day": N_SECONDS_PER_HOUR * HOURS_PER_DAY}[time_interval]
     else:
         time_interval = int(time_interval)
 
     if include_median and program != ACTIVITY:
         raise ValueError("include_median is only valid for activity")
-    # put it back in the kwargs
+
     kwargs_metrics.update(time_interval=time_interval)
 
-    if program == ACTIVITY:
-        results = activity_per_interval(include_median=include_median, **kwargs_metrics)
-        plotting_odd_even(
-            **results,
-            ylabel="activity",
-            set_title=True,
-            set_legend=True,
-            baseline=MEAN_GLOBAL,
-            sw=sw
-        )
+    metric_functions = {
+        ACTIVITY: activity_per_interval,
+        TORTUOSITY: tortuosity_per_interval,
+        TURNING_ANGLE: turning_angle_per_interval,
+        ABS_ANGLE: absolute_angle_per_interval,
+        ENTROPY: entropy_per_interval,
+        WALL_DISTANCE: distance_to_wall_per_interval,
+    }
 
-    elif program == TORTUOSITY:
-        results = tortuosity_per_interval(**kwargs_metrics)
-        plotting_odd_even(
-            **results,
-            ylabel="tortuosity",
-            logscale=True,
-            baseline=1,
-            visualize=visualize
-        )
-
-    elif program == TURNING_ANGLE:
-        results = turning_angle_per_interval(**kwargs_metrics)
-        plotting_odd_even(
-            **results, ylabel="turning angle", baseline=0, visualize=visualize
-        )
-
-    elif program == ABS_ANGLE:
-        results = absolute_angle_per_interval(**kwargs_metrics)
-        plotting_odd_even(**results, ylabel="absolute angle", visualize=visualize)
-
-    elif program == ENTROPY:
-        results = entropy_per_interval(**kwargs_metrics)
-        plotting_odd_even(**results, ylabel="entropy", visualize=visualize)
-
-    elif program == WALL_DISTANCE:
-        results = distance_to_wall_per_interval(**kwargs_metrics)
-        plotting_odd_even(
-            **results, ylabel="distance to the wall", baseline=0, visualize=visualize
-        )
-    else:
+    if program not in metric_functions:
         print("TERMINATED: Invalid program")
+        return
 
-    if (
-        time_interval == N_SECONDS_PER_HOUR
-        or time_interval == N_SECONDS_PER_HOUR * HOURS_PER_DAY
-    ):
+    results = metric_functions[program](include_median=include_median, **kwargs_metrics)
+
+    if time_interval in [N_SECONDS_PER_HOUR, N_SECONDS_PER_HOUR * HOURS_PER_DAY]:
         metric_per_hour_csv(**results)
 
 
-def get_fish_ids_to_run(program, fish_id, is_feeding):
-    fish_keys = get_camera_pos_keys(is_feeding=is_feeding)
+def get_fish_ids_to_run(program, fish_id):
+    fish_keys = get_camera_pos_keys()
     n_fishes = len(fish_keys)
 
     fish_ids = np.arange(n_fishes)
@@ -200,37 +98,29 @@ def get_fish_ids_to_run(program, fish_id, is_feeding):
 def main(
     program=None,
     time_interval=100,
-    sw=10,
     fish_id=None,
-    visualize=None,
-    feeding=0,
     include_median=None,
 ):
     """param:   test, 0,1 when test==1 run test mode
     program: trajectory, activity, turning_angle
     time_interval: kwarg for the programs activity, turning_angle
     """
-    is_feeding = bool(int(feeding))
-    if is_feeding:
-        if not is_valid_dir(dir_back):
-            return None
-    else:
-        if not is_valid_dir(DIR_CSV_LOCAL):
-            return None
-
-    fish_ids = get_fish_ids_to_run(program, fish_id, is_feeding)
+    fish_ids = get_fish_ids_to_run(program, fish_id)
     kwargs_metrics = dict(
         fish_ids=fish_ids,
         time_interval=time_interval,
         write_to_csv=True,
-        is_feeding=is_feeding,
-        visualize=visualize,
-        sw=sw,
         include_median=include_median,
     )
     # PROGRAM METRICS or TRAJECTORY or CLEAR
     if program == TRAJECTORY:
-        main_trajectory(is_feeding, fish_ids)
+        T = Trajectory()
+        T.plots_for_tex(fish_ids)
+    elif program == FEEDING:
+        FT = FeedingTrajectory()
+        FT.plots_for_tex(fish_ids)
+        FT.feeding_data_to_csv()
+        FT.feeding_data_to_tex()
     elif program == TRIAL_TIMES:
         exploration_trials()
     elif program in metric_names:
@@ -243,29 +133,25 @@ def main(
             if os.path.isdir(path):
                 shutil.rmtree(path)
                 print("Removed directory: %s" % path)
-    else:
-        print(
-            "TERMINATED: Please provide the program name which you want to run. One of: ",
-            programs,
-        )
     return None
 
+def set_args():
+    parser = argparse.ArgumentParser(prog = 'fishproviz',
+        description = 'What the program does',
+        epilog = 'Text at the bottom of help')
+    parser.add_argument("program", help="Select the program you want to execute", type=str, choices=programs)
+    parser.add_argument("-ti","--time_interval", help="Choose a time interval to compute averages of metrics", type=int, default=100)
+    parser.add_argument("-fid","--fish_id", help="Fish id to run")
+    parser.add_argument("--include_median", help="Include median or not for activity", action="store_true")
+    args = parser.parse_args()
+    return args
 
 if __name__ == "__main__":
+    args = set_args()
     tstart = time.time()
     create_directories()
     main_kwargs = dict(inspect.signature(main).parameters)
-    try:
-        kwargs = dict(arg.split("=") for arg in sys.argv[1:])
-    except Exception as e:
-        raise ValueError(
-            "Please supply the keyword arguments as follows: kwarg1=value ... ", e
-        )
-    for k in kwargs.keys():
-        if k not in main_kwargs:
-            raise ValueError(
-                "Please use the following keyword arguments %s" % main_kwargs.keys()
-            )
-    main(**kwargs)
+   
+    main(**args.__dict__)
     tend = time.time()
     print("Running time:", tend - tstart, "sec.")
