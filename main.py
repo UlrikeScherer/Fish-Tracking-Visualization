@@ -136,13 +136,13 @@ def main(
     return None
 
 def set_args():
-    parser = argparse.ArgumentParser(prog = 'fishproviz',
-        description = 'What the program does',
-        epilog = 'Text at the bottom of help')
-    parser.add_argument("program", help="Select the program you want to execute", type=str, choices=programs)
-    parser.add_argument("-ti","--time_interval", help="Choose a time interval to compute averages of metrics", type=int, default=100)
-    parser.add_argument("-fid","--fish_id", help="Fish id to run")
-    parser.add_argument("--include_median", help="Include median or not for activity", action="store_true")
+    parser = argparse.ArgumentParser(prog = 'python3 main.py',
+        description = 'This program computes metrics and visualizations for fish trajectories, the results are saved in the directory %s' % DIR_CSV_LOCAL,
+        epilog = 'Example of use: python3 main.py trajectory -fid 0')
+    parser.add_argument("program", help="Select the program you want to execute", type=str, choices=list(programs))
+    parser.add_argument("-ti","--time_interval", help="Choose a time interval in second to compute averages of metrics, also possible [day, hour]", type=str, default=100)
+    parser.add_argument("-fid","--fish_id", help="Fish id to run can be by 'camera_position' or index, default is all fish_ids", type=str, default=None)
+    parser.add_argument("--include_median", help="Include median or not only for activity", action="store_true")
     args = parser.parse_args()
     return args
 

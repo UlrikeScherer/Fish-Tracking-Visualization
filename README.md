@@ -15,21 +15,51 @@ use of the links to the mp4 and csv-files -- connect to the server
 
 ## Build
 
--   To compile the *Cython* code and creating you own `script/env.sh`,
+-   To compile the *Cython* code and creating you own `fishproviz/config.env`,
     run:
     -   `python3 setup.py build_ext --inplace`
+-  To install the package and import functions elsewhere: 
+    -  `python3 -m pip install .`
 
+## Run the main.py
+```
+usage: python3 main.py [-h] [-ti TIME_INTERVAL] [-fid FISH_ID] [--include_median]
+                       {trajectory,feeding,trial_times,activity,turning_angle,
+                       abs_angle,tortuosity,entropy,wall_distance,all,clear}
+
+This program computes metrics and visualizations for fish trajectories,
+the results are saved in the directory:
+'DIR_CSV_LOCAL'
+
+positional arguments:
+  {trajectory,feeding,trial_times,activity,turning_angle,abs_angle,
+  tortuosity,entropy,wall_distance,all,clear}
+                        Select the program you want to execute
+
+options:
+  -h, --help            show this help message and exit
+  -ti TIME_INTERVAL, --time_interval TIME_INTERVAL
+                        Choose a time interval in second to compute
+                        averages of metrics. Also possible [day, hour].
+  -fid FISH_ID, --fish_id FISH_ID
+                        Fish ID to run can be set by 'camera_position'
+                        or index, default is all fish_ids
+  --include_median      Include median or not only for activity
+
+Example of use: python3 main.py trajectory -fid 0
+```
 ## File Structure
-The variable *path_csv_local* in [scripts/env.sh](scripts/env.sh) is the root of the project and the place where all generated data is stored. 
+The variable *path_csv_local* in [fishproviz/config.env](fishproviz/config.env) is the root of the project and the place where all generated data is stored. 
 In addition to the front an back directory where all the tracking data is stored you will find the following directories after the corresponding program executes.
-- visualizations/trajectory
-- visualizations/feeding
+- visualizations/trajectory (pdf)
+- visualizations/feeding (pdf)
+- visualizations/plots (single plots)
 - config_data - where we store feeding times, area coordinates, calibration, etc.
 - results 
 
 ## 1. Trajectory Visualization PDFs
 
-[scripts/env.sh](scripts/env.sh) contains the paths to the trajectory
+[fishproviz/config.env](fishproviz/config.env) contains the paths to the trajectory
 data. One can configure these to point to the correct location of the
 data. Reading the data directly from the server `loopbio_data` results
 in long running times. It is recommended to use a external hard drive.
@@ -39,16 +69,14 @@ Accessing the data from the server is very slow.
 
 ##### 1.1 Generate the trajectory visualizations, *run*:
 
--   Trajectories: `python3 main.py program=trajectory`
--   Feeding Trajectories: `python3 main.py program=trajectory feeding=1`
-        The CSV-file for time spend feeding and number of visits are stored at `results/block{i}/feeding`.
--   optional arguments: `fish_id=<<cam_pos or index in {0,...,23}>>`,
-    `feeding={0,1}`
--   Requirements: Provide a csv-file (;-separated) with start and end time for the feeding measures with columns in the following format: 
+-   Trajectories: `python3 main.py trajectory`
+-   Feeding Trajectories: `python3 main.py feeding`
+        The CSV-file for time spend feeding and number of visits are stored at `results/feeding`.
+    -   Requirements: Provide a csv-file (;-separated) with start and end time for the feeding measures with columns in the following format:   
 
-| block | day | time_in_start | time_in_stop | time_out_start | time_out_stop |
-|-------|-----|---------------|--------------|----------------|---------------|
-| blocki| dd.mm.yy| hh:mm | hh:mm | hh:mm | hh:mm |
+| day | time_in_start | time_in_stop | time_out_start | time_out_stop |
+|-----|---------------|--------------|----------------|---------------|
+| dd.mm.yy| hh:mm | hh:mm | hh:mm | hh:mm |
 
 An example template can be found at [data/recordings_feeding_times_template.csv](data/recordings_feeding_times_template.csv)
 
@@ -87,25 +115,14 @@ and paths of the data files. It logs all error messages into
 
 ## 3. Trajectory Analysis
 
--   run: `python3 main.py program={metric}`
+-   run: `python3 main.py <<metric>>`
 
 -   For **metric** use one keyword out of:
 
-    -   `activity, turning_angle, tortuosity, entropy, abs_angle, wall_distance, all`.
+    -   `activity, turning_angle, tortuosity, entropy, abs_angle, wall_distance`.
 
--   Optional arguments:
-
-    -   `time_interval=<<time in seconds>>` -- default:
-        `time_interval=100`
-    -   `fish_id=<<cam_pos>>`
-    -   `feeding={0,1}`
-    -   `include_median={0,1}` -- only in combination with
-        `program=activity`
-
--   run `python3 main.py program={metric} time_interval=hour` to record
-    mean and standard derivation per fish per hour in one csv-file.
-
--   run: `bash scripts/build_analytics.sh` to generate the pdfs.
+-   run `python3 main.py <<metric>> --time_interval <<hour/day>>` to record
+    mean and standard derivation per fish per hour/day in one csv-file.
 
 ##### 3.1 Metrics:
 
@@ -120,16 +137,6 @@ and paths of the data files. It logs all error messages into
 -   For the sum of angles we take each angle between consecutive steps
     anti-clockwise $`\alpha \in [-\pi, \pi]`$.
 -   For the average angle each angle $`\alpha > 0`$
-
-Compute: `function(fish_id, time_interval in sec)` [In
-methods.py](src/metrics.py) there are four function to calculate the
-metrics and store mean and standard derivation in
-`/results/<<time_interval>>_<<metrics_name>>.csv`.
-
--   `activity_per_interval`
--   `turning_angle_per_interval`
--   `tortuosity_per_interval`
--   `entropy_per_interval`
 
 ## 4 DATA Visualizations
 
