@@ -38,6 +38,14 @@ TEX_DIR="tex" # To store the tex files
 CALIBRATION_DIST_CM=83.0
 DEFAULT_CALIBRATION=0.02278
 
+# Area Data Directory 
+area_back="$path_csv_local/area_config/areas back 10Sep2021"
+area_front="$path_csv_local/area_config/areas front 10Sep2021"
+
+# FILTERING 
+AREA_FILTER=0 # 1 to filter by area, 0 to not filter
+DIRT_FILTER=0 # 1 to filter by dirt, 0 to not filter
+
 export rootserver
 export path_csv
 export path_csv_local

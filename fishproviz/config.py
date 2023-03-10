@@ -13,6 +13,9 @@ DIRT_THRESHOLD = (
     60 * 5
 )  # Threshold for dirt detection, indicates the number of consecutive frames that, when equal, are classified as dirt.
 THRESHOLD_AREA_PX = 50  # The threshold in pixels for the exclusion of data points that are not within the area of the tank.
+# FILTERING 
+AREA_FILTER=int(os.environ["AREA_FILTER"]) # 1 to filter by area, 0 to not filter
+DIRT_FILTER=int(os.environ["DIRT_FILTER"]) # 1 to filter by dirt, 0 to not filter
 ROOT = os.environ["rootserver"]
 DIR_CSV = os.environ["path_csv"]  #
 DIR_CSV_LOCAL = os.environ["path_csv_local"]  #
@@ -61,8 +64,8 @@ DATAFRAME = "DATEFRAME"
 
 # Calibrations
 # AREA CONFIG
-area_back = "%s/area_config/areas back 10Sep2021" % DIR_CSV_LOCAL
-area_front = "%s/area_config/areas front 10Sep2021" % DIR_CSV_LOCAL
+area_back = os.environ["area_back"]
+area_front = os.environ["area_front"]
 CALIBRATION_DIST_CM=float(os.environ["CALIBRATION_DIST_CM"])
 DEFAULT_CALIBRATION=float(os.environ["DEFAULT_CALIBRATION"])
 

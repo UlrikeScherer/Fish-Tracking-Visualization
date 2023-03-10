@@ -1,5 +1,5 @@
 import numpy as np
-from fishproviz.config import THRESHOLD_AREA_PX, BACK, DIRT_THRESHOLD, SPIKE_THRESHOLD, RESULTS_PATH
+from fishproviz.config import THRESHOLD_AREA_PX, BACK, SPIKE_THRESHOLD, RESULTS_PATH, AREA_FILTER, DIRT_FILTER,DIRT_THRESHOLD
 from src.methods import distance_to_wall_chunk, calc_steps
 from fishproviz.utils.transformation import px2cm
 import os
@@ -15,9 +15,12 @@ def all_error_filters(data, area_tuple, **kwargs):
     @params: dataframe
     returns a boolean numpy array with all indices to filter out -- set to True!
     """
-    return error_default_points(data) | error_points_out_of_area(
-        data, area_tuple
-    )# | error_dirt_points(data, **kwargs)
+    data_flt =  error_default_points(data) 
+    if AREA_FILTER:
+        data_flt = data_flt | error_points_out_of_area(data, area_tuple)
+    if DIRT_FILTER:
+        data_flt = data_flt | error_dirt_points(data, **kwargs)
+    return data_flt
 
 
 def error_dirt_points(data, threshold=DIRT_THRESHOLD, fish_key="", day=""):  #

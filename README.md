@@ -21,6 +21,30 @@ use of the links to the mp4 and csv-files -- connect to the server
 -  To install the package and import functions elsewhere: 
     -  `python3 -m pip install .`
 
+## File Structure
+The variable *path_csv_local* in [fishproviz/config.env](fishproviz/config.env) is the root of the project and the place where all generated data is stored. In addition to the initial front an back directory where all the tracking data is stored you will find the following directories after the corresponding program executes.
+
+**Folder Structure**:
+```
+.
+|-- path_csv_local          # root folder of the data directory
+|   |-- front               # POSITION_STR_FRONT front compartments tracks
+|   |-- back                # POSITION_STR_BACK back compartments tracks 
+|   |-- area_config         # area_config Area Configurations 
+|   |   |-- front           # front 
+|   |   |-- back            # back
+|   |-- visualizations      # 
+|   |   |-- trajectory      #
+|   |   |-- feeding         # 
+|   |   |-- plots           # single plots
+|   |-- config_data         # where we store feeding zones, area coordinates, calibration, etc. once generated
+|   |-- results             # folder we the results of metrics are stored
+```
+
+
+## Configuration of the Program
+After *building* - the file [fishproviz/config.env](fishproviz/config.env) contains all configuration and can be edited. 
+
 ## Run the main.py
 ```
 usage: python3 main.py [-h] [-ti TIME_INTERVAL] [-fid FISH_ID] [--include_median]
@@ -48,18 +72,11 @@ options:
 
 Example of use: python3 main.py trajectory -fid 0
 ```
-## File Structure
-The variable *path_csv_local* in [fishproviz/config.env](fishproviz/config.env) is the root of the project and the place where all generated data is stored. 
-In addition to the front an back directory where all the tracking data is stored you will find the following directories after the corresponding program executes.
-- visualizations/trajectory (pdf)
-- visualizations/feeding (pdf)
-- visualizations/plots (single plots)
-- config_data - where we store feeding times, area coordinates, calibration, etc.
-- results 
+
 
 ## 1. Trajectory Visualization PDFs
 
-[fishproviz/config.env](fishproviz/config.env) contains the paths to the trajectory
+The file [fishproviz/config.env](fishproviz/config.env) contains the paths to the trajectory
 data. One can configure these to point to the correct location of the
 data. Reading the data directly from the server `loopbio_data` results
 in long running times. It is recommended to use a external hard drive.
@@ -103,10 +120,10 @@ and paths of the data files. It logs all error messages into
 
 ##### 2.1 Run the script:
 
--   `python -m fishproviz.path_validation path="path/to/root"` -- where you would
+-   `python3 -m fishproviz.path_validation path="path/to/root"` -- where you would
     find the directories for front and back position.
 -   for example:
-    `python -m fishproviz.path_validation path="/Volumes/Extreme_SSD/FE_tracks"`
+    `python3 -m fishproviz.path_validation path="/Volumes/Extreme_SSD/FE_tracks"`
 -   Optional arguments:
     -   `delete=1` -- to delete duplicated filenames
     -   `n_files=<<number of files>>` -- to change the expected number
@@ -138,11 +155,11 @@ and paths of the data files. It logs all error messages into
     anti-clockwise $`\alpha \in [-\pi, \pi]`$.
 -   For the average angle each angle $`\alpha > 0`$
 
-## 4 DATA Visualizations
+## 4 Data Visualizations
 
 ##### 4.1 Entropy Density
 
--   run: `python3 -m src.visualizations.entropy_plots` *plotly needs to
+-   run: `python3 -m fishproviz.visualizations.entropy_plots` *plotly needs to
     be installed*
 -   run: `bach scripts/entropy_density.sh` The PDFs with show in
     tex/entropy_density
@@ -151,7 +168,7 @@ and paths of the data files. It logs all error messages into
 
 -   run: `python3 main.py program=all time_interval="day"` to calculate
     all metrics by day an save them to a csv
--   run: `python3 -m src.visualizations.activity_plotting` to plot the data of the
+-   run: `python3 -m fishproviz.visualizations.activity_plotting` to plot the data of the
     csv-files.
 -   run: `bash scripts/metrics.sh` to create the summery PDF.
 

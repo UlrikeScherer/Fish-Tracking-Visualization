@@ -5,8 +5,12 @@ from fishproviz.config import FRONT, BACK, CONFIG_DATA, DIR_CSV_LOCAL, CALIBRATI
 from .utile import get_camera_pos_keys
 
 def get_area_functions():  # retruns a function to deliver the area for key and day
-    area = read_area_data_from_json()
-    return lambda key, day=None: area[key]
+    try: 
+        area = read_area_data_from_json()
+        return lambda key, day=None: area[key]
+    except Exception as e:
+        print(e, " program will run without area data")
+        return lambda key, day=None: None
 
 def get_calibration_functions():
     calibration_file = f"{CONFIG_DATA}/calibration.json"
