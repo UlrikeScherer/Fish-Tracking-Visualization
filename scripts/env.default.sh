@@ -1,5 +1,4 @@
 #!/bin/bash
-# src/utile.py imports the paths of this file and the bash scripts in tex/ to generate the pdfs do the same
 
 N_BATCHES=15 # SPECIFY THE TRUE NUMBER OF BATCHES per day. Which is the highest index plus one
 # 15 for 8 hours and 8 for feeding f.e. 
@@ -9,8 +8,8 @@ HOURS_PER_DAY=8 # SPECIFY THE NUMBER OF HOURS TRACKED PER DAY
 BATCH_SIZE=10000  # Number of data frames per batch
 FRAMES_PER_SECOND=5 # Number of frames per second
 PROJECT_ID="block1" # The BLOCKID of the experiment, not necessar to specify, just a name for directories
-# -----------------
-# rootserver is the path to the data on the server and the directory where the data is stored
+
+# ---- PATHS -----
 rootserver="/Volumes/data/loopbio_data/FE_(fingerprint_experiment)_SepDec2021"  # On MocOS the path to the root of the data
 path_recordings="/Volumes/data/loopbio_data/02_SE_(superstition_experiment)_JunNov2022/SE_recordings_noisyBackup_07/SE_recordings_phaseII_maze_trials_original/SE_recodings_phaseII_maze_block1_12Jul27Jul2022"
 path_csv="$rootserver/FE_tracks"
@@ -21,18 +20,9 @@ POSITION_STR_BACK="SE_phase2_tracks_final_block1_back"
 dir_front=$path_csv_local/$POSITION_STR_FRONT
 dir_back=$path_csv_local/$POSITION_STR_BACK
 
-FEEDING_SHAPE="ellipse" # ellipse or rectangle
+FEEDING_SHAPE="ellipse" # ellipse or ( rectangle not implimented yet )
 SERVER_FEEDING_TIMES_FILE="/Volumes/data/loopbio_data/02_SE_(superstition_experiment)_JunNov2022/SE_recordings_phasell_maze_trials_times.csv"
 TRIAL_TIMES_CSV="/Volumes/Extreme_SSD/SE_tracks_final/SE_phase4_trial_times.csv"
-
-# shared variables that are used in the scripts
-VIS_DIR="visualisations" # path to stroe the visualisations
-PLOTS_DIR="$VIS_DIR/plots" # path to the plots
-P_FEEDING="feeding"
-P_TRAJECTORY="trajectory"
-CONFIG_DATA="config_data" # To stroe the config data, feeding times, area coordinates, calibration, etc.
-RESULTS="results" # To store the results of the analysis
-TEX_DIR="tex" # To store the tex files
 
 # Calibration 
 CALIBRATION_DIST_CM=83.0
@@ -45,6 +35,16 @@ area_front="$path_csv_local/area_config/areas front 10Sep2021"
 # FILTERING 
 AREA_FILTER=0 # 1 to filter by area, 0 to not filter
 DIRT_FILTER=0 # 1 to filter by dirt, 0 to not filter
+
+# shared variables that are used in the scripts
+# NO Changes needed
+VIS_DIR="visualisations" # path to stroe the visualisations
+PLOTS_DIR="$VIS_DIR/plots" # path to the plots
+P_FEEDING="feeding"
+P_TRAJECTORY="trajectory"
+CONFIG_DATA="config_data" # To stroe the config data, feeding times, area coordinates, calibration, etc.
+RESULTS="results" # To store the results of the analysis
+TEX_DIR="tex" # To store the tex files
 
 export rootserver
 export path_csv
