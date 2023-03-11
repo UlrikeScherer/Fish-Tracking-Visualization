@@ -9,9 +9,7 @@ from fishproviz.utils import get_camera_pos_keys
 from fishproviz.config import (
     DIR_CSV_LOCAL,
     HOURS_PER_DAY,
-    MEAN_GLOBAL,
     N_SECONDS_PER_HOUR,
-    dir_back,
     PLOTS_DIR,
     RESULTS_PATH,
     create_directories
@@ -48,7 +46,7 @@ programs = [TRAJECTORY,FEEDING, TRIAL_TIMES, *metric_names, ALL_METRICS, CLEAR]
 
 def main_metrics(program, time_interval=100, include_median=None, **kwargs_metrics):
     if time_interval in ["hour", "day"]:
-        time_interval = {"hour": N_SECONDS_PER_HOUR, "day": N_SECONDS_PER_HOUR * HOURS_PER_DAY}[time_interval]
+        time_interval = {"hour": N_SECONDS_PER_HOUR, "day": int(N_SECONDS_PER_HOUR * HOURS_PER_DAY)}[time_interval]
     else:
         time_interval = int(time_interval)
 
@@ -72,7 +70,7 @@ def main_metrics(program, time_interval=100, include_median=None, **kwargs_metri
 
     results = metric_functions[program](include_median=include_median, **kwargs_metrics)
 
-    if time_interval in [N_SECONDS_PER_HOUR, N_SECONDS_PER_HOUR * HOURS_PER_DAY]:
+    if time_interval in [N_SECONDS_PER_HOUR, int(N_SECONDS_PER_HOUR * HOURS_PER_DAY)]:
         metric_per_hour_csv(**results)
 
 

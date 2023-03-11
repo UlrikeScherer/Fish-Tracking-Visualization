@@ -20,12 +20,12 @@ extensions = [
 ]
 setup(
     name="fishproviz",
-    version="0.1",
+    version="0.2",
     author="Luka Stärk",
     author_email="luka.staerk@mailbox.org",
     description="A package to analyze trajectories",
     ext_modules=cythonize(extensions),
     #install_requires=['requirement'],
-    packages=[*find_packages()], #["fishproviz", "fishproviz.utils", "fishproviz.metrics","fishproviz.trajectory"],
+    packages=["fishproviz", "fishproviz.utils", "fishproviz.metrics","fishproviz.trajectory"],
     include_package_data=True
     )

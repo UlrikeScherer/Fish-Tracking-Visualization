@@ -43,9 +43,11 @@ def get_start_time_directory(is_feeding):
 
 def get_interval_name_from_seconds(seconds):
     if seconds == N_SECONDS_PER_HOUR:
-        return "HOUR"
-    if seconds == N_SECONDS_PER_HOUR * HOURS_PER_DAY:
-        return "DAY"
+        return "hour"
+    if seconds == int(N_SECONDS_PER_HOUR * HOURS_PER_DAY):
+        return "day"
+    else:
+        return "%s_sec" % seconds
 
 
 def get_directory(is_back=None):
@@ -55,11 +57,6 @@ def get_directory(is_back=None):
         return dir_back
     else:
         return dir_front
-
-
-def get_number_of_batches():
-    return N_BATCHES
-
 
 def get_camera_names(is_back=False):
     dir_ = get_directory(is_back)
@@ -102,7 +99,6 @@ def get_days_in_order(interval=None, is_back=None, camera=None):
     """
     if camera is None or is_back is None:
         raise ValueError("provid kwargs is_back and camera")
-        # camera = get_camera_names(is_back=is_back)[0]
     dir_ = get_directory(is_back)
     days = [
         name[:15]

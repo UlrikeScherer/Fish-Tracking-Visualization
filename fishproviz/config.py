@@ -46,7 +46,7 @@ DIR_TRACES = "%s/%s/%s" % (RESULTS_PATH, PROJECT_ID, "traces")
 N_BATCHES = int(os.environ["N_BATCHES"])
 MIN_BATCH_IDX = int(os.environ["MIN_BATCH_IDX"])
 MAX_BATCH_IDX = int(os.environ["MAX_BATCH_IDX"])
-HOURS_PER_DAY = int(os.environ["HOURS_PER_DAY"])
+HOURS_PER_DAY = float(os.environ["HOURS_PER_DAY"])
 BATCH_SIZE = int(os.environ["BATCH_SIZE"])
 FRAMES_PER_SECOND = int(os.environ["FRAMES_PER_SECOND"])
 N_SECONDS_PER_HOUR = 3600
@@ -55,12 +55,6 @@ N_SECONDS_OF_DAY = 24 * N_SECONDS_PER_HOUR
 # METRICS
 float_format = "%.10f"
 sep = ";"
-
-# TRACE TABLE
-CAM_POS = "CAMERA_POSITION"
-DAY = "DAY"
-BATCH = "BATCH"
-DATAFRAME = "DATEFRAME"
 
 # Calibrations
 # AREA CONFIG

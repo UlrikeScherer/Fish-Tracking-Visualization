@@ -3,7 +3,6 @@ import os
 import numpy as np
 import pandas as pd
 from fishproviz.config import (
-    CAM_POS,
     N_SECONDS_OF_DAY,
     HOURS_PER_DAY,
     N_SECONDS_PER_HOUR,
@@ -77,43 +76,18 @@ def metric_data_to_csv(
 def metric_per_hour_csv(
     results=None, metric_name=None, time_interval=None
 ):
-    columns = [CAM_POS]
-    entities_per_day = 1
+    columns = ["cam_pos", "day", "time_index"]
     interval_name = get_interval_name_from_seconds(time_interval)
-    if time_interval == N_SECONDS_PER_HOUR * HOURS_PER_DAY:
-        data_idx = np.array(list(results.keys()))
-    elif time_interval == N_SECONDS_PER_HOUR:
-        entities_per_day = HOURS_PER_DAY
-        columns.append("HOUR")
-        data_idx = np.array(list(product(results.keys(), range(HOURS_PER_DAY))))
-    else:
-        raise ValueError(
-            "time_interval must be either %s or %s, but was %s"
-            % (N_SECONDS_PER_HOUR * HOURS_PER_DAY, N_SECONDS_PER_HOUR, time_interval)
-        )
-    # initialize table of nan
-    days = get_all_days_of_context()
-    data = np.empty((data_idx.shape[0], len(days)))
-    data.fill(np.nan)
-    df = pd.DataFrame(data=data_idx, columns=columns)
-    df_d = pd.DataFrame(data=data, columns=days)
-    first_key = next(iter(results.keys()))
-    first_day = next(iter(results[first_key].keys()))
+    df_sum = pd.concat([pd.concat([pd.DataFrame(d) for d in data.values()], keys=data.keys()) 
+                    for data in results.values()], keys=results.keys())
     measures = get_csv_columns_from_results_dim(
-        results[first_key][first_day].shape[1], metric_name
+        df_sum.shape[1], metric_name
     )
-    dfs_measures = [pd.concat((df, df_d), axis=1) for m in measures]
-    for i, (cam_pos, fish) in enumerate(results.items()):
-        for j, (day, day_data) in enumerate(fish.items()):
-            idx = i * entities_per_day
-            k = idx + day_data.shape[0] - 1
-            for mi in range(len(dfs_measures)):
-                dfs_measures[mi].loc[idx:k, day] = day_data[:, mi]
-
-    for mi, df_m in enumerate(dfs_measures):
-        df_m.to_csv(
+    df_sum = df_sum.reset_index()
+    df_sum.columns=[*columns, *measures]
+    df_sum.to_csv(
             get_filename_for_metric_csv(
-                metric_name, interval_name, measure_name=measures[mi]
+                metric_name, interval_name
             ),
             sep=sep,
             float_format=float_format,
