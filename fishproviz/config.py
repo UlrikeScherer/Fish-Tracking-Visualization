@@ -62,11 +62,15 @@ area_back = os.environ["area_back"]
 area_front = os.environ["area_front"]
 CALIBRATION_DIST_CM=float(os.environ["CALIBRATION_DIST_CM"])
 DEFAULT_CALIBRATION=float(os.environ["DEFAULT_CALIBRATION"])
+err_file = f"{RESULTS_PATH}/log_error.csv"
 
 def create_directories():
     """
     Creates the directories used in the project
     """
-    for d in [VIS_DIR, PLOTS_DIR, RESULTS_PATH, DIR_TRACES, TEX_DIR]:
+    for d in [VIS_DIR, PLOTS_DIR, RESULTS_PATH, DIR_TRACES, TEX_DIR, CONFIG_DATA]:
         if not os.path.exists(d):
             os.makedirs(d, exist_ok=True)
+    if not os.path.exists(err_file):
+        with open(err_file, "w") as f:
+            f.write(";".join(["fish_key", "day", "duration", "xpx","ypx","start_idx", "end_idx"])+"\n")

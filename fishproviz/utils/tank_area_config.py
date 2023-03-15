@@ -1,7 +1,7 @@
 import glob, json, os
 import matplotlib.pyplot as plt
 import numpy as np
-from fishproviz.config import FRONT, BACK, CONFIG_DATA, DIR_CSV_LOCAL, CALIBRATION_DIST_CM,DEFAULT_CALIBRATION, CONFIG_DATA, area_back, area_front
+from fishproviz.config import FRONT, BACK, CONFIG_DATA, CALIBRATION_DIST_CM,DEFAULT_CALIBRATION, CONFIG_DATA, area_back, area_front
 from .utile import get_camera_pos_keys
 
 def get_area_functions():  # retruns a function to deliver the area for key and day
@@ -14,13 +14,16 @@ def get_area_functions():  # retruns a function to deliver the area for key and 
 
 def get_calibration_functions():
     calibration_file = f"{CONFIG_DATA}/calibration.json"
-    try:
+    if not os.path.exists(calibration_file):
+        try: 
+            calibration = compute_calibrations()
+        except Exception as e:
+            print(e, "will use default calibration of %s px/cm" % ( DEFAULT_CALIBRATION))
+            return lambda cam: DEFAULT_CALIBRATION
+    else:
         f = open(calibration_file, "r")
         calibration = json.load(f)
-        return lambda cam: calibration[cam]
-    except Exception as e:
-        print(e, " no calibration file found under %s, will use default calibration of %s px/cm" % (calibration_file, DEFAULT_CALIBRATION))
-    return lambda cam: DEFAULT_CALIBRATION
+    return lambda cam: calibration[cam]
 
 def read_area_data_from_json():
     if not os.path.exists("{}/area_data.json".format(CONFIG_DATA)):
@@ -31,14 +34,10 @@ def read_area_data_from_json():
             area_data[k] = np.array(area_data[k])
         return area_data
 
-def get_area_path():
-    return {BACK: area_back, FRONT: area_front}
-
 def get_areas():
-    area_paths = get_area_path()
     area_data = dict()
     example_dict = {FRONT: np.array([]), BACK: np.array([])}
-    for p, path in (area_paths).items():
+    for p, path in zip([FRONT,BACK], [area_front, area_back]):
         files_a = glob.glob("%s/*.csv" % (path), recursive=True)
         if len(files_a) == 0:
             raise Exception("no files found in %s" % path)
@@ -100,10 +99,10 @@ def get_line_starting_with(file, matchstr="Last"):
         
 def compute_calibrations():  
     calibration = dict()
-    for position,path in get_area_path().items():
+    for path in [area_front, area_back]:
         files_a = glob.glob("%s/*.csv" % (path), recursive=True)
         if len(files_a) == 0:
-            raise Exception("no files found in %s" % (path))
+            raise Exception("No files found in the directory: %s" % (path))
         for file in files_a:
             c = os.path.basename(file)[:8]
             if c.isnumeric():

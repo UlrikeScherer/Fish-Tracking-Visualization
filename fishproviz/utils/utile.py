@@ -162,21 +162,14 @@ def get_seconds_from_day(day):
     hours, minutes = int(day[9:11]), int(day[11:13])
     return minutes * 60 + hours * 3600
 
-
-def get_date(day):
-    return day[:8]
-
-
 def get_date_string(day):
     return "%s/%s/%s" % (day[:4], day[4:6], day[6:8])
-
 
 def get_full_date(day):
     dateiso = "{}-{}-{}T{}:{}:{}+00:00".format(
         day[:4], day[4:6], day[6:8], day[9:11], day[11:13], day[13:15]
     )
     return datetime.fromisoformat(dateiso).strftime("%A, %B %d, %Y %H:%M")
-
 
 def get_position_string(is_back):
     if is_back:

@@ -1,11 +1,8 @@
-from itertools import product
 import os
 import numpy as np
 import pandas as pd
 from fishproviz.config import (
     N_SECONDS_OF_DAY,
-    HOURS_PER_DAY,
-    N_SECONDS_PER_HOUR,
     PROJECT_ID,
     RESULTS_PATH,
     float_format,
@@ -13,14 +10,12 @@ from fishproviz.config import (
 )
 from fishproviz.utils.utile import (
     get_interval_name_from_seconds,
-    get_start_time_directory,
     get_seconds_from_day,
-    get_all_days_of_context,
 )
 
 csv_columns_time = ["day", "time"]
 csv_columns_results = ["mean", "std", "median"]
-num_datapoints = "number_of_valid_data_points"
+num_datapoints = "num_valid_points"
 
 
 def get_csv_columns_from_results_dim(dimension, metric_name):
@@ -85,12 +80,15 @@ def metric_per_hour_csv(
     )
     df_sum = df_sum.reset_index()
     df_sum.columns=[*columns, *measures]
+    #update the type of the columns
+    df_sum[num_datapoints]= df_sum[num_datapoints].astype(int)
+
     df_sum.to_csv(
             get_filename_for_metric_csv(
                 metric_name, interval_name
             ),
-            sep=sep,
             float_format=float_format,
+            sep=sep
         )
 
 

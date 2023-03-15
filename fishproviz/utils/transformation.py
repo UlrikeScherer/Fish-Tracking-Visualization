@@ -1,7 +1,6 @@
 import numpy as np
 from .tank_area_config import get_calibration_functions
-CONST_PX2CM = 0.02275
-FUNCS_PX2CM = get_calibration_functions()
+from fishproviz.config import DEFAULT_CALIBRATION
 
 def normalize_origin_of_compartment(data, area, is_back):
     if is_back:
@@ -21,8 +20,9 @@ def rotation(t):
 
 
 def px2cm(a, camera=None, day=None):
+    FUNCS_PX2CM = get_calibration_functions()
     if camera: return a * FUNCS_PX2CM(camera, day)
-    return a * CONST_PX2CM
+    return a * DEFAULT_CALIBRATION
 
 
 def pixel_to_cm(pixels, camera=None, day=None):
@@ -30,11 +30,12 @@ def pixel_to_cm(pixels, camera=None, day=None):
     @params: pixels (Nx2)
     returns: cm (Nx2)
     """
+    FUNCS_PX2CM = get_calibration_functions()
     R = rotation(np.pi / 4)
     if camera and day:
         t = [FUNCS_PX2CM(camera, day), FUNCS_PX2CM(camera, day)]
     else:
-        t = [CONST_PX2CM, CONST_PX2CM]
+        t = [DEFAULT_CALIBRATION, DEFAULT_CALIBRATION]
     T = np.diag(t)
     trans_cm = np.array([19.86765585, -1.16965425])
     return (pixels @ R @ T) - trans_cm

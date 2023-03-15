@@ -1,13 +1,7 @@
 import numpy as np
-from fishproviz.config import THRESHOLD_AREA_PX, BACK, SPIKE_THRESHOLD, RESULTS_PATH, AREA_FILTER, DIRT_FILTER,DIRT_THRESHOLD
+from fishproviz.config import THRESHOLD_AREA_PX, BACK, SPIKE_THRESHOLD, err_file, AREA_FILTER, DIRT_FILTER,DIRT_THRESHOLD
 from src.methods import distance_to_wall_chunk, calc_steps
 from fishproviz.utils.transformation import px2cm
-import os
-
-err_file = f"{RESULTS_PATH}/log_error.csv"
-if not os.path.exists(err_file):
-    with open(err_file, "w") as f:
-        f.write(";".join(["fish_key", "day", "duration", "xpx","ypx","start_idx", "end_idx"])+"\n")
 
 def all_error_filters(data, area_tuple, **kwargs):
     """
