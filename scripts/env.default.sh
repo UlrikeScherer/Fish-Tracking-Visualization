@@ -35,6 +35,9 @@ area_front="$path_csv_local/area_config/areas front 10Sep2021"
 # FILTERING 
 AREA_FILTER=0 # 1 to filter by area, 0 to not filter
 DIRT_FILTER=0 # 1 to filter by dirt, 0 to not filter
+SPIKE_THRESHOLD=8  # In centimeters. to consider a step as a spike (alternative definition MEAN_GLOBAL + 3 * SD_GLOBAL)
+DIRT_THRESHOLD=300  # Threshold for dirt detection, indicates the number of consecutive frames that, when equal, are classified as dirt.
+THRESHOLD_AREA_PX=50  # The threshold in pixels for the exclusion of data points that are not within the area of the tank.
 
 # shared variables that are used in the scripts
 # NO Changes needed

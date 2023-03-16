@@ -4,21 +4,16 @@ import os
 import fishproviz 
 module_path = os.path.dirname(fishproviz.__file__)
 load_envbash(module_path+ "/config.env")
-# Calculated MEAN and SD for the data set filtered for erroneous frames
-MEAN_GLOBAL = 0.22746102241709162
-SD_GLOBAL = 1.0044248513034164
 # THRESHOLDS for the data set filtered for erroneous frames
-SPIKE_THRESHOLD = 8  # In centimeters. to consider a step as a spike (alternative definition MEAN_GLOBAL + 3 * SD_GLOBAL)
-DIRT_THRESHOLD = (
-    60 * 5
-)  # Threshold for dirt detection, indicates the number of consecutive frames that, when equal, are classified as dirt.
-THRESHOLD_AREA_PX = 50  # The threshold in pixels for the exclusion of data points that are not within the area of the tank.
+SPIKE_THRESHOLD = int(os.environ["SPIKE_THRESHOLD"]) 
+DIRT_THRESHOLD = int(os.environ["DIRT_THRESHOLD"])
+THRESHOLD_AREA_PX = int(os.environ["THRESHOLD_AREA_PX"])
 # FILTERING 
 AREA_FILTER=int(os.environ["AREA_FILTER"]) # 1 to filter by area, 0 to not filter
 DIRT_FILTER=int(os.environ["DIRT_FILTER"]) # 1 to filter by dirt, 0 to not filter
 ROOT = os.environ["rootserver"]
-DIR_CSV = os.environ["path_csv"]  #
-DIR_CSV_LOCAL = os.environ["path_csv_local"]  #
+DIR_CSV = os.environ["path_csv"]  
+DIR_CSV_LOCAL = os.environ["path_csv_local"]  
 PATH_RECORDINGS=os.environ["path_recordings"]
 FRONT, BACK = "front", "back"
 
