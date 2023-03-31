@@ -59,6 +59,7 @@ CALIBRATION_DIST_CM=float(os.environ["CALIBRATION_DIST_CM"])
 DEFAULT_CALIBRATION=float(os.environ["DEFAULT_CALIBRATION"])
 err_file = f"{RESULTS_PATH}/log_error.csv"
 
+
 def create_directories():
     """
     Creates the directories used in the project

@@ -89,7 +89,7 @@ class FeedingTrajectory(Trajectory):
 
         feeding_filter = batch.FRAME.between(start_idx, end_idx)
 
-        batchxy = pixel_to_cm(batch[["xpx", "ypx"]].to_numpy())
+        batchxy = pixel_to_cm(batch[["xpx", "ypx"]].to_numpy(), fish_key=fish_id)
         F.line.set_data(*batchxy.T)
 
         fish_key = "%s_%s"%tuple(self.fish2camera[fish_id])
@@ -112,10 +112,10 @@ class FeedingTrajectory(Trajectory):
             ]  # The first visit to the box clearly happens at index 0 of feeding_b and the last visit ends at the last index of feeding_b
             n_entries = len(index_visits) - 1  # -1 for the last out index
 
-        fb = pixel_to_cm(feeding_b[["xpx", "ypx"]].to_numpy()).T
+        fb = pixel_to_cm(feeding_b[["xpx", "ypx"]].to_numpy(), fish_key=fish_id).T
         lines = F.ax.get_lines()
         # UPDATE BOX
-        box_cm = pixel_to_cm(box)
+        box_cm = pixel_to_cm(box, fish_key)
         lines[1].set_data(*box_cm.T)
 
         lines = lines[2:]

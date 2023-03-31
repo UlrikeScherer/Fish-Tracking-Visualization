@@ -220,8 +220,8 @@ def csv_of_the_day(
     day,
     is_back=False,
     drop_out_of_scope=False,
-    print_log=False,
-    batch_keys_remove=[]
+    batch_keys_remove=[],
+    print_logs=True,
 ):
     """
     @params: camera, day, is_back, drop_out_of_scope
@@ -238,7 +238,7 @@ def csv_of_the_day(
         )
         if re.search(r"[0-9].*\.csv$", f[-6:])
     ]
-
+    filenames_f = sorted(filenames_f)
     LOG, _, filtered_files = filter_files(
         camera, day, filenames_f, n_files=MAX_BATCH_IDX + 1, min_idx=MIN_BATCH_IDX
     )  # filters for duplicates in the batches for a day. It takes the LAST one!!!
@@ -246,7 +246,7 @@ def csv_of_the_day(
         filtered_files.pop(key, None)
     file_keys = list(filtered_files.keys())
     correct_files = list(filtered_files.values())
-    if print_log and len(LOG) > 0:
+    if print_logs and len(LOG) > 0:
         print("\n {}/{}/{}*: \n".format(dir_, camera, day), "\n".join(LOG))
     return file_keys, merge_files(correct_files, drop_out_of_scope)
 

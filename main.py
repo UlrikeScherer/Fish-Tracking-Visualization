@@ -12,7 +12,7 @@ from fishproviz.config import (
     N_SECONDS_PER_HOUR,
     PLOTS_DIR,
     RESULTS_PATH,
-    create_directories
+    create_directories, 
 )
 from fishproviz.trajectory import Trajectory, FeedingTrajectory
 from fishproviz.metrics import (
@@ -24,12 +24,6 @@ from fishproviz.metrics import (
     distance_to_wall_per_interval,
     absolute_angle_per_interval,
 )
-from fishproviz.visualizations.activity_plotting import (
-    sliding_window,
-    sliding_window_figures_for_tex,
-)
-from fishproviz.utils import is_valid_dir
-
 TRAJECTORY = "trajectory"
 FEEDING = "feeding"
 TRIAL_TIMES = "trial_times"
@@ -98,6 +92,7 @@ def main(
     time_interval=100,
     fish_id=None,
     include_median=None,
+    print_logs=False,
 ):
     """param:   test, 0,1 when test==1 run test mode
     program: trajectory, activity, turning_angle
@@ -109,6 +104,7 @@ def main(
         time_interval=time_interval,
         write_to_csv=True,
         include_median=include_median,
+        print_logs=print_logs,
     )
     # PROGRAM METRICS or TRAJECTORY or CLEAR
     if program == TRAJECTORY:
@@ -141,6 +137,7 @@ def set_args():
     parser.add_argument("-ti","--time_interval", help="Choose a time interval in second to compute averages of metrics, also possible [day, hour]", type=str, default=100)
     parser.add_argument("-fid","--fish_id", help="Fish id to run can be by 'camera_position' or index, default is all fish_ids", type=str, default=None)
     parser.add_argument("--include_median", help="Include median or not only for activity", action="store_true")
+    parser.add_argument("-logs","--print_logs", help="Print log", action="store_true")
     args = parser.parse_args()
     return args
 

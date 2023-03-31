@@ -220,10 +220,11 @@ def entropy(data, frame_interval, error_index, area):
     )
 
 def distance_to_wall(data, frame_interval, error_index, area):
+    fish_key = area[0]
     return calculate_result_for_interval(
         data,
         frame_interval,
-        lambda chunk: mean_std(px2cm(distance_to_wall_chunk(chunk, area[1]))),
+        lambda chunk: mean_std(px2cm(distance_to_wall_chunk(chunk, area[1]), fish_key=fish_key)),
         error_index,
     )
 
@@ -275,6 +276,7 @@ def metric_per_interval(
     drop_out_of_scope=False,
     out_dim=3,
     include_median=False,
+    print_logs=False,
 ):
     """
     Applies a given function to all fishes in fish_ids with the time_interval, for all days in the day_interval interval
@@ -318,8 +320,8 @@ def metric_per_interval(
                 camera_id,
                 day,
                 is_back=is_back,
-                
                 drop_out_of_scope=drop_out_of_scope,
+                print_logs=print_logs
             )  # True or False testing needed
             if len(df_day) > 0:
                 df = pd.concat(df_day)
@@ -341,7 +343,7 @@ def metric_per_interval(
                         **metric_kwargs
                     )
                 else:
-                    data = pixel_to_cm(df[["xpx", "ypx"]].to_numpy())
+                    data = pixel_to_cm(df[["xpx", "ypx"]].to_numpy(), fish_key=fish_key)
                     result = metric(
                         data,
                         time_interval * FRAMES_PER_SECOND,

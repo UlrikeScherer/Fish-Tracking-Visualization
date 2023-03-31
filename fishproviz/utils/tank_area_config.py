@@ -23,7 +23,7 @@ def get_calibration_functions():
     else:
         f = open(calibration_file, "r")
         calibration = json.load(f)
-    return lambda cam: calibration[cam]
+    return lambda cam: calibration[cam.split("_")[0]]
 
 def read_area_data_from_json():
     if not os.path.exists("{}/area_data.json".format(CONFIG_DATA)):
