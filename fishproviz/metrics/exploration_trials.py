@@ -44,7 +44,7 @@ def exploration_trials(path_trials=TRIAL_TIMES_CSV):
                 data = trial_df[["xpx", "ypx"]].to_numpy()
                 area_tuple = (fk, area_func(fk, day=d))
                 err_filter = error_default_points(data)
-                act = activity(pixel_to_cm(data), data.shape[0], err_filter)
+                act = activity(pixel_to_cm(data, fish_key=fk), data.shape[0], err_filter)
                 tdf.loc[tdf["date"]==date,fk] = act[0][0]
                 tdf_ndf.loc[tdf["date"]==date,fk] = act[0][2]
                 

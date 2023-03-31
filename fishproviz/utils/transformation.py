@@ -43,5 +43,6 @@ def pixel_to_cm(pixels, fish_key=None):
     else:
         t = [DEFAULT_CALIBRATION, DEFAULT_CALIBRATION]
     T = np.diag(t)
+    cm_data = (pixels @ R @ T)
     trans_cm = np.array([19.86765585, -1.16965425])
-    return (pixels @ R @ T) - trans_cm
+    return cm_data - trans_cm

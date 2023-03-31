@@ -151,7 +151,8 @@ class Trajectory:
         ):  # remove error point, only need to carry it to this point to record the last frame number
             batch.drop(batch.tail(1).index)
 
-        batchxy = pixel_to_cm(batch[["xpx", "ypx"]].to_numpy(), fish_key=fish_id)
+        fish_key = "%s_%s"%tuple(self.fish2camera[fish_id])
+        batchxy = pixel_to_cm(batch[["xpx", "ypx"]].to_numpy(), fish_key=fish_key)
         F.line.set_data(*batchxy.T)
         # draw spikes where datapoints were lost
         # ax.draw_artist(ax.patch)

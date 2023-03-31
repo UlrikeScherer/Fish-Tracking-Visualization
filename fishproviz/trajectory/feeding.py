@@ -88,11 +88,11 @@ class FeedingTrajectory(Trajectory):
             batch.drop(batch.tail(1).index)
 
         feeding_filter = batch.FRAME.between(start_idx, end_idx)
-
-        batchxy = pixel_to_cm(batch[["xpx", "ypx"]].to_numpy(), fish_key=fish_id)
-        F.line.set_data(*batchxy.T)
-
         fish_key = "%s_%s"%tuple(self.fish2camera[fish_id])
+
+        batchxy = pixel_to_cm(batch[["xpx", "ypx"]].to_numpy(), fish_key=fish_key)
+        F.line.set_data(*batchxy.T)
+        
         feeding_b, box = self.FeedingShape.contains(
             batch[feeding_filter], fish_key, date
         )  # feeding_b: array of data frames that are inside the feeding box.

@@ -44,6 +44,12 @@ def metric_data_to_csv(
             )
 
         time_np = np.array(time)
+        if time_np.shape[0] == 0:
+            print(
+                "# WARNING: for %s der are no files. This is probably because no valid data was found for this camera position."
+                % cam_pos
+            )
+            continue
         concat_r = np.concatenate(list(days.values()))
         if (
             time_np.ndim != concat_r.ndim
@@ -73,8 +79,10 @@ def metric_per_hour_csv(
 ):
     columns = ["cam_pos", "day", "time_index"]
     interval_name = get_interval_name_from_seconds(time_interval)
-    df_sum = pd.concat([pd.concat([pd.DataFrame(d) for d in data.values()], keys=data.keys()) 
-                    for data in results.values()], keys=results.keys())
+    df_sum = pd.concat([
+                pd.concat([pd.DataFrame(day_data) for day_data in fish_data.values()],
+                           keys=fish_data.keys()) if len(fish_data)>0 else None
+                    for fish_data in results.values()], keys=results.keys())
     measures = get_csv_columns_from_results_dim(
         df_sum.shape[1], metric_name
     )
