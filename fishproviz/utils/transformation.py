@@ -1,8 +1,9 @@
 import numpy as np
-from .tank_area_config import get_calibration_functions
+from .tank_area_config import get_area_functions, get_calibration_functions
 from fishproviz.config import DEFAULT_CALIBRATION
 
 FUNCS_PX2CM = None
+AREA_FUNCS = None
 
 def normalize_origin_of_compartment(data, area, is_back):
     if is_back:
@@ -35,6 +36,14 @@ def pixel_to_cm(pixels, fish_key=None):
     returns: cm (Nx2)
     """
     global FUNCS_PX2CM
+    global AREA_FUNCS
+    if not AREA_FUNCS:
+        AREA_FUNCS = get_area_functions()
+    if AREA_FUNCS(fish_key) is None:
+        origin = np.array([450, 450]) # default origin
+    else:
+        origin = AREA_FUNCS(fish_key)[1] # origin of the area is the second point
+    pixels = pixels - origin
     if not FUNCS_PX2CM:
         FUNCS_PX2CM = get_calibration_functions()
     R = rotation(np.pi / 4)
@@ -44,5 +53,4 @@ def pixel_to_cm(pixels, fish_key=None):
         t = [DEFAULT_CALIBRATION, DEFAULT_CALIBRATION]
     T = np.diag(t)
     cm_data = (pixels @ R @ T)
-    trans_cm = np.array([19.86765585, -1.16965425])
-    return cm_data - trans_cm
+    return cm_data

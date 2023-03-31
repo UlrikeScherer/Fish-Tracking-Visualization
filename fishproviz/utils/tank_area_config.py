@@ -4,13 +4,14 @@ import numpy as np
 from fishproviz.config import FRONT, BACK, CONFIG_DATA, CALIBRATION_DIST_CM,DEFAULT_CALIBRATION, CONFIG_DATA, area_back, area_front
 from .utile import get_camera_pos_keys
 
-def get_area_functions():  # retruns a function to deliver the area for key and day
+def get_area_functions():
+    """returns a function to deliver the area, given a fish_key"""
     try: 
         area = read_area_data_from_json()
-        return lambda key, day=None: area[key]
+        return lambda key: area[key]
     except Exception as e:
         print(e, " program will run without area data")
-        return lambda key, day=None: None
+        return lambda key: None
 
 def get_calibration_functions():
     calibration_file = f"{CONFIG_DATA}/calibration.json"

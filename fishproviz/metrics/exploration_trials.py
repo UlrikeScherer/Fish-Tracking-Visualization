@@ -4,7 +4,6 @@ from fishproviz.utils import get_days_in_order, get_camera_pos_keys, csv_of_the_
 from fishproviz.utils.transformation import pixel_to_cm
 from fishproviz.metrics import activity
 from fishproviz.utils.error_filter import error_default_points
-from fishproviz.utils.tank_area_config import get_area_functions
 import pandas as pd
 
 BLOCK = "block1"
@@ -24,7 +23,6 @@ def exploration_trials(path_trials=TRIAL_TIMES_CSV):
         tdf = pd.read_csv(res_mean, sep=sep)
         tdf_ndf = pd.read_csv(res_ndf, sep=sep)
     subcols = ["mean", "std", "n_df"]
-    area_func = get_area_functions()
     #pd.DataFrame(None, tdf.index, pd.MultiIndex.from_product([get_camera_pos_keys(), ["mean", "std", "n_df"]]))
     tdf_b = tdf[int(BLOCK[-1])==tdf["block"]]
     for fk in get_camera_pos_keys():
@@ -42,7 +40,6 @@ def exploration_trials(path_trials=TRIAL_TIMES_CSV):
                 s,e = get_seconds_from_time(start)*FRAMES_PER_SECOND, get_seconds_from_time(end)*FRAMES_PER_SECOND
                 trial_df = df_d[(df_d.index>=s) & (df_d.index<=e)]
                 data = trial_df[["xpx", "ypx"]].to_numpy()
-                area_tuple = (fk, area_func(fk, day=d))
                 err_filter = error_default_points(data)
                 act = activity(pixel_to_cm(data, fish_key=fk), data.shape[0], err_filter)
                 tdf.loc[tdf["date"]==date,fk] = act[0][0]

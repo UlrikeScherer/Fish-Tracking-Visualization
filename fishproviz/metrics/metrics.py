@@ -326,7 +326,7 @@ def metric_per_interval(
             if len(df_day) > 0:
                 df = pd.concat(df_day)
                 data = df[["xpx", "ypx"]].to_numpy()
-                area_tuple = (fish_key, area_func(fish_key, day=day))
+                area_tuple = (fish_key, area_func(fish_key))
                 err_filter = all_error_filters(
                     data, area_tuple, fish_key=fish_key, day=day
                 )

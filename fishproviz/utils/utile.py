@@ -221,7 +221,7 @@ def csv_of_the_day(
     is_back=False,
     drop_out_of_scope=False,
     batch_keys_remove=[],
-    print_logs=True,
+    print_logs=False,
 ):
     """
     @params: camera, day, is_back, drop_out_of_scope

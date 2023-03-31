@@ -30,7 +30,7 @@ def entropy_density_main():
         for week_i, end in enumerate(
             range(days_per_week, len(days) + 1, days_per_week)
         ):
-            area_tuple = (fk, area_f(fk, day=days[start]))
+            area_tuple = (fk, area_f(fk))
             data_batches = flatten_list(
                 [
                     csv_of_the_day(cam, day, is_back=is_back)[1]
