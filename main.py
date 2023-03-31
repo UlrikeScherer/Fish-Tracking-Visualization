@@ -137,7 +137,7 @@ def set_args():
     parser.add_argument("-ti","--time_interval", help="Choose a time interval in second to compute averages of metrics, also possible [day, hour]", type=str, default=100)
     parser.add_argument("-fid","--fish_id", help="Fish id to run can be by 'camera_position' or index, default is all fish_ids", type=str, default=None)
     parser.add_argument("--include_median", help="Include median or not only for activity", action="store_true")
-    parser.add_argument("-logs","--print_logs", help="Print log", action="store_true")
+    parser.add_argument("-logs","--print_logs", help="Print logs from duplicate file detection other file missmatches", action="store_true")
     args = parser.parse_args()
     return args
 

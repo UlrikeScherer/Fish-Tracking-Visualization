@@ -75,6 +75,7 @@ options:
                         Fish ID to run can be set by 'camera_position'
                         or index, default is all fish_ids
   --include_median      Include median or not only for activity
+  -logs, --print_logs   Print logs
 
 Example of use: python3 main.py trajectory -fid 0
 ```
