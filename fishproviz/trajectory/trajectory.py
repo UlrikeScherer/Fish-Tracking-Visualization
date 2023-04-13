@@ -17,7 +17,7 @@ from fishproviz.metrics import (
     activity_mean_sd,
 )
 from fishproviz.utils.transformation import pixel_to_cm
-from src.methods import (
+from fishproviz.methods import (
     avg_and_sum_angles,
 )
 from fishproviz.utils.utile import (

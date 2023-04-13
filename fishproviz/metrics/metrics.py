@@ -13,7 +13,7 @@ from fishproviz.utils import (
 from fishproviz.utils.tank_area_config import get_area_functions
 from fishproviz.utils.transformation import pixel_to_cm, px2cm
 from fishproviz.metrics.results_to_csv import metric_data_to_csv
-from src.methods import (
+from fishproviz.methods import (
     tortuosity_of_chunk,
     turning_directions,
     distance_to_wall_chunk,

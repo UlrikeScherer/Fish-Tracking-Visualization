@@ -1,6 +1,6 @@
 import numpy as np
 from fishproviz.config import THRESHOLD_AREA_PX, BACK, SPIKE_THRESHOLD, err_file, AREA_FILTER, DIRT_FILTER,DIRT_THRESHOLD
-from src.methods import distance_to_wall_chunk, calc_steps
+from fishproviz.methods import distance_to_wall_chunk, calc_steps
 from fishproviz.utils.transformation import px2cm
 
 def all_error_filters(data, area_tuple, **kwargs):
