@@ -16,7 +16,6 @@ scripts/env.sh
 
 *.ipynb 
 
-.flake8
 
 # ignore FOLDERS
 /plots
