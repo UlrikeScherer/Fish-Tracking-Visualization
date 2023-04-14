@@ -3,9 +3,10 @@ import time
 
 from numpy import any
 
-
+# TODO: add docstring
 def check_foldersystem(path, n_files=15, delete=0):
     LOG_msg = ["For path: %s" % path]
+    # TODO: introduce more expressive naming (e.g. c, d)
     for c in [name for name in os.listdir(path) if len(name) == 8 and name.isnumeric()]:
         day_dirs = [
             name for name in os.listdir("{}/{}".format(path, c)) if name[:8].isnumeric()
@@ -30,6 +31,7 @@ def check_foldersystem(path, n_files=15, delete=0):
                     continue
             # expect only 4 files in the folder for the first day
             if "_1550" in d:
+                # TODO: outsource folder-size assertion => assert_folder_size()
                 if len(files) != 4:
                     wrote_folder = True
                     LOG_msg.append(
@@ -56,6 +58,7 @@ def check_foldersystem(path, n_files=15, delete=0):
                         % "{}/{}/{}".format(path, c, d)
                     )
                 # if the delete flag is set and they are duplicates ==> remove them
+                # TODO: outsource deleting duplicates => delete_duplicates()
                 if delete and len(duplicate_f) > 0:
                     LOG_msg.append("----DELETING DUPLICATES----")
                     for df in duplicate_f:
@@ -88,6 +91,7 @@ def filter_files(c, d, files, n_files=15, min_idx=0):
             ".*{}_{}.{}_{}_\d*-\d*-\d*T\d*_\d*_\d*_\d*.csv".format(c, d[:15], c, key_i)
         )
         i_f = [f for f in files if pattern.match(f) is not None]
+        # TODO: outsource deleting duplicates => delete_duplicates()
         if len(i_f) > 1:
             i_f.sort()
             duplicate_f.extend(i_f[:-1])
@@ -132,7 +136,8 @@ def main(delete=0, n_files=15, path=None):
     """
     if type(n_files) is not int:
         n_files = int(n_files)
-    # past your path here as path1 with %s indicating front or back
+    # paste your path here as path1 with %s indicating front or back
+    # TODO: replace path1 with const, if really necessary; clarification needed
     path1 = "/Volumes/Extreme_SSD/FE_tracks"
     # path1 = '/Volumes/data/loopbio_data/FE_(fingerprint_experiment)_SepDec2021/FE_tracks_retracked/FE_tracks_060000_block1_retracked'
 
@@ -152,6 +157,7 @@ def main(delete=0, n_files=15, path=None):
 
     if len(PATHS) < 2:
         raise ValueError("Path %s does not contain enough folders" % path)
+    # TODO: log immediately into log-file
     LOG = list()
     for p in PATHS:  # validating files for front and back position
         LOG.append(p.upper() + "-" * 100 + "\n")
@@ -164,6 +170,7 @@ def main(delete=0, n_files=15, path=None):
 
 if __name__ == "__main__":
     tstart = time.time()
+    # TODO: impl. arguments safety
     main(**dict((arg.split("=")[0], arg.split("=")[1]) for arg in sys.argv[1:]))
     tend = time.time()
     print("Running time:", tend - tstart, "sec.")
