@@ -1,7 +1,6 @@
 import shutil
 import time
-import sys, os, inspect
-import matplotlib.pyplot as plt
+import os, inspect
 import numpy as np
 import argparse
 from fishproviz.metrics.exploration_trials import exploration_trials
@@ -12,7 +11,7 @@ from fishproviz.config import (
     N_SECONDS_PER_HOUR,
     PLOTS_DIR,
     RESULTS_PATH,
-    create_directories, 
+    create_directories,
 )
 from fishproviz.trajectory import Trajectory, FeedingTrajectory
 from fishproviz.metrics import (
@@ -24,6 +23,7 @@ from fishproviz.metrics import (
     distance_to_wall_per_interval,
     absolute_angle_per_interval,
 )
+
 TRAJECTORY = "trajectory"
 FEEDING = "feeding"
 TRIAL_TIMES = "trial_times"
@@ -36,11 +36,15 @@ WALL_DISTANCE = "wall_distance"
 ALL_METRICS = "all"
 CLEAR = "clear"
 metric_names = [ACTIVITY, TURNING_ANGLE, ABS_ANGLE, TORTUOSITY, ENTROPY, WALL_DISTANCE]
-programs = [TRAJECTORY,FEEDING, TRIAL_TIMES, *metric_names, ALL_METRICS, CLEAR]
+programs = [TRAJECTORY, FEEDING, TRIAL_TIMES, *metric_names, ALL_METRICS, CLEAR]
+
 
 def main_metrics(program, time_interval=100, include_median=None, **kwargs_metrics):
     if time_interval in ["hour", "day"]:
-        time_interval = {"hour": N_SECONDS_PER_HOUR, "day": int(N_SECONDS_PER_HOUR * HOURS_PER_DAY)}[time_interval]
+        time_interval = {
+            "hour": N_SECONDS_PER_HOUR,
+            "day": int(N_SECONDS_PER_HOUR * HOURS_PER_DAY),
+        }[time_interval]
     else:
         time_interval = int(time_interval)
 
@@ -129,24 +133,55 @@ def main(
                 print("Removed directory: %s" % path)
     return None
 
+
 def set_args():
-    parser = argparse.ArgumentParser(prog = 'python3 main.py',
-        description = 'This program computes metrics and visualizations for fish trajectories, the results are saved in the directory %s' % DIR_CSV_LOCAL,
-        epilog = 'Example of use: python3 main.py trajectory -fid 0')
-    parser.add_argument("program", help="Select the program you want to execute", type=str, choices=list(programs))
-    parser.add_argument("-ti","--time_interval", help="Choose a time interval in second to compute averages of metrics, also possible [day, hour]", type=str, default=100)
-    parser.add_argument("-fid","--fish_id", help="Fish id to run can be by 'camera_position' or index, default is all fish_ids", type=str, default=None)
-    parser.add_argument("--include_median", help="Include median or not only for activity", action="store_true")
-    parser.add_argument("-logs","--print_logs", help="Print logs from duplicate file detection other file missmatches", action="store_true")
+    parser = argparse.ArgumentParser(
+        prog="python3 main.py",
+        description="This program computes metrics and visualizations for fish trajectories, the results are saved in the directory %s"
+        % DIR_CSV_LOCAL,
+        epilog="Example of use: python3 main.py trajectory -fid 0",
+    )
+    parser.add_argument(
+        "program",
+        help="Select the program you want to execute",
+        type=str,
+        choices=list(programs),
+    )
+    parser.add_argument(
+        "-ti",
+        "--time_interval",
+        help="Choose a time interval in second to compute averages of metrics, also possible [day, hour]",
+        type=str,
+        default=100,
+    )
+    parser.add_argument(
+        "-fid",
+        "--fish_id",
+        help="Fish id to run can be by 'camera_position' or index, default is all fish_ids",
+        type=str,
+        default=None,
+    )
+    parser.add_argument(
+        "--include_median",
+        help="Include median or not only for activity",
+        action="store_true",
+    )
+    parser.add_argument(
+        "-logs",
+        "--print_logs",
+        help="Print logs from duplicate file detection other file missmatches",
+        action="store_true",
+    )
     args = parser.parse_args()
     return args
+
 
 if __name__ == "__main__":
     args = set_args()
     tstart = time.time()
     create_directories()
     main_kwargs = dict(inspect.signature(main).parameters)
-   
+
     main(**args.__dict__)
     tend = time.time()
     print("Running time:", tend - tstart, "sec.")

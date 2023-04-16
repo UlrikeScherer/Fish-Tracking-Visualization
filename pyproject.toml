@@ -1,0 +1,15 @@
+
+line-length = 227
+target-version = ['py310']
+exclude = '''
+(
+  /(
+      \.git
+    | \.venv
+    | \.eggs
+    | \.pytest_cache
+    | build
+    | dist
+  )/
+)
+'''
