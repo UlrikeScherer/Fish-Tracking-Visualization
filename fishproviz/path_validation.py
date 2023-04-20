@@ -17,66 +17,51 @@ def check_foldersystem(path, n_files=15, delete=0):
         log-message as str
     '''
     LOG_msg = ["For path: %s" % path]
-    # TODO: introduce more expressive naming (e.g. c, d)
-    for c in [name for name in os.listdir(path) if len(name) == 8 and name.isnumeric()]:
-        day_dirs = [
-            name for name in os.listdir("{}/{}".format(path, c)) if name[:8].isnumeric()
+
+    for camera_dir in [name for name in os.listdir(path) if len(name) == 8 and name.isnumeric()]:
+        day_dir_list = [
+            name for name in os.listdir("{}/{}".format(path, camera_dir)) if name[:8].isnumeric()
         ]
         days_unique = set()
-        for d in day_dirs:
-            if d[:8] not in days_unique:
-                days_unique.add(d[:8])
+        for day_dir in day_dir_list:
+            working_dir = f'${path}/${camera_dir}/${day_dir}'
+            if day_dir[:8] not in days_unique:
+                days_unique.add(day_dir[:8])
             else:
-                LOG_msg.append("Duplicate day {} in folder: {}/{}/".format(d, path, c))
-            # if "{}.{}".format(d[:15],c) != d:
-            #    LOG_msg.append("Day %s is not in the correct format"%d) # this message can be ignored
-            files = glob.glob("{}/{}/{}/*.csv".format(path, c, d))
+                LOG_msg.append(
+                    f"Duplicate day ${day_dir} in folder: ${path}/${camera_dir}/"
+                )
+            files = glob.glob(f'${working_dir}/*.csv')
             files = [os.path.basename(f) for f in files]
             wrote_folder = False
 
             # ignore no fish folders
-            if "_no_fish" in d:
+            if "_no_fish" in day_dir:
                 if len(files) > 0:
                     LOG_msg.append("Folders with no_fish suffix should be empty!")
                 else:
                     continue
-            # expect only 4 files in the folder for the first day
-            if "_1550" in d:
-                # TODO: outsource folder-size assertion => assert_folder_size()
-                if len(files) != 4:
-                    wrote_folder = True
-                    LOG_msg.append(
-                        "In folder %s the number of csv files is unequal the expected number 4, it is %d instead"
-                        % ("{}/{}/{}".format(path, c, d), len(files))
-                    )
-                msg, duplicate_f = filter_files(c, d, files, 4)
-
             # normal case
             else:
                 if len(files) != n_files:
                     wrote_folder = True
                     LOG_msg.append(
-                        "In folder %s the number of csv files is unequal the expected number %d, it is %d instead"
-                        % ("{}/{}/{}".format(path, c, d), n_files, len(files))
+                        f"In folder ${working_dir} the number of csv files is unequal the expected number ${n_files}, it is ${len(files)} instead"
                     )
-                msg, duplicate_f, correct_f = filter_files(c, d, files, n_files)
+                msg, duplicate_f_list, _correct_f = filter_files(camera_dir, day_dir, files, n_files)
 
-            # if the are any complains add the to the LOG list
+            # if the are any complains add them to the LOG list
             if len(msg) > 0:
                 if not wrote_folder:
                     LOG_msg.append(
-                        "In folder %s has the correct number of csv files: "
-                        % "{}/{}/{}".format(path, c, d)
+                        f"In folder ${working_dir} has the correct number of csv files: "
                     )
                 # if the delete flag is set and they are duplicates ==> remove them
-                # TODO: outsource deleting duplicates => delete_duplicates()
-                if delete and len(duplicate_f) > 0:
+                if delete and len(duplicate_f_list) > 0:
                     LOG_msg.append("----DELETING DUPLICATES----")
-                    for df in duplicate_f:
-                        os.remove("{}/{}/{}/{}".format(path, c, d, df))
-
+                    for duplicate_f in duplicate_f_list:
+                        os.remove(f'${working_dir}/{duplicate_f}')
                 LOG_msg.extend(msg)
-
     return LOG_msg
 
 
@@ -102,7 +87,7 @@ def filter_files(c, d, files, n_files=15, min_idx=0):
             ".*{}_{}.{}_{}_\d*-\d*-\d*T\d*_\d*_\d*_\d*.csv".format(c, d[:15], c, key_i)
         )
         i_f = [f for f in files if pattern.match(f) is not None]
-        # TODO: outsource deleting duplicates => delete_duplicates()
+
         if len(i_f) > 1:
             i_f.sort()
             duplicate_f.extend(i_f[:-1])
