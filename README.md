@@ -178,6 +178,10 @@ and paths of the data files. It logs all error messages into
     csv-files.
 -   run: `bash scripts/metrics.sh` to create the summery PDF.
 
+#### 5. Linter and Style Checker for Python
+Use `flake8` to check the code style and linting.\
+Install `flake8` with `pip install flake8` and run `flake8` in the root directory of the project. THe configuration file is [`.flake8`](.flake8).
+Use `black path_to_file.py` to format the code.\
 ------------------------------------------------------------------------
 
 Further documentation will follow here...

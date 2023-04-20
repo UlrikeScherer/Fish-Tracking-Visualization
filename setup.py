@@ -25,7 +25,7 @@ setup(
     author_email="luka.staerk@mailbox.org",
     description="A package to analyze trajectories",
     ext_modules=cythonize(extensions),
-    #install_requires=['requirement'],
-    packages=["fishproviz", "fishproviz.utils", "fishproviz.metrics","fishproviz.trajectory"],
-    include_package_data=True
-    )
+    # install_requires=['requirement'],
+    packages=find_packages(),
+    include_package_data=True,
+)
