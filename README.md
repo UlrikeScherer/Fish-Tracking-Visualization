@@ -90,7 +90,7 @@ If you path uses spaces, for example the name of the hard drive, rename
 it to underscores -- `_`.\
 Accessing the data from the server is very slow.
 
-##### 1.1 Generate the trajectory visualizations, *run*:
+##### 1.1 Generate the Trajectory Visualizations, *run*:
 
 -   Trajectories: `python3 main.py trajectory`
 -   Feeding Trajectories: `python3 main.py feeding`
@@ -120,21 +120,17 @@ feeding trajectories in parallel as they use the same files.
 
 ## 2. Data File and Path Validation
 
-The python script `fishproviz/path_validation.py` is used to validate the filenames
+The python script `path_validation.py` is used to validate the filenames
 and paths of the data files. It logs all error messages into
 `log-path-validation.txt`.
-
-##### 2.1 Run the script:
-
--   `python3 -m fishproviz.path_validation path="path/to/root"` -- where you would
-    find the directories for front and back position.
--   for example:
-    `python3 -m fishproviz.path_validation path="/Volumes/Extreme_SSD/FE_tracks"`
--   Optional arguments:
-    -   `delete=1` -- to delete duplicated filenames
-    -   `n_files=<<number of files>>` -- to change the expected number
-        of files in a folder for a day. The default is *15* for feeding
-        use *8*.
+```
+usage: python3 path_validation.py [-h] [--delete] [--n_files N_FILES] [--path PATH]
+options:
+  -h, --help         show this help message and exit
+  --delete           If set, the duplicates will be deleted.
+  --n_files N_FILES  Number of files to expect in each folder, default is 15, for feeding use 8, for a log file that is cleaner.
+  --path PATH        Path to the directory that contains the folders front and back, default is /Volumes/Extreme_SSD/test_tracks.
+```
 
 ## 3. Trajectory Analysis
 
