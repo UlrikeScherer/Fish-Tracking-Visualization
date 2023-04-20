@@ -26,14 +26,14 @@ def check_foldersystem(path, n_files=15, delete=0):
         ]
         days_unique = set()
         for day_dir in day_dir_list:
-            working_dir = f'${path}/${camera_dir}/${day_dir}'
+            working_dir = f'{path}/{camera_dir}/{day_dir}'
             if day_dir[:8] not in days_unique:
                 days_unique.add(day_dir[:8])
             else:
                 LOG_msg.append(
-                    f"Duplicate day ${day_dir} in folder: ${path}/${camera_dir}/"
+                    f"Duplicate day {day_dir} in folder: {path}/{camera_dir}/"
                 )
-            files = glob.glob(f'${working_dir}/*.csv')
+            files = glob.glob(f'{working_dir}/*.csv')
             files = [os.path.basename(f) for f in files]
             wrote_folder = False
 
@@ -48,7 +48,7 @@ def check_foldersystem(path, n_files=15, delete=0):
                 if len(files) != n_files:
                     wrote_folder = True
                     LOG_msg.append(
-                        f"In folder ${working_dir} the number of csv files is unequal the expected number ${n_files}, it is ${len(files)} instead"
+                        f"In folder {working_dir} the number of csv files is unequal the expected number {n_files}, it is {len(files)} instead"
                     )
                 msg, duplicate_f_list, _correct_f = utile.filter_files(camera_dir, day_dir, files, n_files)
 
@@ -56,13 +56,13 @@ def check_foldersystem(path, n_files=15, delete=0):
             if len(msg) > 0:
                 if not wrote_folder:
                     LOG_msg.append(
-                        f"In folder ${working_dir} has the correct number of csv files: "
+                        f"In folder {working_dir} has the correct number of csv files: "
                     )
                 # if the delete flag is set and they are duplicates ==> remove them
                 if delete and len(duplicate_f_list) > 0:
                     LOG_msg.append("----DELETING DUPLICATES----")
                     for duplicate_f in duplicate_f_list:
-                        os.remove(f'${working_dir}/{duplicate_f}')
+                        os.remove(f'{working_dir}/{duplicate_f}')
                 LOG_msg.extend(msg)
     return LOG_msg
 
