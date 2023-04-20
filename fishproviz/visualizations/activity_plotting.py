@@ -246,34 +246,33 @@ def plot_turning_direction(data, time_interval):
 
 def plot_metric_figure_for_days(metric_name, measure=None, write_fig=True):
     file_e = get_filename_for_metric_csv(
-        metric_name, "DAY", False, measure_name=measure
+        metric_name, "day"
     )
     if not os.path.isfile(file_e):
         print("File not found:", file_e)
         return
 
     df = pd.read_csv(file_e, sep=sep)
-    days = df.columns[2:]
-    days = list(map(lambda d: "%s/%s" % (d[4:6], d[6:8]), days))
-    df_np = df.to_numpy()
-
-    fig, axis = plt.subplots(figsize=(25, 5), ncols=2, sharey=True)
-    nfish = df_np.shape[0]
-    ncols = int(np.ceil(nfish / 2))
+    df.set_index("day", inplace=True)
+    fish_keys = df.cam_pos.unique()
+    nfish = len(fish_keys)
+    ncols = min(3, 1+nfish//6) # 3 columns max and at least 1 column
+    fig, axis = plt.subplots(figsize=(10*ncols, 5), ncols=ncols, sharey=True, squeeze=False)
+    axis = np.ravel(axis)
+    
+    batch = int(np.ceil(nfish / ncols))
     for axi, ax in enumerate(axis):
-        start = 0 + axi * ncols
-        for i in range(start, min(start + ncols, nfish)):
-            plot_metric_data(
-                ax,
-                days,
-                df_np[i, 2:],
-                color=color_map[i % len(color_map)],
-                label=df_np[i, 1][6:10],
-                linestyle="--",
-                marker="o",
-                markersize=2,
-                linewidth=0.2,
-            )
+        start = axi * batch
+        fks_to_plot = fish_keys[start : start + batch]
+        df.query("cam_pos in @fks_to_plot").groupby("cam_pos")[measure].plot(
+            #by="cam_pos",
+            ax=ax,
+            linestyle="--",
+            marker="o",
+            markersize=2,
+            linewidth=0.2,
+            legend=True,
+        )
         ax.set_xlabel("Date")
         ax.set_ylabel("%s %s" % (metric_name, measure if measure is not None else ""))
         ax.tick_params(axis="x", labelrotation=45)

@@ -184,7 +184,7 @@ options:
 
 
 #### 5. Linter and Style Checker for Python
-Use `flake8` to check the code style and linting.\
+Use `flake8` to check the code style and linting. 
 Install `flake8` with `pip install flake8` and run `flake8` in the root directory of the project. THe configuration file is [`.flake8`](.flake8).
 Use `black path_to_file.py` to format the code.\
 ------------------------------------------------------------------------
