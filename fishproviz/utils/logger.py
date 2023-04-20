@@ -1,7 +1,9 @@
+import os.path
 import logging
 import logging.handlers
 
-from fishproviz.utils.utile import get_timestamp
+from fishproviz.utils.utile import get_timestamp, create_directory
+
 
 
 # TODO: logger
@@ -33,10 +35,10 @@ def create_logger(
         log_level_stream,
         formatter
     )
-
-    filename = create_filename_with_timestamp(logger_name)
+    
+    logger.filepath = create_filepath_with_timestamp(logger_name)
     log_file_handler = create_log_file_handler(
-        filename,
+        logger.filepath,
         log_level_file,
         formatter
     )
@@ -52,6 +54,7 @@ def create_logger(
     logger.critical = CallCounted(logger.critical)
     return logger
 
+
 def create_log_stream_handler(
     log_level_stream: int,
     formatter
@@ -60,6 +63,7 @@ def create_log_stream_handler(
     stream_handler.setLevel(log_level_stream)
     stream_handler.setFormatter(formatter)
     return stream_handler
+
 
 def create_log_file_handler(
     filename: str,
@@ -72,12 +76,19 @@ def create_log_file_handler(
     file_handler.setLevel(log_level_file)
     return file_handler
 
-def create_filename_with_timestamp(
+
+def create_filepath_with_timestamp(
     program_name: str,
 ):
     timestamp = get_timestamp()
+    dir = create_directory('logs')
     filename = f'{program_name}_{timestamp}.log'
-    return filename
+    filepath = os.path.join(
+        dir,
+        filename
+    )
+    return filepath
+
 
 class CallCounted:
     """Decorator to determine number of calls for a method"""

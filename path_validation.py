@@ -92,7 +92,7 @@ def main(delete=False, n_files=15, path=DIR_CSV_LOCAL):
         Logger.debug(p.upper() + "-" * 100 + "\n")
         
         check_foldersystem(p, n_files=n_files, delete=delete)
-    Logger.info(f"LOG: see log-file, {Logger.debug.counter} errors and warnings found.")
+    Logger.info(f"LOG: see log-file {Logger.filepath}, {Logger.debug.counter} errors and warnings found.")
 
 
 if __name__ == "__main__":

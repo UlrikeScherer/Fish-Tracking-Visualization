@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import re
 import os
+from os import path, makedirs
 import glob
 from itertools import product
 from fishproviz.config import (
@@ -320,3 +321,11 @@ def get_timestamp(
     date_time = datetime.fromtimestamp(timestamp)
     str_date_time = date_time.strftime(format)
     return str_date_time
+
+
+def create_directory(
+    directory_name: str
+): 
+    dir_path = path.join(os.getcwd(), directory_name)
+    makedirs(dir_path, exist_ok=True)
+    return dir_path
