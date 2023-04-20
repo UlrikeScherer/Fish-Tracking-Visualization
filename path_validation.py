@@ -3,7 +3,13 @@ import os, re, glob
 import time
 from numpy import any
 from fishproviz.config import DIR_CSV_LOCAL
-from fishproviz.utils import utile
+from fishproviz.utils import utile, logger
+Logger = logger.create_logger(
+    logger_name= 'path_validation', 
+    log_level_stream= 20, 
+    log_level_file= 10, 
+    filename= 'test.log'
+)
 
 def check_foldersystem(path, n_files=15, delete=False):
     '''
@@ -19,6 +25,7 @@ def check_foldersystem(path, n_files=15, delete=False):
         log-message as str
     '''
     LOG_msg = ["For path: %s" % path]
+    Logger.debug(f"For path: {path}")
 
     for camera_dir in [name for name in os.listdir(path) if len(name) == 8 and name.isnumeric()]:
         day_dir_list = [
@@ -33,6 +40,9 @@ def check_foldersystem(path, n_files=15, delete=False):
                 LOG_msg.append(
                     f"Duplicate day {day_dir} in folder: {path}/{camera_dir}/"
                 )
+                Logger.debug(
+                    f"Duplicate day {day_dir} in folder: {path}/{camera_dir}/"
+                )
             files = glob.glob(f'{working_dir}/*.csv')
             files = [os.path.basename(f) for f in files]
             wrote_folder = False
@@ -41,6 +51,7 @@ def check_foldersystem(path, n_files=15, delete=False):
             if "_no_fish" in day_dir:
                 if len(files) > 0:
                     LOG_msg.append("Folders with no_fish suffix should be empty!")
+                    Logger.debug("Folders with no_fish suffix should be empty!")
                 else:
                     continue
             # normal case
@@ -50,7 +61,10 @@ def check_foldersystem(path, n_files=15, delete=False):
                     LOG_msg.append(
                         f"In folder {working_dir} the number of csv files is unequal the expected number {n_files}, it is {len(files)} instead"
                     )
-                msg, duplicate_f_list, _correct_f = utile.filter_files(camera_dir, day_dir, files, n_files)
+                    Logger.debug(
+                        f"In folder {working_dir} the number of csv files is unequal the expected number {n_files}, it is {len(files)} instead"
+                    )
+                msg, duplicate_f_list, _correct_f = utile.filter_files(camera_dir, day_dir, files, n_files, Logger= Logger)
 
             # if the are any complains add them to the LOG list
             if len(msg) > 0:
@@ -58,9 +72,13 @@ def check_foldersystem(path, n_files=15, delete=False):
                     LOG_msg.append(
                         f"In folder {working_dir} has the correct number of csv files: "
                     )
+                    Logger.debug(
+                        f"In folder {working_dir} has the correct number of csv files: "
+                    )
                 # if the delete flag is set and they are duplicates ==> remove them
                 if delete and len(duplicate_f_list) > 0:
                     LOG_msg.append("----DELETING DUPLICATES----")
+                    Logger.debug("----DELETING DUPLICATES----")
                     for duplicate_f in duplicate_f_list:
                         os.remove(f'{working_dir}/{duplicate_f}')
                 LOG_msg.extend(msg)
@@ -91,10 +109,12 @@ def main(delete=False, n_files=15, path=DIR_CSV_LOCAL):
     LOG = list()
     for p in PATHS:  # validating files for front and back position
         LOG.append(p.upper() + "-" * 100 + "\n")
+        Logger.debug(p.upper() + "-" * 100 + "\n")
+
         LOG.extend(check_foldersystem(p, n_files=n_files, delete=delete))
     f = open("log-path-validation.txt", "w")
     f.writelines("\n".join(LOG))
-    print("LOG: see log-path-validation.txt, %d errors and warnings found" % len(LOG))
+    Logger.info(f"LOG: see log-path-validation.txt, {Logger.debug.counter} errors and warnings found.")
     return len(LOG) == 0
 
 
@@ -124,6 +144,7 @@ if __name__ == "__main__":
         help="Path to the directory that contains the folders front and back, default is %s." % DIR_CSV_LOCAL,
     )
     args = parser.parse_args()
+    Logger.info('Starting')
     main(**args.__dict__)
     tend = time.time()
-    print("Running time:", tend - tstart, "sec.")
+    Logger.info(f"Running time: {tend - tstart} sec.")

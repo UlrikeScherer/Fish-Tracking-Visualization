@@ -250,13 +250,14 @@ def csv_of_the_day(
     return file_keys, merge_files(correct_files, drop_out_of_scope)
 
 
-def filter_files(c, d, files, n_files=15, min_idx=0):
+def filter_files(c, d, files, n_files=15, min_idx=0, Logger=None):
     """
     @params:
     c: camera_id
     d: folder name of a day
     files: list of files that are to be filtered
     n_files: number of files to expect.
+    logger: Logger defined in path_validation
     @Returns: LOG, duplicate_f, correct_f
     LOG: a list of LOG messages
     duplicate_f: a list of all duplicates occurring
@@ -293,14 +294,29 @@ def filter_files(c, d, files, n_files=15, min_idx=0):
                 " ".join(missing_numbers)
             )
         )
+        Logger.debug(
+            "The following files are missing: \n \t\t{}".format(
+                " ".join(missing_numbers)
+            )
+        )
     if len(duplicate_f) > 0:
         LOG.append(
             "The following files are duplicates: \n\t{}".format(
                 "\n\t".join(duplicate_f)
             )
         )
+        Logger.debug(
+            "The following files are duplicates: \n\t{}".format(
+                "\n\t".join(duplicate_f)
+            )
+        )
     if len(corrupted_f) > 0:
         LOG.append(
+            "The following file names are corrupted, maybe wrong folder: \n\t{}".format(
+                "\n\t".join(corrupted_f)
+            )
+        )
+        Logger.debug(
             "The following file names are corrupted, maybe wrong folder: \n\t{}".format(
                 "\n\t".join(corrupted_f)
             )
