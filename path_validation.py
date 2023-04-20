@@ -3,6 +3,7 @@ import os, re, glob
 import time
 from numpy import any
 from fishproviz.config import DIR_CSV_LOCAL
+from fishproviz.utils import utile
 
 def check_foldersystem(path, n_files=15, delete=0):
     '''
@@ -49,7 +50,7 @@ def check_foldersystem(path, n_files=15, delete=0):
                     LOG_msg.append(
                         f"In folder ${working_dir} the number of csv files is unequal the expected number ${n_files}, it is ${len(files)} instead"
                     )
-                msg, duplicate_f_list, _correct_f = filter_files(camera_dir, day_dir, files, n_files)
+                msg, duplicate_f_list, _correct_f = utile.filter_files(camera_dir, day_dir, files, n_files)
 
             # if the are any complains add them to the LOG list
             if len(msg) > 0:
@@ -64,64 +65,6 @@ def check_foldersystem(path, n_files=15, delete=0):
                         os.remove(f'${working_dir}/{duplicate_f}')
                 LOG_msg.extend(msg)
     return LOG_msg
-
-
-def filter_files(c, d, files, n_files=15, min_idx=0):
-    """
-    @params:
-    c: camera_id
-    d: folder name of a day
-    files: list of files that are to be filtered
-    n_files: number of files to expect.
-    @Returns: LOG, duplicate_f, correct_f
-    LOG: a list of LOG messages
-    duplicate_f: a list of all duplicates occurring
-    correct_f: dict of the correct files for keys i in 0,...,n_files-1
-    """
-    LOG = []
-    missing_numbers = []
-    duplicate_f = []
-    correct_f = dict()
-    for i in range(min_idx,n_files):
-        key_i = "{:06d}".format(i)
-        pattern = re.compile(
-            ".*{}_{}.{}_{}_\d*-\d*-\d*T\d*_\d*_\d*_\d*.csv".format(c, d[:15], c, key_i)
-        )
-        i_f = [f for f in files if pattern.match(f) is not None]
-
-        if len(i_f) > 1:
-            i_f.sort()
-            duplicate_f.extend(i_f[:-1])
-            correct_f[key_i] = i_f[-1]
-        elif len(i_f) == 0:
-            missing_numbers.append(key_i)
-        else:
-            correct_f[key_i] = i_f[-1]
-
-    pattern_general = re.compile(
-        ".*{}_{}.{}_\d*_\d*-\d*-\d*T\d*_\d*_\d*_\d*.csv".format(c, d[:15], c)
-    )
-    corrupted_f = [f for f in files if pattern_general.match(f) is None]
-
-    if len(missing_numbers) > 0:
-        LOG.append(
-            "The following files are missing: \n \t\t{}".format(
-                " ".join(missing_numbers)
-            )
-        )
-    if len(duplicate_f) > 0:
-        LOG.append(
-            "The following files are duplicates: \n\t{}".format(
-                "\n\t".join(duplicate_f)
-            )
-        )
-    if len(corrupted_f) > 0:
-        LOG.append(
-            "The following file names are corrupted, maybe wrong folder: \n\t{}".format(
-                "\n\t".join(corrupted_f)
-            )
-        )
-    return LOG, duplicate_f, correct_f
 
 
 def main(delete=False, n_files=15, path=DIR_CSV_LOCAL):
