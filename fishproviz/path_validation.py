@@ -3,8 +3,19 @@ import time
 
 from numpy import any
 
-# TODO: add docstring
 def check_foldersystem(path, n_files=15, delete=0):
+    '''
+    asserts correctness of nested directories in the current working directory,
+    implicitly ignores `_no_fish` folders, expects 4 files for the first day,
+    deletes duplicates if `delete`-flag is set
+    
+    params:
+        path: str
+        n_files: int
+        delete: boolean int (0 == False, 1 == True)
+    returns: 
+        log-message as str
+    '''
     LOG_msg = ["For path: %s" % path]
     # TODO: introduce more expressive naming (e.g. c, d)
     for c in [name for name in os.listdir(path) if len(name) == 8 and name.isnumeric()]:

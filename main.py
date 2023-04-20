@@ -41,8 +41,17 @@ CLEAR = "clear"
 metric_names = [ACTIVITY, TURNING_ANGLE, ABS_ANGLE, TORTUOSITY, ENTROPY, WALL_DISTANCE]
 programs = [TRAJECTORY,FEEDING, TRIAL_TIMES, *metric_names, ALL_METRICS, CLEAR]
 
-# TODO: docstring needed
 def main_metrics(program, time_interval=100, include_median=None, **kwargs_metrics):
+    '''
+    updates overloaded time-interval in kwargs_metrics and writes out metric results to csv-file
+    params:
+        program: str
+        time_interval: int
+        include_median: boolean
+        kwargs_metrics
+    returns:
+        int status code
+    '''
     if time_interval in ["hour", "day"]:
         time_interval = {"hour": N_SECONDS_PER_HOUR, "day": int(N_SECONDS_PER_HOUR * HOURS_PER_DAY)}[time_interval]
     else:
@@ -65,17 +74,23 @@ def main_metrics(program, time_interval=100, include_median=None, **kwargs_metri
 
     if program not in metric_functions:
         # TODO: print explainatory output
-        # TODO: return with error-code
         print("TERMINATED: Invalid program")
-        return
+        return -1
 
     results = metric_functions[program](include_median=include_median, **kwargs_metrics)
 
     if time_interval in [N_SECONDS_PER_HOUR, int(N_SECONDS_PER_HOUR * HOURS_PER_DAY)]:
         metric_per_hour_csv(**results)
+    return 0
 
-# TODO: docstring needed
 def get_fish_ids_to_run(program, fish_id):
+    '''
+    calculates fish-ids from camera positions to distinguish program runs for fishes
+    params: 
+        program: str
+        fish_id: int
+    returns: np-array of ids
+    '''
     fish_keys = get_camera_pos_keys()
     n_fishes = len(fish_keys)
 
@@ -101,9 +116,13 @@ def main(
     include_median=None,
     print_logs=False,
 ):
-    """param:   test, 0,1 when test==1 run test mode
-    program: trajectory, activity, turning_angle
-    time_interval: kwarg for the programs activity, turning_angle
+    """
+    params:  
+        program: str (trajectory, activity, turning_angle)
+        time_interval: int 
+        fish_id: int
+        include_median: bool
+        kwargs for the programs activity, turning_angle
     """
     fish_ids = get_fish_ids_to_run(program, fish_id)
     # TODO: clean up kwargs (e.g. write_to_csv not utilized)
