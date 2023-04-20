@@ -178,6 +178,15 @@ and paths of the data files. It logs all error messages into
     csv-files.
 -   run: `bash scripts/metrics.sh` to create the summery PDF.
 
+##### Git Routines 
+-  `git pull` to pull the changes from the remote repository 
+-  `git checkout filename` to discard the changes in the file
+-  `git status` to check the status of the repository
+-  `git add .` to add all files to the staging area
+-  `git commit -m "commit message"` to commit the changes
+-  `git push` to push the changes to the remote repository
+
+
 #### 5. Linter and Style Checker for Python
 Use `flake8` to check the code style and linting.\
 Install `flake8` with `pip install flake8` and run `flake8` in the root directory of the project. THe configuration file is [`.flake8`](.flake8).
