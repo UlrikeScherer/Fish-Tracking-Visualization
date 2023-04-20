@@ -5,14 +5,6 @@ import logging.handlers
 from fishproviz.utils.utile import get_timestamp, create_directory
 
 
-
-# TODO: logger
-'''
-* create logger w/name
-* create logging streams with agnostic log level
-* format logger
-* create date-dependent logger
-'''
 def create_logger(
     logger_name: str,
     log_level_stream: int,
