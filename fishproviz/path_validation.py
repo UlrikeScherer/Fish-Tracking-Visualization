@@ -1,7 +1,9 @@
-import os, sys, re, glob
+import argparse
+import os, re, glob
 import time
-
 from numpy import any
+
+from fishproviz.config import DIR_CSV_LOCAL
 
 
 def check_foldersystem(path, n_files=15, delete=0):
@@ -36,7 +38,7 @@ def check_foldersystem(path, n_files=15, delete=0):
                         "In folder %s the number of csv files is unequal the expected number 4, it is %d instead"
                         % ("{}/{}/{}".format(path, c, d), len(files))
                     )
-                msg, duplicate_f = filter_files(c, d, files, 4)
+                msg, duplicate_f, correct_f = filter_files(c, d, files, 4)
 
             # normal case
             else:
@@ -123,24 +125,15 @@ def filter_files(c, d, files, n_files=15, min_idx=0):
     return LOG, duplicate_f, correct_f
 
 
-def main(delete=0, n_files=15, path=None):
+def main(delete=False, n_files=15, path=DIR_CSV_LOCAL):
     """
     @params:
     This main has two optional arguments:
     delete: if set to 1, the duplicates will be deleted
     n_files: defines how many files to expect in each folder, default is 15, for feeding use 8, for a log file that is more clear.
     """
-    if type(n_files) is not int:
-        n_files = int(n_files)
-    # past your path here as path1 with %s indicating front or back
-    path1 = "/Volumes/Extreme_SSD/FE_tracks"
-    # path1 = '/Volumes/data/loopbio_data/FE_(fingerprint_experiment)_SepDec2021/FE_tracks_retracked/FE_tracks_060000_block1_retracked'
-
     # select the path here and use the %s to replace "front" or "back"
     position = ["front", "back"]
-    if path is None:
-        path = path1
-
     if not os.path.exists(path):
         raise ValueError("Path %s does not exist" % path)
     else:
@@ -164,6 +157,30 @@ def main(delete=0, n_files=15, path=None):
 
 if __name__ == "__main__":
     tstart = time.time()
-    main(**dict((arg.split("=")[0], arg.split("=")[1]) for arg in sys.argv[1:]))
+    parser = argparse.ArgumentParser(
+        prog="python3 path_validation.py",
+        description="This program validate the file structure below the directory %s or if provided with a PATH argument the corresponding directory."
+        % DIR_CSV_LOCAL,
+        epilog="Example of use: python3 path_validation.py --delete --n_files 15 --path /Volumes/Extreme_SSD/FE_tracks",
+    )
+    parser.add_argument(
+        "--delete",
+        action="store_false",
+        help="If set, the duplicates will be deleted.",
+    )
+    parser.add_argument(
+        "--n_files",
+        type=int,
+        default=15,
+        help="Number of files to expect in each folder, default is 15, for feeding use 8, for a log file that is cleaner.",
+    )
+    parser.add_argument(
+        "--path",
+        type=str,
+        default=DIR_CSV_LOCAL,
+        help="Path to the directory that contains the folders front and back, default is %s." % DIR_CSV_LOCAL,
+    )
+    args = parser.parse_args()
+    main(**args.__dict__)
     tend = time.time()
     print("Running time:", tend - tstart, "sec.")
