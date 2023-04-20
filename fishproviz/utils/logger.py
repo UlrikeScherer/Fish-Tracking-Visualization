@@ -9,7 +9,6 @@ import logging.handlers
 * create logging streams with agnostic log level
 * format logger
 * create date-dependent logger
-* object-oriented logger?
 '''
 def create_logger(
     logger_name: str,
@@ -44,6 +43,12 @@ def create_logger(
     logger.addHandler(log_stream_handler)
     logger.addHandler(log_file_handler)
     
+    # count logging-level-agnostic calls
+    logger.debug = CallCounted(logger.debug)
+    logger.info = CallCounted(logger.info)
+    logger.warning = CallCounted(logger.warning)
+    logger.error = CallCounted(logger.error)
+    logger.critical = CallCounted(logger.critical)
     return logger
 
 def create_log_stream_handler(
@@ -65,3 +70,13 @@ def create_log_file_handler(
     file_handler.setFormatter(formatter)
     file_handler.setLevel(log_level_file)
     return file_handler
+
+class CallCounted:
+    """Decorator to determine number of calls for a method"""
+    def __init__(self,method):
+        self.method=method
+        self.counter=0
+
+    def __call__(self,*args,**kwargs):
+        self.counter+=1
+        return self.method(*args,**kwargs)
