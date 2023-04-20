@@ -20,7 +20,6 @@ from fishproviz.config import (
     dir_back,
     dir_front,
 )
-from fishproviz.path_validation import filter_files
 
 def flatten_list(list_of_lists):
     return [item for sublist in list_of_lists for item in sublist]
@@ -250,3 +249,60 @@ def csv_of_the_day(
         print("\n {}/{}/{}*: \n".format(dir_, camera, day), "\n".join(LOG))
     return file_keys, merge_files(correct_files, drop_out_of_scope)
 
+
+def filter_files(c, d, files, n_files=15, min_idx=0):
+    """
+    @params:
+    c: camera_id
+    d: folder name of a day
+    files: list of files that are to be filtered
+    n_files: number of files to expect.
+    @Returns: LOG, duplicate_f, correct_f
+    LOG: a list of LOG messages
+    duplicate_f: a list of all duplicates occurring
+    correct_f: dict of the correct files for keys i in 0,...,n_files-1
+    """
+    LOG = []
+    missing_numbers = []
+    duplicate_f = []
+    correct_f = dict()
+    for i in range(min_idx,n_files):
+        key_i = "{:06d}".format(i)
+        pattern = re.compile(
+            ".*{}_{}.{}_{}_\d*-\d*-\d*T\d*_\d*_\d*_\d*.csv".format(c, d[:15], c, key_i)
+        )
+        i_f = [f for f in files if pattern.match(f) is not None]
+
+        if len(i_f) > 1:
+            i_f.sort()
+            duplicate_f.extend(i_f[:-1])
+            correct_f[key_i] = i_f[-1]
+        elif len(i_f) == 0:
+            missing_numbers.append(key_i)
+        else:
+            correct_f[key_i] = i_f[-1]
+
+    pattern_general = re.compile(
+        ".*{}_{}.{}_\d*_\d*-\d*-\d*T\d*_\d*_\d*_\d*.csv".format(c, d[:15], c)
+    )
+    corrupted_f = [f for f in files if pattern_general.match(f) is None]
+
+    if len(missing_numbers) > 0:
+        LOG.append(
+            "The following files are missing: \n \t\t{}".format(
+                " ".join(missing_numbers)
+            )
+        )
+    if len(duplicate_f) > 0:
+        LOG.append(
+            "The following files are duplicates: \n\t{}".format(
+                "\n\t".join(duplicate_f)
+            )
+        )
+    if len(corrupted_f) > 0:
+        LOG.append(
+            "The following file names are corrupted, maybe wrong folder: \n\t{}".format(
+                "\n\t".join(corrupted_f)
+            )
+        )
+    return LOG, duplicate_f, correct_f
