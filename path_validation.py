@@ -5,7 +5,7 @@ from numpy import any
 from fishproviz.config import DIR_CSV_LOCAL
 from fishproviz.utils import utile
 
-def check_foldersystem(path, n_files=15, delete=0):
+def check_foldersystem(path, n_files=15, delete=False):
     '''
     asserts correctness of nested directories in the current working directory,
     implicitly ignores `_no_fish` folders, expects 4 files for the first day,
