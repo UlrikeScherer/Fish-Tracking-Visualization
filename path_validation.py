@@ -8,7 +8,6 @@ Logger = logger.create_logger(
     logger_name= 'path_validation', 
     log_level_stream= 20, 
     log_level_file= 10, 
-    filename= 'test.log'
 )
 
 def check_foldersystem(path, n_files=15, delete=False):

@@ -295,7 +295,7 @@ def filter_files(c, d, files, n_files=15, min_idx=0, Logger=None):
             )
         )
         Logger.debug(
-            "The following files are missing: \n \t\t{}".format(
+            "The following files are missing: \n \t\t\t{}".format(
                 " ".join(missing_numbers)
             )
         )
@@ -306,7 +306,7 @@ def filter_files(c, d, files, n_files=15, min_idx=0, Logger=None):
             )
         )
         Logger.debug(
-            "The following files are duplicates: \n\t{}".format(
+            "The following files are duplicates: \n\t\t\t{}".format(
                 "\n\t".join(duplicate_f)
             )
         )
@@ -317,8 +317,18 @@ def filter_files(c, d, files, n_files=15, min_idx=0, Logger=None):
             )
         )
         Logger.debug(
-            "The following file names are corrupted, maybe wrong folder: \n\t{}".format(
+            "The following file names are corrupted, maybe wrong folder: \n\t\t\t{}".format(
                 "\n\t".join(corrupted_f)
             )
         )
     return LOG, duplicate_f, correct_f
+
+
+def get_timestamp(
+    format = "%d-%m-%Y_%H:%M:%S"
+):
+    current_time = datetime.now()
+    timestamp = current_time.timestamp()
+    date_time = datetime.fromtimestamp(timestamp)
+    str_date_time = date_time.strftime(format)
+    return str_date_time

@@ -1,6 +1,7 @@
-import sys
 import logging
 import logging.handlers
+
+from fishproviz.utils.utile import get_timestamp
 
 
 # TODO: logger
@@ -14,14 +15,13 @@ def create_logger(
     logger_name: str,
     log_level_stream: int,
     log_level_file: int,
-    filename: str,
 ):
     ''' 
     configuration of the logging verbosity
     params: 
-        filename: consists of program execution mode and timestamp
-        filemode: for opening the file in a specific mode (`a` for appending)
-        level: either an integer value or directly a logger enum (`ERROR`==`40`, `WARNING`==30)
+        logger_name: program name, overloaded to logging-instance, names the log-file
+        log_level_stream: log level for stdout (e.g. `INFO`=`20`)
+        log_level_file: log level for log-file (e.g.`DEBUG`=`10`)
     '''
 
     logger = logging.getLogger(logger_name)
@@ -34,6 +34,7 @@ def create_logger(
         formatter
     )
 
+    filename = create_filename_with_timestamp(logger_name)
     log_file_handler = create_log_file_handler(
         filename,
         log_level_file,
@@ -70,6 +71,13 @@ def create_log_file_handler(
     file_handler.setFormatter(formatter)
     file_handler.setLevel(log_level_file)
     return file_handler
+
+def create_filename_with_timestamp(
+    program_name: str,
+):
+    timestamp = get_timestamp()
+    filename = f'{program_name}_{timestamp}.log'
+    return filename
 
 class CallCounted:
     """Decorator to determine number of calls for a method"""
