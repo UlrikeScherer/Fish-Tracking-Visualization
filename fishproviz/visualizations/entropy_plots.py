@@ -1,8 +1,7 @@
-import sys
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-from fishproviz.visualizations.activity_plotting import get_filepath_metric_plot
+from .activity_plotting import get_filepath_metric_plot
 from fishproviz.config import BACK
 from fishproviz.metrics.metrics import entropy_for_chunk
 from fishproviz.utils.tank_area_config import get_area_functions
@@ -15,6 +14,7 @@ from fishproviz.utils import (
 from fishproviz.utils.utile import flatten_list
 
 FIG_NAME = "entropy_density"
+ENTROPY_DIR = "entropy_density"
 
 
 def entropy_density_main():
@@ -47,7 +47,7 @@ def entropy_density_main():
             entropy_density_plot(
                 data_by_week[week_i],
                 area_tuple,
-                fig_name="%s_%s_week_%s" % (FIG_NAME, fk, week_i),
+                fig_name="%s_week_%s_%s" % (fk, week_i, FIG_NAME),
                 fish_key=fk,
                 zmax=4000,
                 timewindow="week_%s" % (week_i + 1),
@@ -57,7 +57,7 @@ def entropy_density_main():
         _ = entropy_density_plot(
             data_overall,
             area_tuple,
-            fig_name="%s_%s_overall" % (FIG_NAME, fk),
+            fig_name="%s_overall_%s" % (fk, FIG_NAME),
             fish_key=fk,
             zmax=9000,
             timewindow="overall",
@@ -107,8 +107,8 @@ def draw_density_entropy(
     fig.update_xaxes(visible=True)
     fig.update_yaxes(visible=True)
     fig.write_image(
-        get_filepath_metric_plot(fig_name, subdir="entropy_density"),
-        format="pdf",
+        get_filepath_metric_plot(fig_name, subdir=ENTROPY_DIR, ext="png"),
+        format="png",
         engine="kaleido",
     )
     return fig

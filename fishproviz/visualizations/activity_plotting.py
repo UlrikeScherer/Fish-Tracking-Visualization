@@ -286,16 +286,14 @@ def plot_metric_figure_for_days(metric_name, measure=None, write_fig=True):
             get_filepath_metric_plot(metric_name, measure=measure), bbox_inches="tight"
         )
 
-
-def get_filepath_metric_plot(metric_name, measure=None, subdir=None):
-    CONFIG_DATA = "{}/".format(VIS_DIR)
+def get_filepath_metric_plot(metric_name, measure=None, subdir=None, ext="pdf"):
+    dir2plot = "{}/".format(VIS_DIR)
     if subdir is not None:
-        CONFIG_DATA = "{}/{}/".format(CONFIG_DATA, subdir)
-    os.makedirs(CONFIG_DATA, exist_ok=True)
-    return "{}/{}{}.pdf".format(
-        CONFIG_DATA, metric_name, "_" + measure if measure is not None else ""
+        dir2plot = "{}/{}/".format(dir2plot, subdir)
+    os.makedirs(dir2plot, exist_ok=True)
+    return "{}/{}{}.{}".format(
+        dir2plot, metric_name, "_" + measure if measure is not None else "", ext
     )
-
 
 def plots_over_life_time():
     for metric_name in metric_names:

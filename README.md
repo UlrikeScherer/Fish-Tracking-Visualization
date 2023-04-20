@@ -152,7 +152,7 @@ options:
     normed by the distance between data frame when erroneous data point
     where removed.
 -   The number of spikes is defined by the threshold of
-    $` > \mu + 3 \sigma`$
+    $` > 10`$cm in one step. The threshold can be changed in the config.env file.
 -   For the sum of angles we take each angle between consecutive steps
     anti-clockwise $`\alpha \in [-\pi, \pi]`$.
 -   For the average angle each angle $`\alpha > 0`$
