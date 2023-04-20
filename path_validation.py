@@ -20,10 +20,7 @@ def check_foldersystem(path, n_files=15, delete=False):
         path: str
         n_files: int
         delete: boolean int (0 == False, 1 == True)
-    returns: 
-        log-message as str
     '''
-    LOG_msg = ["For path: %s" % path]
     Logger.debug(f"For path: {path}")
 
     for camera_dir in [name for name in os.listdir(path) if len(name) == 8 and name.isnumeric()]:
@@ -36,9 +33,6 @@ def check_foldersystem(path, n_files=15, delete=False):
             if day_dir[:8] not in days_unique:
                 days_unique.add(day_dir[:8])
             else:
-                LOG_msg.append(
-                    f"Duplicate day {day_dir} in folder: {path}/{camera_dir}/"
-                )
                 Logger.debug(
                     f"Duplicate day {day_dir} in folder: {path}/{camera_dir}/"
                 )
@@ -49,7 +43,6 @@ def check_foldersystem(path, n_files=15, delete=False):
             # ignore no fish folders
             if "_no_fish" in day_dir:
                 if len(files) > 0:
-                    LOG_msg.append("Folders with no_fish suffix should be empty!")
                     Logger.debug("Folders with no_fish suffix should be empty!")
                 else:
                     continue
@@ -57,31 +50,22 @@ def check_foldersystem(path, n_files=15, delete=False):
             else:
                 if len(files) != n_files:
                     wrote_folder = True
-                    LOG_msg.append(
-                        f"In folder {working_dir} the number of csv files is unequal the expected number {n_files}, it is {len(files)} instead"
-                    )
                     Logger.debug(
                         f"In folder {working_dir} the number of csv files is unequal the expected number {n_files}, it is {len(files)} instead"
                     )
-                msg, duplicate_f_list, _correct_f = utile.filter_files(camera_dir, day_dir, files, n_files, Logger= Logger)
+                msg_counter, duplicate_f_list, _correct_f = utile.filter_files(camera_dir, day_dir, files, n_files, Logger= Logger)
 
             # if the are any complains add them to the LOG list
-            if len(msg) > 0:
+            if msg_counter > 0:
                 if not wrote_folder:
-                    LOG_msg.append(
-                        f"In folder {working_dir} has the correct number of csv files: "
-                    )
                     Logger.debug(
                         f"In folder {working_dir} has the correct number of csv files: "
                     )
                 # if the delete flag is set and they are duplicates ==> remove them
                 if delete and len(duplicate_f_list) > 0:
-                    LOG_msg.append("----DELETING DUPLICATES----")
                     Logger.debug("----DELETING DUPLICATES----")
                     for duplicate_f in duplicate_f_list:
                         os.remove(f'{working_dir}/{duplicate_f}')
-                LOG_msg.extend(msg)
-    return LOG_msg
 
 
 def main(delete=False, n_files=15, path=DIR_CSV_LOCAL):
@@ -104,17 +88,11 @@ def main(delete=False, n_files=15, path=DIR_CSV_LOCAL):
 
     if len(PATHS) < 2:
         raise ValueError("Path %s does not contain enough folders" % path)
-    # TODO: log immediately into log-file
-    LOG = list()
     for p in PATHS:  # validating files for front and back position
-        LOG.append(p.upper() + "-" * 100 + "\n")
         Logger.debug(p.upper() + "-" * 100 + "\n")
-
-        LOG.extend(check_foldersystem(p, n_files=n_files, delete=delete))
-    f = open("log-path-validation.txt", "w")
-    f.writelines("\n".join(LOG))
-    Logger.info(f"LOG: see log-path-validation.txt, {Logger.debug.counter} errors and warnings found.")
-    return len(LOG) == 0
+        
+        check_foldersystem(p, n_files=n_files, delete=delete)
+    Logger.info(f"LOG: see log-file, {Logger.debug.counter} errors and warnings found.")
 
 
 if __name__ == "__main__":

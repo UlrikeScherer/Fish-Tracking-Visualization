@@ -259,11 +259,11 @@ def filter_files(c, d, files, n_files=15, min_idx=0, Logger=None):
     n_files: number of files to expect.
     logger: Logger defined in path_validation
     @Returns: LOG, duplicate_f, correct_f
-    LOG: a list of LOG messages
+    msg_counter: number of debug-messages
     duplicate_f: a list of all duplicates occurring
     correct_f: dict of the correct files for keys i in 0,...,n_files-1
     """
-    LOG = []
+    msg_counter = 0
     missing_numbers = []
     duplicate_f = []
     correct_f = dict()
@@ -289,39 +289,27 @@ def filter_files(c, d, files, n_files=15, min_idx=0, Logger=None):
     corrupted_f = [f for f in files if pattern_general.match(f) is None]
 
     if len(missing_numbers) > 0:
-        LOG.append(
-            "The following files are missing: \n \t\t{}".format(
-                " ".join(missing_numbers)
-            )
-        )
+        msg_counter += 1
         Logger.debug(
-            "The following files are missing: \n \t\t\t{}".format(
+            "The following files are missing: \n \t\t\t\t{}".format(
                 " ".join(missing_numbers)
             )
         )
     if len(duplicate_f) > 0:
-        LOG.append(
-            "The following files are duplicates: \n\t{}".format(
-                "\n\t".join(duplicate_f)
-            )
-        )
+        msg_counter += 1
         Logger.debug(
-            "The following files are duplicates: \n\t\t\t{}".format(
+            "The following files are duplicates: \n\t\t\t\t{}".format(
                 "\n\t".join(duplicate_f)
             )
         )
     if len(corrupted_f) > 0:
-        LOG.append(
-            "The following file names are corrupted, maybe wrong folder: \n\t{}".format(
-                "\n\t".join(corrupted_f)
-            )
-        )
+        msg_counter += 1
         Logger.debug(
-            "The following file names are corrupted, maybe wrong folder: \n\t\t\t{}".format(
+            "The following file names are corrupted, maybe wrong folder: \n\t\t\t\t{}".format(
                 "\n\t".join(corrupted_f)
             )
         )
-    return LOG, duplicate_f, correct_f
+    return msg_counter, duplicate_f, correct_f
 
 
 def get_timestamp(
