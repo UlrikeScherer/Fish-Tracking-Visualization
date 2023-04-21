@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import re
 import os
+from os import path, makedirs
 import glob
 from itertools import product
 from fishproviz.config import (
@@ -250,19 +251,20 @@ def csv_of_the_day(
     return file_keys, merge_files(correct_files, drop_out_of_scope)
 
 
-def filter_files(c, d, files, n_files=15, min_idx=0):
+def filter_files(c, d, files, n_files=15, min_idx=0, Logger=None):
     """
     @params:
     c: camera_id
     d: folder name of a day
     files: list of files that are to be filtered
     n_files: number of files to expect.
+    logger: Logger defined in path_validation
     @Returns: LOG, duplicate_f, correct_f
-    LOG: a list of LOG messages
+    msg_counter: number of debug-messages
     duplicate_f: a list of all duplicates occurring
     correct_f: dict of the correct files for keys i in 0,...,n_files-1
     """
-    LOG = []
+    msg_counter = 0
     missing_numbers = []
     duplicate_f = []
     correct_f = dict()
@@ -288,21 +290,42 @@ def filter_files(c, d, files, n_files=15, min_idx=0):
     corrupted_f = [f for f in files if pattern_general.match(f) is None]
 
     if len(missing_numbers) > 0:
-        LOG.append(
-            "The following files are missing: \n \t\t{}".format(
+        msg_counter += 1
+        Logger.debug(
+            "The following files are missing: \n \t\t\t\t{}".format(
                 " ".join(missing_numbers)
             )
         )
     if len(duplicate_f) > 0:
-        LOG.append(
-            "The following files are duplicates: \n\t{}".format(
+        msg_counter += 1
+        Logger.debug(
+            "The following files are duplicates: \n\t\t\t\t{}".format(
                 "\n\t".join(duplicate_f)
             )
         )
     if len(corrupted_f) > 0:
-        LOG.append(
-            "The following file names are corrupted, maybe wrong folder: \n\t{}".format(
+        msg_counter += 1
+        Logger.debug(
+            "The following file names are corrupted, maybe wrong folder: \n\t\t\t\t{}".format(
                 "\n\t".join(corrupted_f)
             )
         )
-    return LOG, duplicate_f, correct_f
+    return msg_counter, duplicate_f, correct_f
+
+
+def get_timestamp(
+    format = "%d-%m-%Y_%H:%M:%S"
+):
+    current_time = datetime.now()
+    timestamp = current_time.timestamp()
+    date_time = datetime.fromtimestamp(timestamp)
+    str_date_time = date_time.strftime(format)
+    return str_date_time
+
+
+def create_directory(
+    directory_name: str
+): 
+    dir_path = path.join(os.getcwd(), directory_name)
+    makedirs(dir_path, exist_ok=True)
+    return dir_path

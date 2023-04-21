@@ -9,6 +9,7 @@ Metrics.ipynb
 core.*
 */config.env 
 log*.csv
+logs/
 # MacOS
 .DS_Store
 **/.vscode

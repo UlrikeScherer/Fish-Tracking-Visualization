@@ -1,4 +1,3 @@
-# TODO: clean up imports
 import shutil
 import time
 import os, inspect
@@ -25,7 +24,6 @@ from fishproviz.metrics import (
     absolute_angle_per_interval,
 )
 
-# TODO: outsource consts
 TRAJECTORY = "trajectory"
 FEEDING = "feeding"
 TRIAL_TIMES = "trial_times"
@@ -65,7 +63,6 @@ def main_metrics(program, time_interval=100, include_median=None, **kwargs_metri
 
     kwargs_metrics.update(time_interval=time_interval)
     
-    # TODO: outsource to metrics?
     metric_functions = {
         ACTIVITY: activity_per_interval,
         TORTUOSITY: tortuosity_per_interval,
@@ -76,7 +73,6 @@ def main_metrics(program, time_interval=100, include_median=None, **kwargs_metri
     }
 
     if program not in metric_functions:
-        # TODO: print explainatory output
         print("TERMINATED: Invalid program")
         return -1
 
@@ -128,7 +124,6 @@ def main(
         kwargs for the programs activity, turning_angle
     """
     fish_ids = get_fish_ids_to_run(program, fish_id)
-    # TODO: clean up kwargs (e.g. write_to_csv not utilized)
     kwargs_metrics = dict(
         fish_ids=fish_ids,
         time_interval=time_interval,
@@ -153,12 +148,10 @@ def main(
         for p in metric_names:
             main_metrics(p, **kwargs_metrics)
     elif program == CLEAR:  # clear all data remove directories DANGEROUS!
-    # TODO: new method for clearing directory (! prompt user with warning)
         for path in [PLOTS_DIR, RESULTS_PATH]:  # VIS_DIR
             if os.path.isdir(path):
                 shutil.rmtree(path)
                 print("Removed directory: %s" % path)
-    # TODO: return save exiting main vs. no return
     return None
 
 
@@ -201,7 +194,6 @@ def set_args():
         action="store_true",
     )
     args = parser.parse_args()
-    # TODO: check for unsafe program use/ constraint program utilizations
     return args
 
 
