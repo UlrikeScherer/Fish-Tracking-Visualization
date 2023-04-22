@@ -21,7 +21,6 @@ from fishproviz.methods import (
     mean_std,
     calc_steps,
 )  
-# TODO: import cython; coordinate: cythonization necessary?
 import pandas as pd
 import numpy as np
 import scipy.stats as scipy_stats
@@ -391,6 +390,3 @@ def entropy_per_interval(*args, **kwargs):
 def distance_to_wall_per_interval(*args, **kwargs):
     return metric_per_interval(*args, **kwargs, metric=distance_to_wall)
 
-# TODO: still necessary? del/ implement
-# function that returns a boolean deciding if it is odd or even
-# python loop => cythonize?
