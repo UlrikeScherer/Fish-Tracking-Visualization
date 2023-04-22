@@ -1,6 +1,7 @@
 from fishproviz.utils import all_error_filters
 from fishproviz.config import (
     BACK,
+    BATCH_SIZE,
     THRESHOLD_AREA_PX,
     SPIKE_THRESHOLD,
     FRAMES_PER_SECOND,
@@ -25,6 +26,8 @@ import pandas as pd
 import numpy as np
 import scipy.stats as scipy_stats
 import matplotlib.pyplot as plt
+
+from fishproviz.utils.utile import start_time_of_day_to_seconds
 
 NDIM = 3
 
@@ -317,20 +320,25 @@ def metric_per_interval(
             is_back=is_back,
         )
         for j, day in enumerate(days):
-            keys, df_day = csv_of_the_day(
+            keys, data_in_batches = csv_of_the_day(
                 camera_id,
                 day,
                 is_back=is_back,
                 drop_out_of_scope=drop_out_of_scope,
                 print_logs=print_logs
             )  # True or False testing needed
-            if len(df_day) > 0:
-                df = pd.concat(df_day)
+            if len(data_in_batches) > 0:
+                daytime_DF = start_time_of_day_to_seconds(day.split("_")[1])*FRAMES_PER_SECOND
+                for k, dfi in zip(keys,data_in_batches):
+                    dfi.index = dfi.FRAME+(int(k)*BATCH_SIZE)+daytime_DF
+                df = pd.concat(data_in_batches)
                 data = df[["xpx", "ypx"]].to_numpy()
+                # TODO use index frames to get the precis time of the data when averaging
                 area_tuple = (fish_key, area_func(fish_key))
                 err_filter = all_error_filters(
                     data, area_tuple, fish_key=fish_key, day=day
                 )
+
                 if metric.__name__ in [  # metrics in pixels using the area config
                     entropy.__name__,
                     distance_to_wall.__name__,
@@ -344,9 +352,9 @@ def metric_per_interval(
                         **metric_kwargs
                     )
                 else:
-                    data = pixel_to_cm(df[["xpx", "ypx"]].to_numpy(), fish_key=fish_key)
+                    data_cm = pixel_to_cm(data, fish_key=fish_key)
                     result = metric(
-                        data,
+                        data_cm,
                         time_interval * FRAMES_PER_SECOND,
                         err_filter,
                         **metric_kwargs
