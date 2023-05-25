@@ -186,8 +186,8 @@ def read_batch_csv(filename, drop_errors):
         usecols=["x", "y", "FRAME", "time", "xpx", "ypx"],
         dtype={"xpx": np.float64, "ypx": np.float64, "time": np.float64},
     )
-    df.dropna(axis="rows", how="any", inplace=True)
     if drop_errors:
+        df.dropna(axis="rows", how="any", inplace=True)
         err_filter = get_error_indices(df[:-1])
         df = df.drop(index=df[:-1][err_filter].index)
     df.reset_index(drop=True, inplace=True)

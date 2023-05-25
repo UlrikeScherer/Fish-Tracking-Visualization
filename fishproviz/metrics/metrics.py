@@ -13,7 +13,7 @@ from fishproviz.utils import (
 )
 from fishproviz.utils.tank_area_config import get_area_functions
 from fishproviz.utils.transformation import pixel_to_cm, px2cm
-from fishproviz.metrics.results_to_csv import metric_data_to_csv
+from fishproviz.metrics.results_to_csv import metric_result_to_csv
 from fishproviz.methods import (
     tortuosity_of_chunk,
     turning_directions,
@@ -187,28 +187,16 @@ def entropy_for_chunk(chunk, area_tuple):
 
 
 def calculate_result_for_interval(
-    data, frame_interval, avg_metric_f, error_index, NDIM=3
+    data, split_index, avg_metric_f, error_index, NDIM=3
 ):
-    SIZE = data.shape[0]
-    len_out = int(np.ceil(SIZE / frame_interval))
+    len_out = len(split_index)
     mu_sd = np.zeros([len_out, NDIM], dtype=float)
-    for i, s in enumerate(
-        range(frame_interval, data.shape[0] + frame_interval, frame_interval)
-    ):
-        chunk = data[s - frame_interval : s][~error_index[s - frame_interval : s]]
+    for i, (chunk, err_flt) in enumerate(zip(
+        np.split(data, split_index[1:]), 
+        np.split(error_index, split_index[1:]))
+        ):
+        chunk = chunk[~err_flt]
         mu_sd[i, :-1] = avg_metric_f(chunk)
-        mu_sd[i, -1] = len(chunk)
-    return mu_sd
-
-
-def mean_std_for_interval(results, frame_interval, filtered, NDIM=3):
-    len_out = int(np.ceil(results.size / frame_interval))
-    mu_sd = np.zeros([len_out, NDIM], dtype=float)
-    for i, s in enumerate(range(0, results.size, frame_interval)):
-        chunk = results[s : s + frame_interval][
-            filtered[s : s + frame_interval]
-        ]  # select chunk and filter it
-        mu_sd[i, :-1] = mean_std(chunk)
         mu_sd[i, -1] = len(chunk)
     return mu_sd
 
@@ -247,9 +235,11 @@ def mean_std_median(chunk):
 
 
 def absolute_angles(data, frame_interval, filter_index):
-    filter_index = ~update_filter_three_points(calc_steps(data), filter_index)
-    return mean_std_for_interval(
-        np.abs(turning_directions(data)), frame_interval, filter_index
+    error_index = update_filter_three_points(calc_steps(data), filter_index)
+    return calculate_result_for_interval(
+        np.abs(turning_directions(data)), frame_interval, 
+        mean_std,
+        error_index
     )
 
 
@@ -266,8 +256,12 @@ def activity(data, frame_interval, filter_index, include_median=False):
 
 
 def turning_angle(data, frame_interval, filter_index):
-    filter_index = ~update_filter_three_points(calc_steps(data), filter_index)
-    return mean_std_for_interval(turning_directions(data), frame_interval, filter_index)
+    error_index = update_filter_three_points(calc_steps(data), filter_index)
+    return calculate_result_for_interval(
+        turning_directions(data), 
+        frame_interval,
+        mean_std,
+        error_index)
 
 
 def metric_per_interval(
@@ -328,11 +322,12 @@ def metric_per_interval(
             )  # True or False testing needed
             if len(data_in_batches) > 0:
                 daytime_DF = start_time_of_day_to_seconds(day.split("_")[1])*FRAMES_PER_SECOND
+                 # use index frames to get the precis time of the data when averaging
                 for k, dfi in zip(keys,data_in_batches):
-                    dfi.index = dfi.FRAME+(int(k)*BATCH_SIZE)+daytime_DF
+                    dfi.index = dfi.FRAME+(int(k)*BATCH_SIZE)#+daytime_DF
                 df = pd.concat(data_in_batches)
+                split_by_interval_idx = np.where(df.index%(time_interval*FRAMES_PER_SECOND)==0)[0]
                 data = df[["xpx", "ypx"]].to_numpy()
-                # TODO use index frames to get the precis time of the data when averaging
                 area_tuple = (fish_key, area_func(fish_key))
                 err_filter = all_error_filters(
                     data, area_tuple, fish_key=fish_key, day=day
@@ -345,7 +340,7 @@ def metric_per_interval(
                     # DISTANCE TO WALL METRIC
                     result = metric(
                         data,
-                        time_interval * FRAMES_PER_SECOND,
+                        split_by_interval_idx,
                         err_filter,
                         area_tuple,
                         **metric_kwargs
@@ -354,16 +349,19 @@ def metric_per_interval(
                     data_cm = pixel_to_cm(data, fish_key=fish_key)
                     result = metric(
                         data_cm,
-                        time_interval * FRAMES_PER_SECOND,
+                        split_by_interval_idx,
                         err_filter,
                         **metric_kwargs
                     )
+                # concat the results array with the index of df for every time_interval step 
+                result = pd.DataFrame(result, index=df.index[split_by_interval_idx])
                 day_dict[day] = result
             else:
-                day_dict[day] = np.empty([0, out_dim])
+                day_dict[day] = pd.DataFrame(np.empty([0, out_dim]))
+
         results[fish_key] = day_dict
     if write_to_csv:
-        metric_data_to_csv(**package)
+        metric_result_to_csv(**package)
     return package
 
 

@@ -19,7 +19,6 @@ from fishproviz.metrics import (
     turning_angle_per_interval,
     tortuosity_per_interval,
     entropy_per_interval,
-    metric_per_hour_csv,
     distance_to_wall_per_interval,
     absolute_angle_per_interval,
 )
@@ -58,6 +57,9 @@ def main_metrics(program, time_interval=100, include_median=None, **kwargs_metri
     else:
         time_interval = int(time_interval)
 
+    if time_interval < 30:
+        raise ValueError("time_interval must be at least 30 seconds otherwise the csv files will be too large")
+
     if include_median and program != ACTIVITY:
         raise ValueError("include_median is only valid for activity")
 
@@ -77,10 +79,7 @@ def main_metrics(program, time_interval=100, include_median=None, **kwargs_metri
         return -1
 
     results = metric_functions[program](include_median=include_median, **kwargs_metrics)
-
-    if time_interval in [N_SECONDS_PER_HOUR, int(N_SECONDS_PER_HOUR * HOURS_PER_DAY)]:
-        metric_per_hour_csv(**results)
-    return 0
+    return None
 
 def get_fish_ids_to_run(program, fish_id):
     '''

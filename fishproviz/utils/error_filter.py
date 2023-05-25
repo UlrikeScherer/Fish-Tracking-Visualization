@@ -76,7 +76,9 @@ def error_dirt_points(data, threshold=DIRT_THRESHOLD, fish_key="", day=""):  #
 
 def error_default_points(data):
     x, y = data[:, 0], data[:, 1]
-    return ((x == -1) & (y == -1)) | ((x == 0) & (y == 0))
+    # filter nan
+    nan_filter = np.isnan(x) | np.isnan(y)
+    return ((x == -1) & (y == -1)) | ((x == 0) & (y == 0)) | nan_filter
 
 
 def error_points_out_of_range(data, area_tuple):

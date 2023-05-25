@@ -21,7 +21,7 @@ from .metrics import (
 )
 
 from .results_to_csv import (
-    metric_per_hour_csv,
+    metric_result_to_csv,
 )
 
 metric_names = [
@@ -48,7 +48,7 @@ __all__ = [
     "entropy",
     "distance_to_wall_per_interval",
     "distance_to_wall",
-    "metric_per_hour_csv",
+    "metric_result_to_csv",
     "num_of_spikes",
     "calc_length_of_steps",
     "get_gaps_in_dataframes",
