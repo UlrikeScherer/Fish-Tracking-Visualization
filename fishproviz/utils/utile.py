@@ -8,11 +8,9 @@ from os import path, makedirs
 import glob
 from itertools import product
 from fishproviz.config import (
-    CONFIG_DATA,
     HOURS_PER_DAY,
     MAX_BATCH_IDX,
     MIN_BATCH_IDX,
-    N_BATCHES,
     FRONT,
     BACK,
     N_SECONDS_PER_HOUR,
@@ -289,21 +287,21 @@ def filter_files(c, d, files, n_files=15, min_idx=0, Logger=None):
     )
     corrupted_f = [f for f in files if pattern_general.match(f) is None]
 
-    if len(missing_numbers) > 0:
+    if Logger and len(missing_numbers) > 0:
         msg_counter += 1
         Logger.debug(
             "The following files are missing: \n \t\t\t\t{}".format(
                 " ".join(missing_numbers)
             )
         )
-    if len(duplicate_f) > 0:
+    if Logger and len(duplicate_f) > 0:
         msg_counter += 1
         Logger.debug(
             "The following files are duplicates: \n\t\t\t\t{}".format(
                 "\n\t".join(duplicate_f)
             )
         )
-    if len(corrupted_f) > 0:
+    if Logger and len(corrupted_f) > 0:
         msg_counter += 1
         Logger.debug(
             "The following file names are corrupted, maybe wrong folder: \n\t\t\t\t{}".format(
