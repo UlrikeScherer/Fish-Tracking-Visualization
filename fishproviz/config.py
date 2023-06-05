@@ -64,6 +64,8 @@ def create_directories():
     """
     Creates the directories used in the project
     """
+    if not os.path.exists(DIR_CSV_LOCAL):
+        raise Exception("path_csv_local does not exist: %s" % DIR_CSV_LOCAL)
     for d in [VIS_DIR, PLOTS_DIR, RESULTS_PATH, DIR_TRACES, TEX_DIR, CONFIG_DATA]:
         if not os.path.exists(d):
             os.makedirs(d, exist_ok=True)

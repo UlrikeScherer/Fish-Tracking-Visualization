@@ -25,6 +25,7 @@ import pandas as pd
 import numpy as np
 import scipy.stats as scipy_stats
 import matplotlib.pyplot as plt
+import bisect
 
 from fishproviz.utils.utile import start_time_of_day_to_seconds
 
@@ -185,15 +186,14 @@ def entropy_for_chunk(chunk, area_tuple):
         plt.plot(*chunk.T, "*")
     return scipy_stats.entropy(hist[tri])
 
-
 def calculate_result_for_interval(
     data, split_index, avg_metric_f, error_index, NDIM=3
 ):
-    len_out = len(split_index)
+    len_out = len(split_index)+1
     mu_sd = np.zeros([len_out, NDIM], dtype=float)
     for i, (chunk, err_flt) in enumerate(zip(
-        np.split(data, split_index[1:]), 
-        np.split(error_index, split_index[1:]))
+        np.split(data, split_index), 
+        np.split(error_index, split_index))
         ):
         chunk = chunk[~err_flt]
         mu_sd[i, :-1] = avg_metric_f(chunk)
@@ -326,7 +326,9 @@ def metric_per_interval(
                 for k, dfi in zip(keys,data_in_batches):
                     dfi.index = dfi.FRAME+(int(k)*BATCH_SIZE)#+daytime_DF
                 df = pd.concat(data_in_batches)
-                split_by_interval_idx = np.where(df.index%(time_interval*FRAMES_PER_SECOND)==0)[0]
+                step = time_interval * FRAMES_PER_SECOND
+                time_points = np.arange(0, int(df.index[-1]), step)
+                split_by_interval_idx = [bisect.bisect_left(df.index, h) for h in time_points[1:]]
                 data = df[["xpx", "ypx"]].to_numpy()
                 area_tuple = (fish_key, area_func(fish_key))
                 err_filter = all_error_filters(
@@ -354,7 +356,7 @@ def metric_per_interval(
                         **metric_kwargs
                     )
                 # concat the results array with the index of df for every time_interval step 
-                result = pd.DataFrame(result, index=df.index[split_by_interval_idx])
+                result = pd.DataFrame(result, index=time_points)
                 day_dict[day] = result
             else:
                 day_dict[day] = pd.DataFrame(np.empty([0, out_dim]))
