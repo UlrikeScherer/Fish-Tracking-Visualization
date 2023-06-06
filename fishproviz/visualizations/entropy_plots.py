@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 from .activity_plotting import get_filepath_metric_plot
-from fishproviz.config import BACK
+import fishproviz.config as config
 from fishproviz.metrics.metrics import entropy_for_chunk
 from fishproviz.utils.tank_area_config import get_area_functions
 from fishproviz.utils import (
@@ -23,7 +23,7 @@ def entropy_density_main():
     area_f = get_area_functions()
     for fk in fish_keys:
         cam, pos = fk.split("_")
-        is_back = pos == BACK
+        is_back = pos == config.BACK
         start = 0
         days_per_week = 7
         data_by_week = []

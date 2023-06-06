@@ -1,7 +1,8 @@
 import numpy as np
-from fishproviz.config import THRESHOLD_AREA_PX, BACK, SPIKE_THRESHOLD, err_file, AREA_FILTER, DIRT_FILTER,DIRT_THRESHOLD
+import fishproviz.config as config
 from fishproviz.methods import distance_to_wall_chunk, calc_steps
 from fishproviz.utils.transformation import px2cm
+
 
 def all_error_filters(data, area_tuple, **kwargs):
     """
@@ -9,15 +10,15 @@ def all_error_filters(data, area_tuple, **kwargs):
     @params: dataframe
     returns a boolean numpy array with all indices to filter out -- set to True!
     """
-    data_flt =  error_default_points(data) 
-    if AREA_FILTER:
+    data_flt = error_default_points(data)
+    if config.AREA_FILTER:
         data_flt = data_flt | error_points_out_of_area(data, area_tuple)
-    if DIRT_FILTER:
+    if config.DIRT_FILTER:
         data_flt = data_flt | error_dirt_points(data, **kwargs)
     return data_flt
 
 
-def error_dirt_points(data, threshold=DIRT_THRESHOLD, fish_key="", day=""):  #
+def error_dirt_points(data, threshold=config.DIRT_THRESHOLD, fish_key="", day=""):  #
     """
     @params:    data -- numpy array with x,y coordinates
                 threshold -- number of data frames that are sequentially equal such that we classify them as dirt.
@@ -37,11 +38,11 @@ def error_dirt_points(data, threshold=DIRT_THRESHOLD, fish_key="", day=""):  #
                 msg_spike_s, msg_spike_e = "", ""
                 if start > 0:
                     spike_s = calc_steps(data[start - 1 : start + 1])[0]
-                    if px2cm(spike_s) > SPIKE_THRESHOLD:
+                    if px2cm(spike_s) > config.SPIKE_THRESHOLD:
                         msg_spike_s = "SPIKE START"
                 if end < data.shape[0]:
                     spike_e = calc_steps(data[end - 1 : end + 1])[0]
-                    if px2cm(spike_e) > SPIKE_THRESHOLD:
+                    if px2cm(spike_e) > config.SPIKE_THRESHOLD:
                         msg_spike_e = "SPIKE END"
                 print(
                     "DIRT: %s, %s: Found dirt: %d data points for [%d:%d] out of %d, data[start]=[%d,%d] \t %s \t %s"
@@ -59,17 +60,27 @@ def error_dirt_points(data, threshold=DIRT_THRESHOLD, fish_key="", day=""):  #
                     "%.2f" % px2cm(spike_s),
                     "%.2f" % px2cm(spike_e),
                 )
-                print("dirt threshold: %.02f"%(threshold/(5*60)), "min","Dirt Sequence %.02f"%((end - start)/(5*60)), "min" )
-                with open(err_file, "a") as f:
-                    f.write(";".join([
+                print(
+                    "dirt threshold: %.02f" % (threshold / (5 * 60)),
+                    "min",
+                    "Dirt Sequence %.02f" % ((end - start) / (5 * 60)),
+                    "min",
+                )
+                with open(config.err_file, "a") as f:
+                    f.write(
+                        ";".join(
+                            [
                                 fish_key,
                                 day,
-                                str((end - start)/(5*60)),
+                                str((end - start) / (5 * 60)),
                                 str(data[start][0]),
                                 str(data[start][1]),
                                 str(start),
-                                str(end)
-                            ])+ "\n")
+                                str(end),
+                            ]
+                        )
+                        + "\n"
+                    )
         start = end - 1
     return flt
 
@@ -84,7 +95,7 @@ def error_default_points(data):
 def error_points_out_of_range(data, area_tuple):
     # error out of range
     area = area_tuple[1]
-    th = THRESHOLD_AREA_PX
+    th = config.THRESHOLD_AREA_PX
     xmin, xmax = min(area[:, 0]) - th, max(area[:, 0]) + th
     ymin, ymax = min(area[:, 1]) - th, max(area[:, 1]) + th
     error_out_of_range = (
@@ -99,7 +110,7 @@ def error_points_out_of_range(data, area_tuple):
 def error_points_out_of_area(data, area_tuple, day=""):
     """returns a boolean np.array, where true indecates weather the corresponding datapoint is on the wrong side of the tank"""
     key, area = area_tuple
-    is_back = BACK in key  # key in the shape of <<camera>>_<<position>>
+    is_back = config.BACK in key  # key in the shape of <<camera>>_<<position>>
     error_out_of_range = error_points_out_of_range(data, area_tuple)
     # over the diagonal
     AB = area[2] - area[1]
@@ -117,7 +128,7 @@ def error_points_out_of_area(data, area_tuple, day=""):
     err_default = error_default_points(data)
     error_non_default = error_filter & ~err_default
     error_non_default[error_non_default] = (
-        distance_to_wall_chunk(data[error_non_default], area) > THRESHOLD_AREA_PX
+        distance_to_wall_chunk(data[error_non_default], area) > config.THRESHOLD_AREA_PX
     )  # in pixels
     error_non_default = error_non_default | (error_out_of_range & ~err_default)
     if np.any(error_non_default):  # ef and not ed

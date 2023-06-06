@@ -4,25 +4,36 @@ import os
 import numpy as np
 import warnings
 from time import gmtime, strftime
-from fishproviz.config import BACK, BATCH_SIZE, FEEDING_SHAPE, FRAMES_PER_SECOND, P_FEEDING, PROJECT_ID, SERVER_FEEDING_TIMES_FILE, START_END_FEEDING_TIMES_FILE, RESULTS_PATH, TEX_DIR, sep
+import fishproviz.config as config
 from fishproviz.metrics.metrics import calc_length_of_steps, num_of_spikes
 from fishproviz.trajectory.feeding_shape import FeedingEllipse, FeedingRectangle
-from fishproviz.utils import get_days_in_order, get_all_days_of_context, get_camera_pos_keys
+from fishproviz.utils import (
+    get_days_in_order,
+    get_all_days_of_context,
+    get_camera_pos_keys,
+)
 from fishproviz.utils.utile import start_time_of_day_to_seconds, get_seconds_from_time
 from .trajectory import Trajectory
 from fishproviz.utils.transformation import pixel_to_cm
 
-map_shape = {"rectangle":FeedingRectangle, "ellipse":FeedingEllipse}
-FT_DATE, FT_START, FT_END = "day","time_in_start","time_out_stop" # time_in_stop, time_out_start
+map_shape = {"rectangle": FeedingRectangle, "ellipse": FeedingEllipse}
+FT_DATE, FT_START, FT_END = (
+    "day",
+    "time_in_start",
+    "time_out_stop",
+)  # time_in_stop, time_out_start
 
 
 class FeedingTrajectory(Trajectory):
-
     is_feeding = True
-    dir_data_feeding = "%s/%s/%s" % (RESULTS_PATH, PROJECT_ID, P_FEEDING)
-    dir_tex_feeding = TEX_DIR
+    dir_data_feeding = "%s/%s/%s" % (
+        config.RESULTS_PATH,
+        config.PROJECT_ID,
+        config.P_FEEDING,
+    )
+    dir_tex_feeding = config.TEX_DIR
 
-    def __init__(self, shape=FEEDING_SHAPE, **kwargs):
+    def __init__(self, shape=config.FEEDING_SHAPE, **kwargs):
         super().__init__(**kwargs)
         self.set_feeding_box(is_back=False)
         self.set_feeding_box(is_back=True)
@@ -44,29 +55,29 @@ class FeedingTrajectory(Trajectory):
 
     def get_start_end_index(self, day_key, batch_number):
         if self.start_end_times is None:
-            return 0, BATCH_SIZE
+            return 0, config.BATCH_SIZE
         (day, track_start) = day_key.split("_")[:2]
         ts_sec = start_time_of_day_to_seconds(track_start)
         (f_start, f_end) = self.start_end_times[day]
         if f_start is None or f_end is None:
             warnings.warn("No start or end time for day %s" % day)
-            return 0, BATCH_SIZE
-        start = int((f_start - ts_sec) * FRAMES_PER_SECOND)
-        end = int((f_end - ts_sec) * FRAMES_PER_SECOND)
+            return 0, config.BATCH_SIZE
+        start = int((f_start - ts_sec) * config.FRAMES_PER_SECOND)
+        end = int((f_end - ts_sec) * config.FRAMES_PER_SECOND)
         # get start index
-        if start < int(batch_number)* BATCH_SIZE:
+        if start < int(batch_number) * config.BATCH_SIZE:
             start_idx = 0
-        elif start > (int(batch_number)+1)* BATCH_SIZE:
-            start_idx = BATCH_SIZE
+        elif start > (int(batch_number) + 1) * config.BATCH_SIZE:
+            start_idx = config.BATCH_SIZE
         else:
-            start_idx = start - int(batch_number)* BATCH_SIZE
+            start_idx = start - int(batch_number) * config.BATCH_SIZE
         # get end index
-        if end < int(batch_number)* BATCH_SIZE:
+        if end < int(batch_number) * config.BATCH_SIZE:
             end_idx = 0
-        elif end > (int(batch_number)+1)* BATCH_SIZE:
-            end_idx = BATCH_SIZE
+        elif end > (int(batch_number) + 1) * config.BATCH_SIZE:
+            end_idx = config.BATCH_SIZE
         else:
-            end_idx = end - int(batch_number)* BATCH_SIZE
+            end_idx = end - int(batch_number) * config.BATCH_SIZE
         return start_idx, end_idx
 
     def subplot_function(
@@ -88,7 +99,7 @@ class FeedingTrajectory(Trajectory):
             batch.drop(batch.tail(1).index)
 
         feeding_filter = batch.FRAME.between(start_idx, end_idx)
-        fish_key = "%s_%s"%tuple(self.fish2camera[fish_id])
+        fish_key = "%s_%s" % tuple(self.fish2camera[fish_id])
 
         batchxy = pixel_to_cm(batch[["xpx", "ypx"]].to_numpy(), fish_key=fish_key)
         F.line.set_data(*batchxy.T)
@@ -96,7 +107,9 @@ class FeedingTrajectory(Trajectory):
         feeding_b, box = self.FeedingShape.contains(
             batch[feeding_filter], fish_key, date
         )  # feeding_b: array of data frames that are inside the feeding box.
-        feeding_size = feeding_b.shape[0]  # size of the feeding box gives us the time spent in the box in number of frames.
+        feeding_size = feeding_b.shape[
+            0
+        ]  # size of the feeding box gives us the time spent in the box in number of frames.
         # The next line identifies the indices of feeding_b array where the fish swims from in to out of the box in the next frame
         index_visits = []
         n_entries = 0
@@ -133,7 +146,7 @@ class FeedingTrajectory(Trajectory):
                 "r-",
                 alpha=0.7,
                 solid_capstyle="projecting",
-                markersize=0.2
+                markersize=0.2,
             )
 
         text_l = [
@@ -149,14 +162,18 @@ class FeedingTrajectory(Trajectory):
 
         # ax.draw_artist(ax.patch)
         # ax.draw_artist(line)
-        self.update_feeding_and_visits(fish_id, date, feeding_size, n_entries, sum(feeding_filter))
+        self.update_feeding_and_visits(
+            fish_id, date, feeding_size, n_entries, sum(feeding_filter)
+        )
 
         if self.write_fig:
             F.write_figure(directory, batch_number)
         remove_text()
         return F.fig
 
-    def update_feeding_and_visits(self, fish_id, date, feeding_size, visits, num_df_feeding):
+    def update_feeding_and_visits(
+        self, fish_id, date, feeding_size, visits, num_df_feeding
+    ):
         if date not in self.feeding_times[fish_id]:
             self.feeding_times[fish_id][date] = 0
             self.visits[fish_id][date] = 0
@@ -181,7 +198,9 @@ class FeedingTrajectory(Trajectory):
         os.makedirs(self.dir_data_feeding, exist_ok=True)
         df_feeding.to_csv("%s/%s.csv" % (self.dir_data_feeding, "feeding_times"))
         df_visits.to_csv("%s/%s.csv" % (self.dir_data_feeding, "visits"))
-        df_num_df_feeding.to_csv("%s/%s.csv" % (self.dir_data_feeding, "num_df_feeding"))
+        df_num_df_feeding.to_csv(
+            "%s/%s.csv" % (self.dir_data_feeding, "num_df_feeding")
+        )
 
     def feeding_data_to_tex(self):
         text = """\newcommand\ftlist{}\newcommand\setft[2]{\csdef{ft#1}{#2}}\newcommand\getft[1]{\csuse{ft#1}}""".replace(
@@ -191,9 +210,7 @@ class FeedingTrajectory(Trajectory):
         )
 
         for i, (c, p) in enumerate(self.fish2camera):
-            days = get_days_in_order(
-                camera=c, is_back=p == BACK
-            )
+            days = get_days_in_order(camera=c, is_back=p == config.BACK)
             for d in days:
                 if d in self.feeding_times[i]:
                     text += "\setft{%s%s%s}{%s}" % (
@@ -203,27 +220,41 @@ class FeedingTrajectory(Trajectory):
                         strftime("%H:%M:%S", gmtime(self.feeding_times[i][d] / 5)),
                     )
                     text += "\setft{%s%s%sv}{%s}" % (c, p, d, self.visits[i][d])
-                    text += "\setft{%s%s%snum}{%s}" % (c,p,d,strftime("%H:%M:%S", gmtime(self.num_df_feeding[i][d] / 5)))
+                    text += "\setft{%s%s%snum}{%s}" % (
+                        c,
+                        p,
+                        d,
+                        strftime("%H:%M:%S", gmtime(self.num_df_feeding[i][d] / 5)),
+                    )
         text_file = open("%s/feedingtime.tex" % (self.dir_tex_feeding), "w")
         text_file.write(text)
         text_file.close()
 
+
 def feeding_times_start_end_dict():
-    if os.path.exists(START_END_FEEDING_TIMES_FILE):
-        return json.load(open(START_END_FEEDING_TIMES_FILE, "r"))
+    if os.path.exists(config.START_END_FEEDING_TIMES_FILE):
+        return json.load(open(config.START_END_FEEDING_TIMES_FILE, "r"))
     else:
-        if not os.path.exists(SERVER_FEEDING_TIMES_FILE):
-            warnings.warn(f"File {SERVER_FEEDING_TIMES_FILE} not found, thus feeding times will be calculated over all provided batches, if this is not intended please check the path in scripts/env.sh")
+        if not os.path.exists(config.SERVER_FEEDING_TIMES_FILE):
+            warnings.warn(
+                f"File {config.SERVER_FEEDING_TIMES_FILE} not found, thus feeding times will be calculated over all provided batches, if this is not intended please check the path in scripts/env.sh"
+            )
             return None
         else:
-            ft_df = pd.read_csv(SERVER_FEEDING_TIMES_FILE, usecols=[FT_DATE, FT_START, FT_END], sep=sep)
+            ft_df = pd.read_csv(
+                config.SERVER_FEEDING_TIMES_FILE,
+                usecols=[FT_DATE, FT_START, FT_END],
+                sep=config.sep,
+            )
             ft_df = ft_df[~ft_df[FT_START].isna()]
-            start_end = dict([("20%s%02d%02d"%tuple(map(int,reversed(d.split(".")))), 
-                                (get_seconds_from_time(s),get_seconds_from_time(e))) for (d,s,e) in zip(
-                ft_df[FT_DATE],
-                ft_df[FT_START],
-                ft_df[FT_END])
-                                ])
-            json.dump(start_end, open(START_END_FEEDING_TIMES_FILE, "w"))
+            start_end = dict(
+                [
+                    (
+                        "20%s%02d%02d" % tuple(map(int, reversed(d.split(".")))),
+                        (get_seconds_from_time(s), get_seconds_from_time(e)),
+                    )
+                    for (d, s, e) in zip(ft_df[FT_DATE], ft_df[FT_START], ft_df[FT_END])
+                ]
+            )
+            json.dump(start_end, open(config.START_END_FEEDING_TIMES_FILE, "w"))
             return start_end
-

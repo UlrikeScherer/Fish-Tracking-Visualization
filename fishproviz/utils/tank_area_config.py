@@ -1,44 +1,55 @@
 import glob, json, os
 import matplotlib.pyplot as plt
 import numpy as np
-from fishproviz.config import FRONT, BACK, CONFIG_DATA, CALIBRATION_DIST_CM,DEFAULT_CALIBRATION, CONFIG_DATA, area_back, area_front
+import fishproviz.config as config
 from .utile import get_camera_pos_keys
+
 
 def get_area_functions():
     """returns a function to deliver the area, given a fish_key"""
-    try: 
+    try:
         area = read_area_data_from_json()
         return lambda key: area[key]
     except Exception as e:
         print(e, " program will run without area data")
         return lambda key: None
 
+
 def get_calibration_functions():
-    calibration_file = f"{CONFIG_DATA}/calibration.json"
+    calibration_file = f"{config.CONFIG_DATA}/calibration.json"
     if not os.path.exists(calibration_file):
-        try: 
+        try:
             calibration = compute_calibrations()
         except Exception as e:
-            print(e, "will use default calibration of %s px/cm" % ( DEFAULT_CALIBRATION))
-            return lambda cam: DEFAULT_CALIBRATION
+            print(
+                e,
+                "will use default calibration of %s px/cm"
+                % (config.DEFAULT_CALIBRATION),
+            )
+            return lambda cam: config.DEFAULT_CALIBRATION
     else:
         f = open(calibration_file, "r")
         calibration = json.load(f)
+        f.close()
     return lambda cam: calibration[cam.split("_")[0]]
 
+
 def read_area_data_from_json():
-    if not os.path.exists("{}/area_data.json".format(CONFIG_DATA)):
+    if not os.path.exists("{}/area_data.json".format(config.CONFIG_DATA)):
         return get_areas()
-    with open("{}/area_data.json".format(CONFIG_DATA), "r") as infile:
+    with open("{}/area_data.json".format(config.CONFIG_DATA), "r") as infile:
         area_data = json.load(infile)
         for k in area_data.keys():
             area_data[k] = np.array(area_data[k])
         return area_data
 
+
 def get_areas():
     area_data = dict()
-    example_dict = {FRONT: np.array([]), BACK: np.array([])}
-    for p, path in zip([FRONT,BACK], [area_front, area_back]):
+    example_dict = {config.FRONT: np.array([]), config.BACK: np.array([])}
+    for p, path in zip(
+        [config.FRONT, config.BACK], [config.area_front, config.area_back]
+    ):
         files_a = glob.glob("%s/*.csv" % (path), recursive=True)
         if len(files_a) == 0:
             raise Exception("no files found in %s" % path)
@@ -89,18 +100,20 @@ def update_area(example, area):
 
 def write_area_data_to_json(area_data):
     area_d = dict(zip(area_data.keys(), map(lambda v: v.tolist(), area_data.values())))
-    with open("{}/area_data.json".format(CONFIG_DATA), "w") as outfile:
+    with open("{}/area_data.json".format(config.CONFIG_DATA), "w") as outfile:
         json.dump(area_d, outfile, indent=2)
 
+
 def get_line_starting_with(file, matchstr="Last"):
-    file_read = open(file, "r")
-    for line in file_read.readlines():
-        if matchstr == line[:len(matchstr)]:
-            return line
-        
-def compute_calibrations():  
+    with open(file, "r") as file_read:
+        for line in file_read.readlines():
+            if matchstr == line[: len(matchstr)]:
+                return line
+
+
+def compute_calibrations():
     calibration = dict()
-    for path in [area_front, area_back]:
+    for path in [config.area_front, config.area_back]:
         files_a = glob.glob("%s/*.csv" % (path), recursive=True)
         if len(files_a) == 0:
             raise Exception("No files found in the directory: %s" % (path))
@@ -108,8 +121,19 @@ def compute_calibrations():
             c = os.path.basename(file)[:8]
             if c.isnumeric():
                 if c not in calibration:
-                    cal = np.array([list(map(lambda x: int(x), coord.split(","))) if "," in coord else None for coord in get_line_starting_with(file).split("#")[1].split(";")])
-                    calibration[c] = CALIBRATION_DIST_CM/np.mean(np.sqrt(np.sum((cal[:2]-cal[2:])**2, axis=1)))      
-    with open(f"{CONFIG_DATA}/calibration.json", "w") as f:
+                    cal = np.array(
+                        [
+                            list(map(lambda x: int(x), coord.split(",")))
+                            if "," in coord
+                            else None
+                            for coord in get_line_starting_with(file)
+                            .split("#")[1]
+                            .split(";")
+                        ]
+                    )
+                    calibration[c] = config.CALIBRATION_DIST_CM / np.mean(
+                        np.sqrt(np.sum((cal[:2] - cal[2:]) ** 2, axis=1))
+                    )
+    with open(f"{config.CONFIG_DATA}/calibration.json", "w") as f:
         json.dump(calibration, f, indent=2)
     return calibration

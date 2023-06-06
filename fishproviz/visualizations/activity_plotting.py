@@ -6,7 +6,7 @@ import os
 from fishproviz.metrics import metric_names
 from fishproviz.metrics.results_to_csv import get_filename_for_metric_csv
 from fishproviz.utils import get_date_string
-from fishproviz.config import VIS_DIR, sep
+import fishproviz.config as config
 
 
 colors = (
@@ -245,27 +245,27 @@ def plot_turning_direction(data, time_interval):
 
 
 def plot_metric_figure_for_days(metric_name, measure=None, write_fig=True):
-    file_e = get_filename_for_metric_csv(
-        metric_name, "day"
-    )
+    file_e = get_filename_for_metric_csv(metric_name, "day")
     if not os.path.isfile(file_e):
         print("File not found:", file_e)
         return
 
-    df = pd.read_csv(file_e, sep=sep)
+    df = pd.read_csv(file_e, sep=config.sep)
     df.set_index("day", inplace=True)
     fish_keys = df.cam_pos.unique()
     nfish = len(fish_keys)
-    ncols = min(3, 1+nfish//6) # 3 columns max and at least 1 column
-    fig, axis = plt.subplots(figsize=(10*ncols, 5), ncols=ncols, sharey=True, squeeze=False)
+    ncols = min(3, 1 + nfish // 6)  # 3 columns max and at least 1 column
+    fig, axis = plt.subplots(
+        figsize=(10 * ncols, 5), ncols=ncols, sharey=True, squeeze=False
+    )
     axis = np.ravel(axis)
-    
+
     batch = int(np.ceil(nfish / ncols))
     for axi, ax in enumerate(axis):
         start = axi * batch
         fks_to_plot = fish_keys[start : start + batch]
         df.query("cam_pos in @fks_to_plot").groupby("cam_pos")[measure].plot(
-            #by="cam_pos",
+            # by="cam_pos",
             ax=ax,
             linestyle="--",
             marker="o",
@@ -285,14 +285,16 @@ def plot_metric_figure_for_days(metric_name, measure=None, write_fig=True):
             get_filepath_metric_plot(metric_name, measure=measure), bbox_inches="tight"
         )
 
+
 def get_filepath_metric_plot(metric_name, measure=None, subdir=None, ext="pdf"):
-    dir2plot = "{}/".format(VIS_DIR)
+    dir2plot = "{}/".format(config.VIS_DIR)
     if subdir is not None:
         dir2plot = "{}/{}/".format(dir2plot, subdir)
     os.makedirs(dir2plot, exist_ok=True)
     return "{}/{}{}.{}".format(
         dir2plot, metric_name, "_" + measure if measure is not None else "", ext
     )
+
 
 def plots_over_life_time():
     for metric_name in metric_names:

@@ -7,15 +7,21 @@ Metrics.ipynb
 !README.pdf
 *.mp4
 core.*
-*/config.env 
+*/config.env
 log*.csv
 logs/
+# test_data
+test_data/results
+test_data/visualisations
+test_data/config_data
+
+
 # MacOS
 .DS_Store
 **/.vscode
 scripts/env.sh
 
-*.ipynb 
+*.ipynb
 
 
 # ignore FOLDERS

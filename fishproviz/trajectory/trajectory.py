@@ -2,7 +2,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import os
 import sys
-from fishproviz.config import BATCH_SIZE, PLOTS_DIR, BACK
+import fishproviz.config as config
 from fishproviz.utils import (
     csv_of_the_day,
     get_position_string,
@@ -120,7 +120,6 @@ class Figure:
 
 
 class Trajectory:
-
     is_feeding = False
 
     def __init__(self, marker_char="", write_fig=True):
@@ -151,7 +150,7 @@ class Trajectory:
         ):  # remove error point, only need to carry it to this point to record the last frame number
             batch.drop(batch.tail(1).index)
 
-        fish_key = "%s_%s"%tuple(self.fish2camera[fish_id])
+        fish_key = "%s_%s" % tuple(self.fish2camera[fish_id])
         batchxy = pixel_to_cm(batch[["xpx", "ypx"]].to_numpy(), fish_key=fish_key)
         F.line.set_data(*batchxy.T)
         # draw spikes where datapoints were lost
@@ -188,10 +187,8 @@ class Trajectory:
         self.reset_data()
         for i, fish_idx in enumerate(fish_ids):
             camera_id, pos = self.fish2camera[fish_idx]
-            is_back = pos == BACK
-            day_list = get_days_in_order(
-                camera=camera_id, is_back=is_back
-            )
+            is_back = pos == config.BACK
+            day_list = get_days_in_order(camera=camera_id, is_back=is_back)
             N_days = len(day_list)
             for j, day in enumerate(day_list):
                 sys.stdout.write("\r")
@@ -203,10 +200,7 @@ class Trajectory:
                 sys.stdout.flush()
 
                 keys, day_df = csv_of_the_day(
-                    camera_id,
-                    day,
-                    is_back=is_back,
-                    drop_out_of_scope=True
+                    camera_id, day, is_back=is_back, drop_out_of_scope=True
                 )
                 self.plot_day_camera_fast(
                     day_df, keys, camera_id, day, fish_idx, is_back=is_back
@@ -216,13 +210,13 @@ class Trajectory:
         position = get_position_string(is_back)
         prog_name = get_start_time_directory(self.is_feeding)
         plots_dir = "{}/{}/{}/{}/{}".format(
-            PLOTS_DIR, prog_name, position, camera_id, date
+            config.PLOTS_DIR, prog_name, position, camera_id, date
         )
 
         if len(data) == 0:
             return None
 
-        nr_of_frames = int(keys[0])*BATCH_SIZE
+        nr_of_frames = int(keys[0]) * config.BATCH_SIZE
         for idx in range(len(data)):
             batch = data[idx]
             up = len(batch.x) - 1

@@ -7,18 +7,8 @@ import os
 from os import path, makedirs
 import glob
 from itertools import product
-from fishproviz.config import (
-    HOURS_PER_DAY,
-    MAX_BATCH_IDX,
-    MIN_BATCH_IDX,
-    FRONT,
-    BACK,
-    N_SECONDS_PER_HOUR,
-    P_FEEDING,
-    P_TRAJECTORY,
-    dir_back,
-    dir_front,
-)
+import fishproviz.config as config
+
 
 def flatten_list(list_of_lists):
     return [item for sublist in list_of_lists for item in sublist]
@@ -36,13 +26,13 @@ def is_valid_dir(directory):
 
 
 def get_start_time_directory(is_feeding):
-    return P_FEEDING if is_feeding else P_TRAJECTORY
+    return config.P_FEEDING if is_feeding else config.P_TRAJECTORY
 
 
 def get_interval_name_from_seconds(seconds):
-    if seconds == N_SECONDS_PER_HOUR:
+    if seconds == config.N_SECONDS_PER_HOUR:
         return "hour"
-    if seconds == int(N_SECONDS_PER_HOUR * HOURS_PER_DAY):
+    if seconds == int(config.N_SECONDS_PER_HOUR * config.HOURS_PER_DAY):
         return "day"
     else:
         return "%s_sec" % seconds
@@ -52,9 +42,10 @@ def get_directory(is_back=None):
     if is_back is None:
         raise Exception("define kwargs is_back")
     if is_back:
-        return dir_back
+        return config.dir_back
     else:
-        return dir_front
+        return config.dir_front
+
 
 def get_camera_names(is_back=False):
     dir_ = get_directory(is_back)
@@ -65,9 +56,11 @@ def get_camera_names(is_back=False):
 
 def get_fish2camera_map():
     l_front = list(
-        product(get_camera_names(is_back=BACK == FRONT), [FRONT])
+        product(get_camera_names(is_back=config.BACK == config.FRONT), [config.FRONT])
     )
-    l_back = list(product(get_camera_names(is_back=BACK == BACK), [BACK]))
+    l_back = list(
+        product(get_camera_names(is_back=config.BACK == config.BACK), [config.BACK])
+    )
     return np.array(l_back + l_front)
 
 
@@ -107,7 +100,7 @@ def get_days_in_order(interval=None, is_back=None, camera=None):
     if len(days_unique) < len(days):
         print(
             "WARNING DUPLICATE DAY: CAMERA %s_%s some days are duplicated, please check the directory"
-            % (camera, BACK if is_back else FRONT)
+            % (camera, config.BACK if is_back else config.FRONT)
         )
     if interval:
         return days_unique[interval[0] : interval[1]]
@@ -116,27 +109,27 @@ def get_days_in_order(interval=None, is_back=None, camera=None):
 
 def get_all_days_of_context():
     days = list()
-    for p in [BACK, FRONT]:
-        is_back = p == BACK
+    for p in [config.BACK, config.FRONT]:
+        is_back = p == config.BACK
         cameras = get_camera_names(is_back=is_back)
         for c in cameras:
             days.extend(
                 [
                     d
-                    for d in get_days_in_order(
-                        is_back=is_back, camera=c
-                    )
+                    for d in get_days_in_order(is_back=is_back, camera=c)
                     if d not in days
                 ]
             )
     return sorted(days)
 
-def get_seconds_from_time(time): 
+
+def get_seconds_from_time(time):
     """
     @time string hh:mm
     return seconds (int)
     """
-    return sum([int(t)*f for (t, f) in zip(time.split(":"),[3600, 60])])
+    return sum([int(t) * f for (t, f) in zip(time.split(":"), [3600, 60])])
+
 
 def start_time_of_day_to_seconds(START_TIME):
     """
@@ -144,9 +137,12 @@ def start_time_of_day_to_seconds(START_TIME):
     return seconds (int)
     """
     if len(START_TIME) == 6:
-        return int(START_TIME[:2]) * 3600 + int(START_TIME[2:4]) * 60 + int(START_TIME[4:])
+        return (
+            int(START_TIME[:2]) * 3600 + int(START_TIME[2:4]) * 60 + int(START_TIME[4:])
+        )
     else:
         raise ValueError("START_TIME must be of length 6")
+
 
 def get_time_for_day(day, nrF):
     # dateiso = "{}-{}-{}T{}:{}:{}+02:00".format(day[:4],day[4:6],day[6:8],day[9:11],day[11:13],day[13:15])
@@ -160,8 +156,10 @@ def get_seconds_from_day(day):
     hours, minutes = int(day[9:11]), int(day[11:13])
     return minutes * 60 + hours * 3600
 
+
 def get_date_string(day):
     return "%s/%s/%s" % (day[:4], day[4:6], day[6:8])
+
 
 def get_full_date(day):
     dateiso = "{}-{}-{}T{}:{}:{}+00:00".format(
@@ -169,11 +167,12 @@ def get_full_date(day):
     )
     return datetime.fromisoformat(dateiso).strftime("%A, %B %d, %Y %H:%M")
 
+
 def get_position_string(is_back):
     if is_back:
-        return BACK
+        return config.BACK
     else:
-        return FRONT
+        return config.FRONT
 
 
 def read_batch_csv(filename, drop_errors):
@@ -238,7 +237,11 @@ def csv_of_the_day(
     ]
     filenames_f = sorted(filenames_f)
     LOG, _, filtered_files = filter_files(
-        camera, day, filenames_f, n_files=MAX_BATCH_IDX + 1, min_idx=MIN_BATCH_IDX
+        camera,
+        day,
+        filenames_f,
+        n_files=config.MAX_BATCH_IDX + 1,
+        min_idx=config.MIN_BATCH_IDX,
     )  # filters for duplicates in the batches for a day. It takes the LAST one!!!
     for key in batch_keys_remove:
         filtered_files.pop(key, None)
@@ -266,7 +269,7 @@ def filter_files(c, d, files, n_files=15, min_idx=0, Logger=None):
     missing_numbers = []
     duplicate_f = []
     correct_f = dict()
-    for i in range(min_idx,n_files):
+    for i in range(min_idx, n_files):
         key_i = "{:06d}".format(i)
         pattern = re.compile(
             ".*{}_{}.{}_{}_\d*-\d*-\d*T\d*_\d*_\d*_\d*.csv".format(c, d[:15], c, key_i)
@@ -311,9 +314,7 @@ def filter_files(c, d, files, n_files=15, min_idx=0, Logger=None):
     return msg_counter, duplicate_f, correct_f
 
 
-def get_timestamp(
-    format = "%d-%m-%Y_%H:%M:%S"
-):
+def get_timestamp(format="%d-%m-%Y_%H:%M:%S"):
     current_time = datetime.now()
     timestamp = current_time.timestamp()
     date_time = datetime.fromtimestamp(timestamp)
@@ -321,9 +322,7 @@ def get_timestamp(
     return str_date_time
 
 
-def create_directory(
-    directory_name: str
-): 
+def create_directory(directory_name: str):
     dir_path = path.join(os.getcwd(), directory_name)
     makedirs(dir_path, exist_ok=True)
     return dir_path
