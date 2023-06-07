@@ -33,6 +33,10 @@ class TestUtils(unittest.TestCase):
         results = metrics.activity_per_interval(
             fish_ids=self.fish_ids, time_interval=100, write_to_csv=True
         )
+        results = metrics.activity_per_interval(
+            fish_ids=self.fish_ids, time_interval=(60**2), write_to_csv=True
+        )
+        return True
 
 
 if __name__ == "__main__":
