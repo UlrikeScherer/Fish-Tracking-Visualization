@@ -26,6 +26,6 @@ repos:
         entry: python3 -m unittest discover
         language: python
         types: [python3]
-        args: ["-p'tests/test_*.py'"]
+        args: ["tests"]
         pass_filenames: false
         stage: [commit]
