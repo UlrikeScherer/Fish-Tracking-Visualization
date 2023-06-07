@@ -19,3 +19,13 @@ repos:
         entry: pylint
         language: python
         types: [python3]
+  - repo: local
+    hooks:
+      - id: unittest
+        name: unittest
+        entry: python3 -m unittest discover
+        language: python
+        types: [python3]
+        args: ["-p'test_*.py'"]
+        pass_filenames: false
+        stage: [commit]
