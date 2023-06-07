@@ -24,7 +24,8 @@ repos:
       - id: unittest
         name: unittest
         entry: python3 -m unittest discover tests
-        language: python
+        language: system
         types: [python3]
         pass_filenames: false
         stage: [commit]
+        always_run: true
