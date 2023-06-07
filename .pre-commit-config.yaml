@@ -23,9 +23,8 @@ repos:
     hooks:
       - id: unittest
         name: unittest
-        entry: python3 -m unittest discover
+        entry: python3 -m unittest discover tests
         language: python
         types: [python3]
-        args: ["tests"]
         pass_filenames: false
         stage: [commit]
