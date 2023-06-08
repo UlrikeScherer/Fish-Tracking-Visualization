@@ -5,6 +5,7 @@ repos:
       - id: check-docstring-first
       - id: check-merge-conflict
       - id: trailing-whitespace
+        types: [python, text]
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-ast
@@ -12,7 +13,6 @@ repos:
     rev: 23.3.0
     hooks:
       - id: black
-        types: [python]
   - repo: local
     hooks:
       - id: pylint
