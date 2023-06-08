@@ -18,6 +18,13 @@ def all_error_filters(data, area_tuple, **kwargs):
     return data_flt
 
 
+def error_default_points(data):
+    x, y = data[:, 0], data[:, 1]
+    # filter nan
+    nan_filter = np.isnan(x) | np.isnan(y)
+    return ((x == -1) & (y == -1)) | ((x == 0) & (y == 0)) | nan_filter
+
+
 def error_dirt_points(data, threshold=config.DIRT_THRESHOLD, fish_key="", day=""):  #
     """
     @params:    data -- numpy array with x,y coordinates
@@ -83,13 +90,6 @@ def error_dirt_points(data, threshold=config.DIRT_THRESHOLD, fish_key="", day=""
                     )
         start = end - 1
     return flt
-
-
-def error_default_points(data):
-    x, y = data[:, 0], data[:, 1]
-    # filter nan
-    nan_filter = np.isnan(x) | np.isnan(y)
-    return ((x == -1) & (y == -1)) | ((x == 0) & (y == 0)) | nan_filter
 
 
 def error_points_out_of_range(data, area_tuple):

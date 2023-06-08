@@ -5,27 +5,30 @@ Project 21: Developing Exploration Behavior
 Holds the scripts to visualize the molly's trajectory. To make
 use of the links to the mp4 and csv-files -- connect to the server
 `loopbio_data`. Currently the links work for MacOS systems and best with
-[Adobe Reader](https://get.adobe.com/de/reader/). 
+[Adobe Reader](https://get.adobe.com/de/reader/).
 
-### How to use the fishproviz module on the window PC in the Lab? 
+### How to use the fishproviz module on the window PC in the Lab?
 - fishproviz is installed on the left PC in the lab.
-These are the steps: 
+These are the steps:
 1. open Ubuntu-App and in the terminal type `cd project/fishproviz` and enter.
-2. open the file `fishproviz/config.env` with: `notepad.exe fishproviz/config.env` - to configure the environment file and set the path variables that point to your working directory. 
-3. note that the prefix to the different data sources is `/mnt/`. 
+2. open the file `fishproviz/config.env` with: `notepad.exe fishproviz/config.env` - to configure the environment file and set the path variables that point to your working directory.
+3. note that the prefix to the different data sources is `/mnt/`.
 
 ## Requirements
 -   `python3, gcc, latex`
 -   Install dependencies:
     -   `pip3 install -r requirements.txt`
+    -   `pip3 install pre-commit`
+    -   `pre-commit install` install the git hooks
 
 ## Build
-
 -   To compile the *Cython* code and creating you own `fishproviz/config.env`,
     run:
     -   `python3 setup.py build_ext --inplace`
--  To install the package and import functions elsewhere: 
+-  To install the package and import functions elsewhere:
     -  `python3 -m pip install .`
+-   Use Pandoc to generate a README.pdf:
+    -   `pandoc README.md -o README.pdf`
 
 ## File Structure
 The variable *path_csv_local* in [fishproviz/config.env](fishproviz/config.env) is the root of the project and the place where all generated data is stored. In addition to the initial front an back directory where all the tracking data is stored you will find the following directories after the corresponding program executes.
@@ -35,13 +38,13 @@ The variable *path_csv_local* in [fishproviz/config.env](fishproviz/config.env) 
 .
 |-- path_csv_local          # root folder of the data directory
 |   |-- front               # POSITION_STR_FRONT front compartments tracks
-|   |-- back                # POSITION_STR_BACK back compartments tracks 
-|   |-- area_config         # area_config Area Configurations 
-|   |   |-- front           # front 
+|   |-- back                # POSITION_STR_BACK back compartments tracks
+|   |-- area_config         # area_config Area Configurations
+|   |   |-- front           # front
 |   |   |-- back            # back
-|   |-- visualizations      # 
+|   |-- visualizations      #
 |   |   |-- trajectory      #
-|   |   |-- feeding         # 
+|   |   |-- feeding         #
 |   |   |-- plots           # single plots
 |   |-- config_data         # where we store feeding zones, area coordinates, calibration, etc. once generated
 |   |-- results             # folder we the results of metrics are stored
@@ -49,7 +52,7 @@ The variable *path_csv_local* in [fishproviz/config.env](fishproviz/config.env) 
 
 
 ## Configuration of the Program
-After *building* - the file [fishproviz/config.env](fishproviz/config.env) contains all configuration and can be edited. 
+After *building* - the file [fishproviz/config.env](fishproviz/config.env) contains all configuration and can be edited.
 
 ## Run the main.py
 ```
@@ -95,7 +98,7 @@ Accessing the data from the server is very slow.
 -   Trajectories: `python3 main.py trajectory`
 -   Feeding Trajectories: `python3 main.py feeding`
         The CSV-file for time spend feeding and number of visits are stored at `results/feeding`.
-    -   Requirements: Provide a csv-file (;-separated) with start and end time for the feeding measures with columns in the following format:   
+    -   Requirements: Provide a csv-file (;-separated) with start and end time for the feeding measures with columns in the following format:
 
 | day | time_in_start | time_in_stop | time_out_start | time_out_stop |
 |-----|---------------|--------------|----------------|---------------|
@@ -174,8 +177,8 @@ options:
     csv-files.
 -   run: `bash scripts/metrics.sh` to create the summery PDF.
 
-##### Git Routines 
--  `git pull` to pull the changes from the remote repository 
+##### Git Routines
+-  `git pull` to pull the changes from the remote repository
 -  `git checkout filename` to discard the changes in the file
 -  `git status` to check the status of the repository
 -  `git add .` to add all files to the staging area
@@ -184,7 +187,7 @@ options:
 
 
 #### 5. Linter and Style Checker for Python
-Use `flake8` to check the code style and linting. 
+Use `flake8` to check the code style and linting.
 Install `flake8` with `pip install flake8` and run `flake8` in the root directory of the project. THe configuration file is [`.flake8`](.flake8).
 Use `black path_to_file.py` to format the code.\
 ------------------------------------------------------------------------

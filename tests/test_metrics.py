@@ -28,12 +28,26 @@ class TestUtils(unittest.TestCase):
     fish_ids = np.arange(n_fishes)
 
     def test_activity(self):
+        print("Fish Keys for test:", self.fish_keys)
         print("Testing activity")
-        print(self.fish_keys)
         results = metrics.activity_per_interval(
             fish_ids=self.fish_ids, time_interval=100, write_to_csv=True
         )
         results = metrics.activity_per_interval(
+            fish_ids=self.fish_ids, time_interval=(60**2), write_to_csv=True
+        )
+        print("Testing distance to wall")
+        results = metrics.distance_to_wall_per_interval(
+            fish_ids=self.fish_ids, time_interval=100, write_to_csv=True
+        )
+        results = metrics.distance_to_wall_per_interval(
+            fish_ids=self.fish_ids, time_interval=(60**2), write_to_csv=True
+        )
+        print("Testing turning angle")
+        results = metrics.turning_angle_per_interval(
+            fish_ids=self.fish_ids, time_interval=100, write_to_csv=True
+        )
+        results = metrics.turning_angle_per_interval(
             fish_ids=self.fish_ids, time_interval=(60**2), write_to_csv=True
         )
 
