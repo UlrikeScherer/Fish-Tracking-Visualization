@@ -2,7 +2,9 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import os
 import sys
+from tqdm import tqdm
 import fishproviz.config as config
+from fishproviz.metrics.metrics import compute_turning_angles
 from fishproviz.utils import (
     csv_of_the_day,
     get_position_string,
@@ -12,14 +14,11 @@ from fishproviz.utils import (
 )
 from fishproviz.metrics import (
     num_of_spikes,
-    calc_length_of_steps,
+    compute_step_lengths,
     get_gaps_in_dataframes,
     activity_mean_sd,
 )
 from fishproviz.utils.transformation import pixel_to_cm
-from fishproviz.methods import (
-    avg_and_sum_angles,
-)
 from fishproviz.utils.utile import (
     get_start_time_directory,
 )  # import cython functions for faster for-loops.
@@ -164,13 +163,14 @@ class Trajectory:
             )
 
         # metric calculations
-        steps = calc_length_of_steps(batchxy)
+        steps = compute_step_lengths(batchxy)
         spikes, spike_places = num_of_spikes(steps)
         ignore_flags = (
             spike_places | gaps_select
         )  # spike or gap ignore them for the next calculation
         mean, sd = activity_mean_sd(steps, ignore_flags)
-        avg_alpha, sum_alpha = avg_and_sum_angles(batchxy)
+        alphas = compute_turning_angles(batchxy)
+        avg_alpha, sum_alpha = alphas.mean(), alphas.sum()
         N = len(steps)
         misses = last_frame - N
         remove_text = F.meta_text_for_trajectory(

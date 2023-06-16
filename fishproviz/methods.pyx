@@ -69,27 +69,6 @@ cdef double angle(double v0, double v1, double w0, double w1):
     cos = dot(v0,v1,w0,w1)
     return arccos(clip(cos, -1, 1))
 
-cpdef (double, double) avg_and_sum_angles(np.ndarray[double, ndim=2] data):
-    cdef np.ndarray[double, ndim=2] vecs
-    cdef double v0, v1, u0, u1
-    vecs = data[1:]-data[:-1]
-    vecs = vecs[np.all(vecs!=0, axis=1)]
-    cdef double sum_avg, sum_ang
-    cdef int N_alpha
-    sum_avg, sum_ang, N_alpha = 0.,0.,len(vecs)
-
-    if N_alpha <= 1:
-        return (sum_avg, sum_ang)
-
-    (u0, u1) = unit_vector(vecs[0,0], vecs[0,1])
-    cdef int i
-    for i in range(1,N_alpha):
-        (v0, v1) = unit_vector(vecs[i,0], vecs[i,1])
-        sum_avg += angle(u0,u1,v0,v1)
-        sum_ang += direction_angle(u0,u1,v0,v1)
-        u0, u1 = v0, v1
-    return (sum_avg/(N_alpha-1), sum_ang)
-
 cpdef np.ndarray[double, ndim=1] calc_steps(np.ndarray[double, ndim=2] data):
     sq = (data[1:] - data[:-1])**2
     c=np.sqrt(sq[:,0] + sq[:,1])

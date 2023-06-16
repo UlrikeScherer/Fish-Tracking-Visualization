@@ -5,7 +5,7 @@ import numpy as np
 import warnings
 from time import gmtime, strftime
 import fishproviz.config as config
-from fishproviz.metrics.metrics import calc_length_of_steps, num_of_spikes
+from fishproviz.metrics.metrics import compute_step_lengths, num_of_spikes
 from fishproviz.trajectory.feeding_shape import FeedingEllipse, FeedingRectangle
 from fishproviz.utils import (
     get_days_in_order,
@@ -154,7 +154,7 @@ class FeedingTrajectory(Trajectory):
             "#Visits: %s" % (n_entries),
             r"$\Delta$ Feeding: %s" % (strftime("%M:%S", gmtime(feeding_size / 5))),
         ]
-        steps = calc_length_of_steps(batchxy)
+        steps = compute_step_lengths(batchxy)
         spikes, spike_places = num_of_spikes(steps)
         N = batchxy.shape[0]
         text_r = F.meta_text_rhs(N, last_frame - N, spikes)

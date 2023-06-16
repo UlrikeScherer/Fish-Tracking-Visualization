@@ -54,6 +54,8 @@ The variable *path_csv_local* in [fishproviz/config.env](fishproviz/config.env) 
 ## Configuration of the Program
 After *building* - the file [fishproviz/config.env](fishproviz/config.env) contains all configuration and can be edited.
 
+#### Caution with config
+
 ## Run the main.py
 ```
 usage: python3 main.py [-h] [-ti TIME_INTERVAL] [-fid FISH_ID] [--include_median]
