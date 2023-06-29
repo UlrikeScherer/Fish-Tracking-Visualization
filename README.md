@@ -54,7 +54,9 @@ The variable *path_csv_local* in [fishproviz/config.env](fishproviz/config.env) 
 ## Configuration of the Program
 After *building* - the file [fishproviz/config.env](fishproviz/config.env) contains all configuration and can be edited.
 
-#### Caution with config
+#### Caution with `config` module
+1. The `config` module load the `config.env` file and makes the variables available as global variables. When importing with variables with `from config import var` the `var` will not whiteness and updates to `config`, therefore its recommended to `import config` and access the variables with `config.var`.
+2. In `utils.transformations` we have two dictionaries `global FUNCS_PX2CM, global AREA_FUNCS` with function to return the area and calibration data, respectively, give a `camera_position` string. When the area_config is updated these global variables need to be set to `None` such that the new data is loaded.
 
 ## Run the main.py
 ```
@@ -100,12 +102,25 @@ Accessing the data from the server is very slow.
 -   Trajectories: `python3 main.py trajectory`
 -   Feeding Trajectories: `python3 main.py feeding`
         The CSV-file for time spend feeding and number of visits are stored at `results/feeding`.
-    -   Requirements: Provide a csv-file (;-separated) with start and end time for the feeding measures with columns in the following format:
+    -   Optional requirement: Provide a csv-file (;-separated) with start and end time for the feeding measures with columns in the following format:
 
 | day | time_in_start | time_in_stop | time_out_start | time_out_stop |
 |-----|---------------|--------------|----------------|---------------|
 | dd.mm.yy| hh:mm | hh:mm | hh:mm | hh:mm |
 
+```bash
+# fishproviz/config.env
+SERVER_FEEDING_TIMES_FILE="path/to/feeding_times.csv"
+FEEDING_SHAPE="ellipse" # or "patch", "rectangle"
+```
+- Feeding Shape `ellipse`: 
+    -   Requirements: Set the `path_recordings` in `config.env` to the correct path where the recordings and annotations are stored containing the data of the feeding ellipses. This is usually on the server, make sure you connect to the server to access the data for the first time. 
+    After the first run, the data is stored locally in `config_data/feeding_zones` and the server is not needed anymore.
+    -   TODO: In the future we want to store the feeding zones in the `path_csv_local` folder and not with the recordings. 
+- Feeding Shape `rectangle`:
+    -  Is not implemented yet. Could be done similar to the ellipse shape.
+- Feeding Shape `patch`:
+    -  Requirements: Provide a csv-file (;-separated) with the coordinates of the feeding patches, and example can be found at [data/feeding_patches.csv](data/feeding_patches.csv).  
 An example template can be found at [data/recordings_feeding_times_template.csv](data/recordings_feeding_times_template.csv)
 
 ##### Then run the `bash`-script:
@@ -195,3 +210,7 @@ Use `black path_to_file.py` to format the code.\
 ------------------------------------------------------------------------
 
 Further documentation will follow here...
+
+TODOs:
+- [ ] latex scripts are slow on the PC of the lab, suspicion that the `ls` search is slow. 
+- [ ] feeding trajectories for rectangle (code) and circle documentation.

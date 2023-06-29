@@ -20,7 +20,7 @@ POSITION_STR_BACK="SE_phase2_tracks_final_block1_back"
 dir_front=$path_csv_local/$POSITION_STR_FRONT
 dir_back=$path_csv_local/$POSITION_STR_BACK
 
-FEEDING_SHAPE="ellipse" # ellipse or ( rectangle not implimented yet )
+FEEDING_SHAPE="ellipse" # ellipse, patch or ( rectangle not implimented yet )
 SERVER_FEEDING_TIMES_FILE="/Volumes/data/loopbio_data/02_SE_(superstition_experiment)_JunNov2022/SE_recordings_phasell_maze_trials_times.csv"
 TRIAL_TIMES_CSV="/Volumes/Extreme_SSD/SE_tracks_final/SE_phase4_trial_times.csv"
 

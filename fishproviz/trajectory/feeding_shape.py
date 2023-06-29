@@ -45,7 +45,7 @@ class FeedingEllipse(FeedingShape):
         )
 
 
-class FeedingRectangle(FeedingShape):
+class FeedingPatch(FeedingShape):
     """Class for feeding squares"""
 
     def __init__(self):

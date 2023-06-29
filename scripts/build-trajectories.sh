@@ -57,7 +57,7 @@ SUBFIGURE_HEIGHT="${FIG_WIDTH}\textheight"
 echo "
 -------------------------
 START generating PDFs for:
-$BLOCK,
+$PROJECT_ID,
 $rootserver,
 $path_recordings,
 $PLOTS_TRAJECTORY,
@@ -69,7 +69,7 @@ $SQRT_N,
 $FIG_WIDTH
 -------------------------"
 
-directory_of_run=$path_csv_local/$VIS_DIR/$PROGRAMNAME/$BLOCK
+directory_of_run=$path_csv_local/$VIS_DIR/$PROGRAMNAME
 mkdir -p $directory_of_run
 
 for b in ${!position[@]}; do
@@ -92,7 +92,7 @@ for b in ${!position[@]}; do
                     \newcommand\rootcsv{$CSV_DIR}
                     \newcommand\rootrecord{$path_recordings}
                     \newcommand\plots{$PLOTS_TRAJECTORY}
-                    \newcommand\block{$BLOCK}
+                    \newcommand\block{$PROJECT_ID}
                     \newcommand\posstr{$POSITION_STR}
                     \newcommand\programname{$PROGRAMNAME}
                     \newcommand\minindex{$MIN_BATCH_IDX}
@@ -174,7 +174,7 @@ for b in ${!position[@]}; do
         echo "${daysarray}" > $FILES/days_array.tex
         echo "$texheader" > $FILES/arrayoflinks.tex
         if [ $feeding ]; then
-            echo "\input{$FILES/${BLOCK}_feedingtime.tex}" >> $FILES/arrayoflinks.tex
+            echo "\input{$FILES/feedingtime.tex}" >> $FILES/arrayoflinks.tex
         fi
         # run pdflatex two times
         END=2
@@ -183,7 +183,7 @@ for b in ${!position[@]}; do
             pdflatex --interaction=nonstopmode "\newcommand\arrayoflinks{${FILES}/arrayoflinks}\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}" > log_tex.txt
             #pdflatex "\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}"
         done
-        mv main.pdf ${directory_of_run}/${PROGRAMNAME}_${BLOCK}_${camera}_${position[$b]}.pdf
+        mv main.pdf ${directory_of_run}/${PROGRAMNAME}_${camera}_${position[$b]}.pdf
     done
 done
 

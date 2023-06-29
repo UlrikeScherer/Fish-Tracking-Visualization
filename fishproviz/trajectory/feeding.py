@@ -6,7 +6,7 @@ import warnings
 from time import gmtime, strftime
 import fishproviz.config as config
 from fishproviz.metrics.metrics import compute_step_lengths, num_of_spikes
-from fishproviz.trajectory.feeding_shape import FeedingEllipse, FeedingRectangle
+from fishproviz.trajectory.feeding_shape import FeedingEllipse, FeedingPatch
 from fishproviz.utils import (
     get_days_in_order,
     get_all_days_of_context,
@@ -16,7 +16,7 @@ from fishproviz.utils.utile import start_time_of_day_to_seconds, get_seconds_fro
 from .trajectory import Trajectory
 from fishproviz.utils.transformation import pixel_to_cm
 
-map_shape = {"rectangle": FeedingRectangle, "ellipse": FeedingEllipse}
+map_shape = {"patch": FeedingPatch, "ellipse": FeedingEllipse}
 FT_DATE, FT_START, FT_END = (
     "day",
     "time_in_start",
@@ -26,9 +26,8 @@ FT_DATE, FT_START, FT_END = (
 
 class FeedingTrajectory(Trajectory):
     is_feeding = True
-    dir_data_feeding = "%s/%s/%s" % (
+    dir_data_feeding = "%s/%s" % (
         config.RESULTS_PATH,
-        config.PROJECT_ID,
         config.P_FEEDING,
     )
     dir_tex_feeding = config.TEX_DIR
@@ -232,29 +231,25 @@ class FeedingTrajectory(Trajectory):
 
 
 def feeding_times_start_end_dict():
-    if os.path.exists(config.START_END_FEEDING_TIMES_FILE):
-        return json.load(open(config.START_END_FEEDING_TIMES_FILE, "r"))
+    if not os.path.exists(config.SERVER_FEEDING_TIMES_FILE):
+        warnings.warn(
+            f"File {config.SERVER_FEEDING_TIMES_FILE} not found, thus feeding times will be calculated over all provided batches, if this is not intended please check the path in scripts/env.sh"
+        )
+        return None
     else:
-        if not os.path.exists(config.SERVER_FEEDING_TIMES_FILE):
-            warnings.warn(
-                f"File {config.SERVER_FEEDING_TIMES_FILE} not found, thus feeding times will be calculated over all provided batches, if this is not intended please check the path in scripts/env.sh"
-            )
-            return None
-        else:
-            ft_df = pd.read_csv(
-                config.SERVER_FEEDING_TIMES_FILE,
-                usecols=[FT_DATE, FT_START, FT_END],
-                sep=config.sep,
-            )
-            ft_df = ft_df[~ft_df[FT_START].isna()]
-            start_end = dict(
-                [
-                    (
-                        "20%s%02d%02d" % tuple(map(int, reversed(d.split(".")))),
-                        (get_seconds_from_time(s), get_seconds_from_time(e)),
-                    )
-                    for (d, s, e) in zip(ft_df[FT_DATE], ft_df[FT_START], ft_df[FT_END])
-                ]
-            )
-            json.dump(start_end, open(config.START_END_FEEDING_TIMES_FILE, "w"))
-            return start_end
+        ft_df = pd.read_csv(
+            config.SERVER_FEEDING_TIMES_FILE,
+            usecols=[FT_DATE, FT_START, FT_END],
+            sep=config.sep,
+        )
+        ft_df = ft_df[~ft_df[FT_START].isna()]
+        start_end = dict(
+            [
+                (
+                    "20%s%02d%02d" % tuple(map(int, reversed(d.split(".")))),
+                    (get_seconds_from_time(s), get_seconds_from_time(e)),
+                )
+                for (d, s, e) in zip(ft_df[FT_DATE], ft_df[FT_START], ft_df[FT_END])
+            ]
+        )
+        return start_end
