@@ -30,44 +30,8 @@ ctypedef np.int_t DTYPE_t
 ctypedef np.float64_t double
 cdef int NDIM = 3
 
-cdef double arccos(double v):
-    return acos(v)
-
-cdef double clip(double a, int min_value, int max_value):
-    return min(max(a, min_value), max_value)
-
-cdef double dot(double v0, double v1, double w0, double w1):
-    return v0*w0+v1*w1
-
 cdef double norm(double v0, double v1):
     return sqrt(v0**2 + v1**2)
-
-cdef (double, double) unit_vector(v0, v1):
-    """ Returns the unit vector of the vector.  """
-    cdef double n
-    n = norm(v0, v1)
-    if n == 0:
-        return (v0, v1)
-    return (v0/n, v1/n)
-
-cdef double determinant(double v0, double v1, double w0, double w1):
-    """ Determinant of two vectors. """
-    return v0*w1-v1*w0
-
-cdef double direction_angle(double v0, double v1, double w0, double w1):
-    """ Returns the angle between v,w anti clockwise from direction v to m. """
-    cdef double cos, r, det
-    cos = dot(v0,v1,w0,w1)
-    r = arccos(clip(cos, -1, 1))
-    det = determinant(v0,v1,w0,w1)
-    if det < 0:
-        return r
-    else:
-        return -r
-
-cdef double angle(double v0, double v1, double w0, double w1):
-    cos = dot(v0,v1,w0,w1)
-    return arccos(clip(cos, -1, 1))
 
 cpdef np.ndarray[double, ndim=1] calc_steps(np.ndarray[double, ndim=2] data):
     sq = (data[1:] - data[:-1])**2
@@ -98,27 +62,6 @@ cpdef np.ndarray[double, ndim=1] tortuosity_of_chunk(np.ndarray[double, ndim=2] 
         j=i
 
     return np.array(t_result, dtype=float)
-
-cpdef np.ndarray[float, ndim=1] turning_directions(np.ndarray[double, ndim=2] data):
-    cdef np.ndarray[double, ndim=2] vecs
-    cdef double v0, v1, u0, u1
-    vecs_in = data[1:]-data[:-1]
-    indices = np.any(vecs_in!=0, axis=1) # remove all vectors where both dimentions are 0
-    vecs = vecs_in[indices]
-    cdef int N_alpha = len(vecs)
-    cdef np.ndarray d_angles = np.zeros([N_alpha], dtype=float) # one point smaller then vecs and two points smaller
-    if N_alpha <= 1:
-        return d_angles
-    (u0, u1) = unit_vector(vecs[0,0], vecs[0,1])
-    cdef int i
-    for i in range(1,N_alpha):
-        (v0, v1) = unit_vector(vecs[i,0], vecs[i,1])
-        d_angles[i-1] = direction_angle(u0,u1,v0,v1)
-        u0, u1 = v0, v1
-
-    results = np.zeros([len(vecs_in)], dtype=float)
-    results[indices] = d_angles
-    return results[:-1]
 
 cpdef (double, double) mean_std(np.ndarray[double, ndim=1] data):
     if data.size == 0:

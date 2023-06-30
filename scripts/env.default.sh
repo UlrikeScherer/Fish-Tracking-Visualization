@@ -15,8 +15,8 @@ path_recordings="/Volumes/data/loopbio_data/02_SE_(superstition_experiment)_JunN
 path_csv="$rootserver/FE_tracks"
 # --- The Path to the local data ------------
 path_csv_local="/Volumes/Extreme_SSD/SE_tracks_final"
-POSITION_STR_FRONT="SE_phase2_tracks_final_block1_front" 
-POSITION_STR_BACK="SE_phase2_tracks_final_block1_back"
+POSITION_STR_FRONT="front" 
+POSITION_STR_BACK="back"
 dir_front=$path_csv_local/$POSITION_STR_FRONT
 dir_back=$path_csv_local/$POSITION_STR_BACK
 
@@ -29,8 +29,8 @@ CALIBRATION_DIST_CM=83.0
 DEFAULT_CALIBRATION=0.02278
 
 # Area Data Directory 
-area_back="$path_csv_local/area_config/areas back 10Sep2021"
-area_front="$path_csv_local/area_config/areas front 10Sep2021"
+area_back="$path_csv_local/area_config/areas_back"
+area_front="$path_csv_local/area_config/areas_front"
 
 # FILTERING 
 AREA_FILTER=0 # 1 to filter by area, 0 to not filter

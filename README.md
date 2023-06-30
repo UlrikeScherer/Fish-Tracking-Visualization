@@ -18,6 +18,7 @@ These are the steps:
 -   `python3, gcc, latex`
 -   Install dependencies:
     -   `pip3 install -r requirements.txt`
+    -   for developers:
     -   `pip3 install pre-commit`
     -   `pre-commit install` install the git hooks
 
@@ -43,18 +44,22 @@ The variable *path_csv_local* in [fishproviz/config.env](fishproviz/config.env) 
 |   |   |-- front           # front
 |   |   |-- back            # back
 |   |-- visualizations      #
-|   |   |-- trajectory      #
-|   |   |-- feeding         #
+|   |   |-- trajectory      # trajectories pdfs from latex
+|   |   |-- feeding         # feeding trajectories pdfs from latex
 |   |   |-- plots           # single plots
 |   |-- config_data         # where we store feeding zones, area coordinates, calibration, etc. once generated
 |   |-- results             # folder we the results of metrics are stored
+|   |   |-- feeding         # feeding metrics 
+|   |   |-- <metric>         # each metric has its own folder
 ```
-
 
 ## Configuration of the Program
 After *building* - the file [fishproviz/config.env](fishproviz/config.env) contains all configuration and can be edited.
+Most main variable is:
+-   `path_csv_local`: root folder of the data directory
+For the other variables see the comments in the file.
 
-#### Caution with `config` module
+## Caution with `config` module (for developers) 
 1. The `config` module load the `config.env` file and makes the variables available as global variables. When importing with variables with `from config import var` the `var` will not whiteness and updates to `config`, therefore its recommended to `import config` and access the variables with `config.var`.
 2. In `utils.transformations` we have two dictionaries `global FUNCS_PX2CM, global AREA_FUNCS` with function to return the area and calibration data, respectively, give a `camera_position` string. When the area_config is updated these global variables need to be set to `None` such that the new data is loaded.
 
@@ -118,9 +123,9 @@ FEEDING_SHAPE="ellipse" # or "patch", "rectangle"
     After the first run, the data is stored locally in `config_data/feeding_zones` and the server is not needed anymore.
     -   TODO: In the future we want to store the feeding zones in the `path_csv_local` folder and not with the recordings. 
 - Feeding Shape `rectangle`:
-    -  Is not implemented yet. Could be done similar to the ellipse shape.
+    -  Is not implemented yet. Could be done similar to the ellipse shape. Or a general polygon shape could be implemented.
 - Feeding Shape `patch`:
-    -  Requirements: Provide a csv-file (;-separated) with the coordinates of the feeding patches, and example can be found at [data/feeding_patches.csv](data/feeding_patches.csv).  
+    -  Requirements: Provide a csv-file (;-separated) with the coordinates of the feeding patches. The file used is [data/feeding_patches.csv](data/feeding_patches.csv). If modified patch coordinates are needed change the path in the program `feeding_shape.py`. 
 An example template can be found at [data/recordings_feeding_times_template.csv](data/recordings_feeding_times_template.csv)
 
 ##### Then run the `bash`-script:
@@ -194,6 +199,11 @@ options:
     csv-files.
 -   run: `bash scripts/metrics.sh` to create the summery PDF.
 
+#### 5. Linter and Style Checker for Python
+Use `flake8` to check the code style and linting.
+Install `flake8` with `pip install flake8` and run `flake8` in the root directory of the project. THe configuration file is [`.flake8`](.flake8).
+Use `black path_to_file.py` to format the code.
+
 ##### Git Routines
 -  `git pull` to pull the changes from the remote repository
 -  `git checkout filename` to discard the changes in the file
@@ -202,15 +212,10 @@ options:
 -  `git commit -m "commit message"` to commit the changes
 -  `git push` to push the changes to the remote repository
 
-
-#### 5. Linter and Style Checker for Python
-Use `flake8` to check the code style and linting.
-Install `flake8` with `pip install flake8` and run `flake8` in the root directory of the project. THe configuration file is [`.flake8`](.flake8).
-Use `black path_to_file.py` to format the code.\
 ------------------------------------------------------------------------
 
 Further documentation will follow here...
 
-TODOs:
+# TODOs:
 - [ ] latex scripts are slow on the PC of the lab, suspicion that the `ls` search is slow. 
-- [ ] feeding trajectories for rectangle (code) and circle documentation.
+- [ ] feeding trajectories for rectangle.

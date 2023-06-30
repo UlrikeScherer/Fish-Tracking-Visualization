@@ -79,9 +79,8 @@ def get_filename_for_metric_csv(
 
 
 def get_results_directory(metric_name):
-    directory = "%s/%s/%s" % (
+    directory = "%s/%s" % (
         config.RESULTS_PATH,
-        config.PROJECT_ID,
         metric_name,
     )
     if os.path.exists(directory):
