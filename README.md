@@ -13,6 +13,7 @@ These are the steps:
 1. open Ubuntu-App and in the terminal type `cd project21/fishproviz` and enter.
 2. open the file `fishproviz/config.env` with: `notepad.exe fishproviz/config.env` - to configure the environment file and set the path variables that point to your working directory.
 3. note that the prefix to the different data sources is `/mnt/`.
+4. TODO: the latex part is still very slow on the PC, this needs some investigation.  
 
 ## Requirements
 -   `python3, gcc, latex`
