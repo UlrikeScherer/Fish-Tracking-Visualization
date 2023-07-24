@@ -10,7 +10,7 @@ use of the links to the mp4 and csv-files -- connect to the server
 ### How to use the fishproviz module on the window PC in the Lab?
 - fishproviz is installed on the left PC in the lab.
 These are the steps:
-1. open Ubuntu-App and in the terminal type `cd project/fishproviz` and enter.
+1. open Ubuntu-App and in the terminal type `cd project21/fishproviz` and enter.
 2. open the file `fishproviz/config.env` with: `notepad.exe fishproviz/config.env` - to configure the environment file and set the path variables that point to your working directory.
 3. note that the prefix to the different data sources is `/mnt/`.
 
