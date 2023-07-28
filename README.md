@@ -10,10 +10,33 @@ use of the links to the mp4 and csv-files -- connect to the server
 ### How to use the fishproviz module on the window PC in the Lab?
 - fishproviz is installed on the left PC in the lab.
 These are the steps:
-1. open Ubuntu-App and in the terminal type `cd project21/fishproviz` and enter.
-2. open the file `fishproviz/config.env` with: `notepad.exe fishproviz/config.env` - to configure the environment file and set the path variables that point to your working directory.
-3. note that the prefix to the different data sources is `/mnt/`.
-4. TODO: the latex part is still very slow on the PC, this needs some investigation.  
+1. open Ubuntu in WSL on Windows by typing into the terminal: `bash`
+2. check, whether the external drive is correctly mounted into ubuntu and expect not an empty folder to appear: 
+    ```bash 
+    ls /mnt/e
+    ``` 
+    * if the folder is unexpectedly empty, the drive seems not to be mounted correctly, mounting it requires administration-priviledges, for that, please contact your supervisor:
+        ```bash 
+        sudo mount -t drvfs e: /mnt/e
+        ```
+    * the mounted drive is dependent on the variable assigned by windows, in this ongoing example this drive is referenced with `e`. please note, that creating the directory in `mnt` is neccessary, if this has not already been created. this can be done with the following command: 
+        ```bash
+        sudo mkdir /mnt/e
+        ```
+3. change the active working directory to 
+    ```bash 
+    cd ~/project21/fishproviz
+    ```
+4. open the file `fishproviz/config.env` to configure the environment file and set the path variables that point to your working directory
+    ```bash
+    notepad.exe fishproviz/config.env &
+    ```
+    * please note, that linux doesn't accept whitespaces or special characters (like braces) in file names. These need to be escaped with a backslash
+    * note that the prefix to the different data sources is `/mnt/e`.
+5. for calculating trajectories, run 
+    ```bash 
+    python3 main.py trajectory
+    ```
 
 ## Requirements
 -   `python3, gcc, latex`
