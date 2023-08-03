@@ -149,7 +149,7 @@ FEEDING_SHAPE="ellipse" # or "patch", "rectangle"
 - Feeding Shape `rectangle`:
     -  Is not implemented yet. Could be done similar to the ellipse shape. Or a general polygon shape could be implemented.
 - Feeding Shape `patch`:
-    -  Requirements: Provide a csv-file (;-separated) with the coordinates of the feeding patches. The file used is [data/feeding_patches.csv](data/feeding_patches.csv). If modified patch coordinates are needed change the path in the program `feeding_shape.py`. 
+    -  Requirements: Provide a csv-file (;-separated) with the coordinates of the feeding patches. The file used is [data/feeding_patch_coords.csv](data/feeding_patch_coords.csv). If modified patch coordinates are needed change the path in the program `feeding_shape.py`. 
 An example template can be found at [data/recordings_feeding_times_template.csv](data/recordings_feeding_times_template.csv)
 
 ##### Then run the `bash`-script:
