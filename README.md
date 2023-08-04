@@ -117,6 +117,14 @@ The resulting bundeled pdf-files for every individual are then stored in `./visu
 >    ```bash
 >    bash scripts/build-trajectories.sh
 >    ```
+>   * if the execution of this bash-script results in permission errors, check the access-rights for this files using 
+>   ```bash
+>    ls -las scripts/build-trajectories.sh
+>    # output: >>> 16 -rw-r--r--  1  user user-group date time scripts/build-trajectories.sh
+>    chmod u+x scripts/build-trajectories.sh # users receive execution-rights for this file
+>    ls -las scripts/build-trajectories.sh
+>    # output: >>> 16 -rwxr--r--  1  user user-group date time scripts/build-trajectories.sh
+>    ```
 
 #### Plot Generation for Feeding Trajectories
 For generating single pdf-files with plots with trajectories for every timeframe, run the following command:
