@@ -174,7 +174,7 @@ for b in ${!position[@]}; do
         echo "${daysarray}" > $FILES/days_array.tex
         echo "$texheader" > $FILES/arrayoflinks.tex
         if [ $feeding ]; then
-            echo "\input{$FILES/${BLOCK}_feedingtime.tex}" >> $FILES/arrayoflinks.tex
+            echo "\input{$FILES/${BLOCK}feedingtime.tex}" >> $FILES/arrayoflinks.tex
         fi
         # run pdflatex two times
         END=2
