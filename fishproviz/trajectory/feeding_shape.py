@@ -90,7 +90,7 @@ def get_feeding_cords(data, camera_id, is_back):
 
 def get_feeding_box(data, TL_x, TL_y, TR_x, TR_y):
     # TODO: scaling differences
-    scale = 1
+    scale = 2
     # if x has the same value.
     if abs(TL_x - TR_x) < abs(TL_y - TR_y):
         # config.FRONT
