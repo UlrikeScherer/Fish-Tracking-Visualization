@@ -33,6 +33,15 @@ def px2cm(a, fish_key=None):
     return a * config.DEFAULT_CALIBRATION
 
 
+def init_area_and_calibration_functions():
+    global AREA_FUNCS
+    global FUNCS_PX2CM
+    if not AREA_FUNCS:
+        AREA_FUNCS = get_area_functions()
+    if not FUNCS_PX2CM:
+        FUNCS_PX2CM = get_calibration_functions()
+
+
 def pixel_to_cm(pixels, fish_key=None):
     """
     @params: pixels (Nx2)

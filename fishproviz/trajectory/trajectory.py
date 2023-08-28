@@ -18,7 +18,7 @@ from fishproviz.metrics import (
     get_gaps_in_dataframes,
     activity_mean_sd,
 )
-from fishproviz.utils.transformation import pixel_to_cm
+from fishproviz.utils.transformation import init_area_and_calibration_functions, pixel_to_cm
 from fishproviz.utils.utile import (
     get_start_time_directory,
 )  # import cython functions for faster for-loops.
@@ -150,6 +150,7 @@ class Trajectory:
             batch.drop(batch.tail(1).index)
 
         fish_key = "%s_%s" % tuple(self.fish2camera[fish_id])
+        init_area_and_calibration_functions()
         batchxy = pixel_to_cm(batch[["xpx", "ypx"]].to_numpy(), fish_key=fish_key)
         F.line.set_data(*batchxy.T)
         # draw spikes where datapoints were lost

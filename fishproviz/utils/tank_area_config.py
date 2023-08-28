@@ -1,6 +1,3 @@
-# TODO: prevent racing-condition
-# from threading import Thread, Lock
-import time
 
 import glob, json, os
 import matplotlib.pyplot as plt
@@ -85,8 +82,6 @@ def get_areas():
         area_data[m_k] = example_dict[m_k.split("_")[1]]
 
     write_area_data_to_json(area_data)
-    for k, v in list(area_data.items()):
-        plt.plot(v[:, 0], v[:, 1], "-o")
     return area_data
 
 
