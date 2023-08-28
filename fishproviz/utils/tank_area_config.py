@@ -1,4 +1,5 @@
 # TODO: prevent racing-condition
+# from threading import Thread, Lock
 import time
 
 import glob, json, os
@@ -105,9 +106,6 @@ def write_area_data_to_json(area_data):
     area_d = dict(zip(area_data.keys(), map(lambda v: v.tolist(), area_data.values())))
     with open("{}/area_data.json".format(config.CONFIG_DATA), "w") as outfile:
         json.dump(area_d, outfile, indent=2)
-        # TODO: preventing race-condition
-        print('=> writing aread_data.json: thread sleeping, preventing race-condition')
-        time.sleep(5)
 
 
 def get_line_starting_with(file, matchstr="Last"):
@@ -142,7 +140,4 @@ def compute_calibrations():
                     )
     with open(f"{config.CONFIG_DATA}/calibration.json", "w") as f:
         json.dump(calibration, f, indent=2)
-        # TODO: preventing race-condition
-        print('=> writing calibration.json: thread sleeping, preventing race-condition')
-        time.sleep(5)
     return calibration
