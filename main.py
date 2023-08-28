@@ -90,6 +90,10 @@ def get_fish_ids_to_run(program, fish_id):
     returns: np-array of ids
     '''
     fish_keys = get_camera_pos_keys()
+    # debug 
+    for index, value in enumerate(fish_keys):
+        print(f'i: {index} => {value}')
+
     n_fishes = len(fish_keys)
 
     fish_ids = np.arange(n_fishes)

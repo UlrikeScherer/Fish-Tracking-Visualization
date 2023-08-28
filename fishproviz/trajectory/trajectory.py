@@ -186,6 +186,7 @@ class Trajectory:
         N = len(self.fish2camera[fish_ids])
         self.reset_data()
         for i, fish_idx in enumerate(fish_ids):
+            print(f'\nFISH-ID: {i}')
             camera_id, pos = self.fish2camera[fish_idx]
             is_back = pos == config.BACK
             day_list = get_days_in_order(camera=camera_id, is_back=is_back)
