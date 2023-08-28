@@ -1,3 +1,6 @@
+# TODO: prevent racing-condition
+import time
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import os
@@ -151,6 +154,8 @@ class Trajectory:
 
         fish_key = "%s_%s" % tuple(self.fish2camera[fish_id])
         batchxy = pixel_to_cm(batch[["xpx", "ypx"]].to_numpy(), fish_key=fish_key)
+        # TODO: preventing race-condition
+        time.sleep(10)
         F.line.set_data(*batchxy.T)
         # draw spikes where datapoints were lost
         # ax.draw_artist(ax.patch)
