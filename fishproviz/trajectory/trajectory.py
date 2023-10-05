@@ -1,5 +1,6 @@
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import numpy as np
 import os
 import sys
 from tqdm import tqdm
@@ -169,6 +170,11 @@ class Trajectory:
             spike_places | gaps_select
         )  # spike or gap ignore them for the next calculation
         mean, sd = activity_mean_sd(steps, ignore_flags)
+        # prevention of negative dimension when computing alphas: check for erroneous data
+        # mean should be numeric and not nan, which indicates erroneous data without any tracking (consistent -1 values)
+        if np.isnan(mean):
+            print(f'erroneous data filtered out for key: {fish_key} date: {date}')
+            return -1
         alphas = compute_turning_angles(batchxy)
         avg_alpha, sum_alpha = alphas.mean(), alphas.sum()
         N = len(steps)
