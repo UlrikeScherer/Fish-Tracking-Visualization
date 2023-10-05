@@ -165,7 +165,7 @@ Bundling these locally created individual timeframes into one combined file is p
 **Remark:** For the bash-script you can not build feeding and non
 feeding trajectories in parallel as they use the same files.
 ##### Usage on the Lab Computer - Feeding
->1. the configurations for feeding are analog to the trajectory configuration, please refer to the steps 1-4 in [a](#usage-on-the-lab-computer---trajectories)
+>1. the configurations for feeding are analog to the trajectory configuration, please refer to the steps 1-4 in the [trajectory section](#usage-on-the-lab-computer---trajectories)
 >2. for calculating trajectories, run 
 >    ```bash 
 >    python3 main.py feeding
