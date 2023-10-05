@@ -84,7 +84,7 @@ bash scripts/build-trajectories.sh -l #-l flag for using the local configuration
 ```
 The resulting bundeled pdf-files for every individual are then stored in `./visualisations/trajectory`
 
->##### Usage on the Lab Computer
+>##### Usage on the Lab Computer - Trajectories
 >As the lab computers use windows, an instance of the Windows Subsystem for Linux needs to be started on the Left PC. This is configured there with Ubuntu as the target Linux-Derivate.
 >1. open Ubuntu in WSL on Windows by typing into the terminal: `bash`
 >2. check, whether the external drive is correctly mounted into ubuntu and expect not an empty folder to appear: 
@@ -115,7 +115,7 @@ The resulting bundeled pdf-files for every individual are then stored in `./visu
 >    ```
 >6. bundling each trajectory file into one trajectory-file per individual using:
 >    ```bash
->    bash scripts/build-trajectories.sh
+>    bash scripts/build-trajectories.sh -l #-l flag for using the local configurations
 >    ```
 >   * if the execution of this bash-script results in permission errors, check the access-rights for this files using 
 >   ```bash
@@ -164,6 +164,16 @@ Bundling these locally created individual timeframes into one combined file is p
 
 **Remark:** For the bash-script you can not build feeding and non
 feeding trajectories in parallel as they use the same files.
+##### Usage on the Lab Computer - Feeding
+>1. the configurations for feeding are analog to the trajectory configuration, please refer to the steps 1-4 in [a](#usage-on-the-lab-computer---trajectories)
+>2. for calculating trajectories, run 
+>    ```bash 
+>    python3 main.py feeding
+>    ```
+>3. bundling each trajectory file into one trajectory-file per individual using:
+>    ```bash
+>    bash scripts/build-trajectories.sh -f -l  #-l flag for using the local configurations
+>    ```
 
 ### 2. Data File and Path Validation
 
