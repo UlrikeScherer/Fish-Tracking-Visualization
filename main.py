@@ -206,5 +206,3 @@ if __name__ == "__main__":
     main(**args.__dict__)
     tend = time.time()
     print("Running time:", tend - tstart, "sec.")
-
-# TODO: structurize outputs vs. prints vs. program-logs

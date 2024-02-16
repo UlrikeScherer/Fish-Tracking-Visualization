@@ -173,7 +173,7 @@ class Trajectory:
         # prevention of negative dimension when computing alphas: check for erroneous data
         # mean should be numeric and not nan, which indicates erroneous data without any tracking (consistent -1 values)
         if np.isnan(mean):
-            print(f'\terroneous data filtered out for key: {fish_key} date: {date}')
+            print(f'\terroneous data filtered out for key: <{fish_key}>, date: {date} in timespan {time_span}')
             return -1
         alphas = compute_turning_angles(batchxy)
         avg_alpha, sum_alpha = alphas.mean(), alphas.sum()

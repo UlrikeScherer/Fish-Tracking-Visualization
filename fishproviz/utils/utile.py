@@ -283,7 +283,7 @@ def filter_files(c, d, files, n_files=15, min_idx=0, Logger=None):
         elif len(i_f) == 0:
             missing_numbers.append(key_i)
         else:
-            correct_f[key_i] = i_f[-1]
+            correct_f[key_i] = i_f[-1] # takes the last one
 
     pattern_general = re.compile(
         ".*{}_{}.{}_\d*_\d*-\d*-\d*T\d*_\d*_\d*_\d*.csv".format(c, d[:15], c)
