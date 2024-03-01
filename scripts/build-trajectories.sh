@@ -88,6 +88,7 @@ for b in ${!position[@]}; do
 
         texheader="%\usepackage{etoolbox}
                     %% root folders: ---------------------
+                    \extrafloats{1000}
                     \newcommand\rootserver{$rootserver}
                     \newcommand\rootcsv{$CSV_DIR}
                     \newcommand\rootrecord{$path_recordings}

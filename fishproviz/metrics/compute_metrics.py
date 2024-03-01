@@ -74,16 +74,16 @@ def entropy_for_chunk(chunk, area_tuple):
         tri = np.tril_indices(l_y, k=3)
     sum_hist = np.sum(hist)
     if sum_hist == 0:  #
-        print(chunk[:10])
+        # print(chunk[:10])
         print(
-            "Warning for %s all %d data points where not in der range of histogram and removed"
+            "Warning for %s all %d data points were not in der range of histogram and removed"
             % (fish_key, chunk.shape[0])
         )
         return np.nan
     if chunk.shape[0] > sum_hist:
         # print(chunk[:10])
         print(
-            "Warning for %s %d out of %d data points where not in der range of histogram and removed"
+            "Warning for %s %d out of %d data points were not in der range of histogram and removed"
             % (fish_key, chunk.shape[0] - sum_hist, chunk.shape[0])
         )
     if sum_hist > np.sum(hist[tri]):

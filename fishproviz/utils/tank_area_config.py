@@ -9,8 +9,10 @@ from .utile import get_camera_pos_keys
 def get_area_functions():
     """returns a function to deliver the area, given a fish_key"""
     try:
-        area = read_area_data_from_json()
-        return lambda key: area[key]
+        area_data = get_areas()
+        for k in area_data.keys():
+            area_data[k] = np.array(area_data[k])
+        return lambda key: area_data[key]
     except Exception as e:
         print(e, " program will run without area data")
         return lambda key: None
@@ -36,8 +38,6 @@ def get_calibration_functions():
 
 
 def read_area_data_from_json():
-    if not os.path.exists("{}/area_data.json".format(config.CONFIG_DATA)):
-        return get_areas()
     with open("{}/area_data.json".format(config.CONFIG_DATA), "r") as infile:
         area_data = json.load(infile)
         for k in area_data.keys():
