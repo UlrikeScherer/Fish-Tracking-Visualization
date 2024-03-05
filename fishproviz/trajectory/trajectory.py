@@ -23,7 +23,9 @@ from fishproviz.metrics import (
 from fishproviz.utils.transformation import pixel_to_cm
 from fishproviz.utils.utile import (
     get_start_time_directory,
-)  # import cython functions for faster for-loops.
+    get_timestamp,
+    create_directory
+) 
 
 mpl.rcParams["lines.linewidth"] = 0.5
 mpl.rcParams["lines.linestyle"] = "-"
@@ -123,7 +125,12 @@ class Figure:
 class Trajectory:
     is_feeding = False
 
-    def __init__(self, marker_char="", write_fig=True):
+    def __init__(self, marker_char="", write_fig=True, parallel=False):
+        dir = create_directory("logs")
+        log_filename = f'trajectory_{get_timestamp()}.log'
+        self.log_filepath = os.path.join(dir, log_filename)
+        print(f'Logs can be found here: {self.log_filepath}')
+        self.parallel = parallel
         self.write_fig = write_fig
         self.fish2camera = get_fish2camera_map()
         self.N_fishes = self.fish2camera.shape[0]
@@ -174,7 +181,9 @@ class Trajectory:
         # prevention of negative dimension when computing alphas: check for erroneous data
         # mean should be numeric and not nan, which indicates erroneous data without any tracking (consistent -1 values)
         if np.isnan(mean):
-            print(f'\terroneous data filtered out for key: <{fish_key}>, date: {date} in timespan {time_span}')
+            with open(self.log_filepath, 'a') as file:
+                file.write(f'\terroneous data filtered out for key: <{fish_key}>, date: {date} in timespan {time_span}\n')
+            # print(f'\terroneous data filtered out for key: <{fish_key}>, date: {date} in timespan {time_span}')
             return -1
         alphas = compute_turning_angles(batchxy)
         avg_alpha, sum_alpha = alphas.mean(), alphas.sum()
@@ -189,42 +198,61 @@ class Trajectory:
         remove_text()
         return F.fig
 
+
     def plots_for_tex(self, fish_ids):
+        
         # parallelization
-        numProcessors = mp.cpu_count()
-        N = len(self.fish2camera[fish_ids])
-        self.reset_data()
-        pool = mp.Pool(numProcessors)
-        _ = pool.starmap(
-            self.plot_for_individual,
-            [(
-                fish_idx,
-                N,
-                i
-            ) for i, fish_idx in enumerate(fish_ids)]
-        )
-        pool.close()
-        pool.join()
+        if self.parallel:
+            num_processors = mp.cpu_count() - 1
+            self.reset_data()
+            with mp.Pool(num_processors) as pool:
+                _ = list(tqdm(
+                    pool.imap(
+                        self.plot_for_individual_parallel,
+                        [(
+                            fish_idx,
+                        ) for i, fish_idx in enumerate(fish_ids)]
+                    ), 
+                    total= len(fish_ids),
+                    position=0,
+                    bar_format='{desc}'
+                ))
+            pool.close()
+            pool.join()
+        else:
+            N = len(self.fish2camera[fish_ids])
+            for i, fish_idx in enumerate(fish_ids):
+                camera_id, pos = self.fish2camera[fish_idx]
+                is_back = pos == config.BACK
+                day_list = get_days_in_order(camera=camera_id, is_back=is_back)
+                N_days = len(day_list)
+                for j, day in enumerate(day_list):
+                    sys.stdout.write("\r")
+                    # write the progress to stdout
+                    progress = i / N + j / (N * N_days)
+                    sys.stdout.write(
+                        "[%-20s] %d%%" % ("=" * int(20 * progress), 100 * progress)
+                    )
+                    sys.stdout.flush()
+
+                    keys, day_df = csv_of_the_day(
+                        camera_id, day, is_back=is_back, drop_out_of_scope=True
+                    )
+                    self.plot_day_camera_fast(
+                        day_df, keys, camera_id, day, fish_idx, is_back=is_back
+                    )
 
     
-    def plot_for_individual(
+    def plot_for_individual_parallel(
         self,
         fish_idx,
-        N,
-        i,
     ):
+        current = mp.current_process()
         camera_id, pos = self.fish2camera[fish_idx]
         is_back = pos == config.BACK
         day_list = get_days_in_order(camera=camera_id, is_back=is_back)
         N_days = len(day_list)
-        for j, day in enumerate(day_list):
-            sys.stdout.write("\r")
-            # write the progress to stdout
-            progress = i / N + j / (N * N_days)
-            sys.stdout.write(
-                "[%-20s] %d%%" % ("=" * int(20 * progress), 100 * progress)
-            )
-            sys.stdout.flush()
+        for j, day in enumerate(tqdm(day_list, desc=f'id: {camera_id}_{pos}', position=current._identity[0]+1)):
 
             keys, day_df = csv_of_the_day(
                 camera_id, day, is_back=is_back, drop_out_of_scope=True

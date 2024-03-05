@@ -72,11 +72,12 @@ Necessary Variables:
 - `POSITION_STR_FRONT`: specified sub-directory for the front compartment 
 - `POSITION_STR_BACK`: specified sub-directory for the back compartment
 #### Plot Generation for Activity Analyses
-For generating single pdf-files with plots with trajectories for every timeframe, run the following command:
+For generating single pdf-files with plots with trajectories for every timeframe run the following command, a parallel execution is recommended but not required, the argument `parallel` accepts the values "True" or "False":
 ```bash 
-python3 main.py trajectory
+python3 main.py trajectory --parallel "True"
 ```
-The individual pdf-files are stored in `./visualisations/plots/trajectory`
+The individual pdf-files are stored in `./visualisations/plots/trajectory`.\
+Trajectory Logs are stored in the directory `./logs` and include information about erroneous data that has been filtered out.
 
 Bundling these locally created individual timeframes into one combined file is possible using the following bash-script:
 ```bash

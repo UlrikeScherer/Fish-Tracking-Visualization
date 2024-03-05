@@ -1,6 +1,7 @@
 import shutil
 import time
 import os, inspect
+import json
 import numpy as np
 import argparse
 from fishproviz.metrics.exploration_trials import exploration_trials
@@ -113,6 +114,7 @@ def main(
     time_interval=100,
     fish_id=None,
     include_median=None,
+    parallel=False,
     print_logs=False,
 ):
     """
@@ -133,7 +135,11 @@ def main(
     )
     # PROGRAM METRICS or TRAJECTORY or CLEAR
     if program == TRAJECTORY:
-        T = Trajectory()
+        T = Trajectory(
+            parallel = json.loads(
+                str(parallel).lower()
+            )
+        )
         T.plots_for_tex(fish_ids)
     elif program == FEEDING:
         FT = FeedingTrajectory()
@@ -186,6 +192,13 @@ def set_args():
         "--include_median",
         help="Include median or not only for activity",
         action="store_true",
+    )
+    parser.add_argument(
+        "-mp",
+        "--parallel",
+        help="compute trajectories in parallel",
+        type=str,
+        default=False,
     )
     parser.add_argument(
         "-logs",
