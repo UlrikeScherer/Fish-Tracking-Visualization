@@ -272,7 +272,7 @@ def filter_files(c, d, files, n_files=15, min_idx=0, Logger=None):
     for i in range(min_idx, n_files):
         key_i = "{:06d}".format(i)
         pattern = re.compile(
-            ".*{}_{}.{}_{}_\d*-\d*-\d*T\d*_\d*_\d*_\d*.csv".format(c, d[:15], c, key_i)
+            ".*{}_{}.{}(_back|_front)*_{}_\d*-\d*-\d*T\d*_\d*_\d*_\d*.csv".format(c, d[:15], c, key_i)
         )
         i_f = [f for f in files if pattern.match(f) is not None]
 
