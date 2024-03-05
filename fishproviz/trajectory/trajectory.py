@@ -1,3 +1,4 @@
+import multiprocessing as mp
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -189,28 +190,49 @@ class Trajectory:
         return F.fig
 
     def plots_for_tex(self, fish_ids):
+        # parallelization
+        numProcessors = mp.cpu_count()
         N = len(self.fish2camera[fish_ids])
         self.reset_data()
-        for i, fish_idx in enumerate(fish_ids):
-            camera_id, pos = self.fish2camera[fish_idx]
-            is_back = pos == config.BACK
-            day_list = get_days_in_order(camera=camera_id, is_back=is_back)
-            N_days = len(day_list)
-            for j, day in enumerate(day_list):
-                sys.stdout.write("\r")
-                # write the progress to stdout
-                progress = i / N + j / (N * N_days)
-                sys.stdout.write(
-                    "[%-20s] %d%%" % ("=" * int(20 * progress), 100 * progress)
-                )
-                sys.stdout.flush()
+        pool = mp.Pool(numProcessors)
+        _ = pool.starmap(
+            self.plot_for_individual,
+            [(
+                fish_idx,
+                N,
+                i
+            ) for i, fish_idx in enumerate(fish_ids)]
+        )
+        pool.close()
+        pool.join()
 
-                keys, day_df = csv_of_the_day(
-                    camera_id, day, is_back=is_back, drop_out_of_scope=True
-                )
-                self.plot_day_camera_fast(
-                    day_df, keys, camera_id, day, fish_idx, is_back=is_back
-                )
+    
+    def plot_for_individual(
+        self,
+        fish_idx,
+        N,
+        i,
+    ):
+        camera_id, pos = self.fish2camera[fish_idx]
+        is_back = pos == config.BACK
+        day_list = get_days_in_order(camera=camera_id, is_back=is_back)
+        N_days = len(day_list)
+        for j, day in enumerate(day_list):
+            sys.stdout.write("\r")
+            # write the progress to stdout
+            progress = i / N + j / (N * N_days)
+            sys.stdout.write(
+                "[%-20s] %d%%" % ("=" * int(20 * progress), 100 * progress)
+            )
+            sys.stdout.flush()
+
+            keys, day_df = csv_of_the_day(
+                camera_id, day, is_back=is_back, drop_out_of_scope=True
+            )
+            self.plot_day_camera_fast(
+                day_df, keys, camera_id, day, fish_idx, is_back=is_back
+            )
+
 
     def plot_day_camera_fast(self, data, keys, camera_id, date, fish_id, is_back):
         position = get_position_string(is_back)
