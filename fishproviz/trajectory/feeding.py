@@ -173,6 +173,9 @@ class FeedingTrajectory(Trajectory):
     def update_feeding_and_visits(
         self, fish_id, date, feeding_size, visits, num_df_feeding
     ):
+        if self.parallel: # multiprocessing support
+            fish_id = fish_id[0]
+        
         if date not in self.feeding_times[fish_id]:
             self.feeding_times[fish_id][date] = 0
             self.visits[fish_id][date] = 0

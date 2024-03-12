@@ -142,7 +142,11 @@ def main(
         )
         T.plots_for_tex(fish_ids)
     elif program == FEEDING:
-        FT = FeedingTrajectory()
+        FT = FeedingTrajectory(
+            parallel = json.loads(
+                str(parallel).lower()
+            )
+        )
         FT.plots_for_tex(fish_ids)
         FT.feeding_data_to_csv()
         FT.feeding_data_to_tex()
