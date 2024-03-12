@@ -89,36 +89,40 @@ def get_feeding_cords(data, camera_id, is_back):
 
 
 def get_feeding_box(data, TL_x, TL_y, TR_x, TR_y):
-    scale = 1
+    scale = 2
     # if x has the same value.
     if abs(TL_x - TR_x) < abs(TL_y - TR_y):
         # config.FRONT
         p_len = abs(TL_y - TR_y) * scale
-        f1 = data["xpx"] > TL_x - (2 * p_len)
-        f2 = data["ypx"] < TL_y + (p_len/2)
-        f3 = data["ypx"] > TR_y - (p_len/2)
+        f1 = data["xpx"] > TL_x - p_len
+        f2 = data["ypx"] < TL_y + p_len
+        f3 = data["ypx"] > TR_y - p_len
+        TL_y += p_len
+        TR_y -= p_len
         box = np.array(
             [
-                (TL_x, TL_y + (p_len / 2)),
-                (TL_x - (2 * p_len), TL_y + (p_len / 2)),
-                (TR_x - (2 * p_len), TR_y - (p_len / 2)),
-                (TR_x, TR_y - (p_len / 2)),
-                (TL_x, TL_y + (p_len / 2)),
+                (TL_x, TL_y),
+                (TL_x - p_len, TL_y),
+                (TR_x - p_len, TR_y),
+                (TR_x, TR_y),
+                (TL_x, TL_y),
             ]
         )
     else:
         # config.BACK
         p_len = abs(TL_x - TR_x) * scale
-        f1 = data["ypx"] > TR_y - (2 * p_len)
-        f2 = data["xpx"] > TL_x - (p_len/2)
-        f3 = data["xpx"] < TR_x + (p_len/2)
+        f1 = data["ypx"] > TR_y - p_len
+        f2 = data["xpx"] > TL_x - p_len
+        f3 = data["xpx"] < TR_x + p_len
+        TL_x -= p_len
+        TR_x += p_len
         box = np.array(
             [
-                (TL_x - (p_len / 2), TL_y),
-                (TL_x - (p_len / 2), TL_y - (2 * p_len)),
-                (TR_x + (p_len / 2), TR_y - (2 * p_len)),
-                (TR_x + (p_len / 2), TR_y),
-                (TL_x - (p_len / 2), TL_y),
+                (TL_x, TL_y),
+                (TL_x, TL_y - p_len),
+                (TR_x, TR_y - p_len),
+                (TR_x, TR_y),
+                (TL_x, TL_y),
             ]
         )
     feeding = data[f1 & f2 & f3]
