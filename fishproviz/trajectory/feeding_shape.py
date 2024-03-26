@@ -62,7 +62,7 @@ def get_feeding_patches():
     patches = pd.read_csv("data/feeding_patch_coords.csv", delimiter=";")
     return dict(
         zip(
-            map(
+            map( 
                 lambda stuff: "_".join(map(str, stuff)),
                 patches[["camera_id", "front_or_back"]].to_numpy(),
             ),
