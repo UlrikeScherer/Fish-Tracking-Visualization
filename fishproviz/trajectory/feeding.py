@@ -243,13 +243,13 @@ def feeding_times_start_end_dict():
         ft_df = pd.read_csv(
             config.SERVER_FEEDING_TIMES_FILE,
             usecols=[FT_DATE, FT_START, FT_END],
-            sep=config.sep,
+            sep=',',
         )
         ft_df = ft_df[~ft_df[FT_START].isna()]
         start_end = dict(
             [
                 (
-                    "20%s%02d%02d" % tuple(map(int, reversed(d.split(".")))),
+                    ''.join(d.split("-")),
                     (get_seconds_from_time(s), get_seconds_from_time(e)),
                 )
                 for (d, s, e) in zip(ft_df[FT_DATE], ft_df[FT_START], ft_df[FT_END])
