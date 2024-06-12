@@ -200,7 +200,6 @@ class Trajectory:
 
 
     def plots_for_tex(self, fish_ids):
-        
         # parallelization
         if self.parallel:
             num_processors = mp.cpu_count() - 1
@@ -236,7 +235,7 @@ class Trajectory:
                     sys.stdout.flush()
 
                     keys, day_df = csv_of_the_day(
-                        camera_id, day, is_back=is_back, drop_out_of_scope=True
+                        camera_id, day, is_back=is_back, drop_out_of_scope=False
                     )
                     self.plot_day_camera_fast(
                         day_df, keys, camera_id, day, fish_idx, is_back=is_back
@@ -255,7 +254,7 @@ class Trajectory:
         for j, day in enumerate(tqdm(day_list, desc=f'id: {camera_id}_{pos}', position=current._identity[0]+1)):
 
             keys, day_df = csv_of_the_day(
-                camera_id, day, is_back=is_back, drop_out_of_scope=True
+                camera_id, day, is_back=is_back, drop_out_of_scope=False
             )
             self.plot_day_camera_fast(
                 day_df, keys, camera_id, day, fish_idx, is_back=is_back
