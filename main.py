@@ -136,7 +136,7 @@ def main(
     # PROGRAM METRICS or TRAJECTORY or CLEAR
     if program == TRAJECTORY:
         T = Trajectory(
-            parallel = json.loads(
+            parallel=json.loads(
                 str(parallel).lower()
             )
         )

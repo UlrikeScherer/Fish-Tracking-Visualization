@@ -59,7 +59,7 @@ class FeedingPatch(FeedingShape):
 
 
 def get_feeding_patches():
-    patches = pd.read_csv("data/feeding_patch_coords.csv", delimiter=";")
+    patches = pd.read_csv("data/feeding_patch_coords.csv", delimiter=",")
     return dict(
         zip(
             map(
