@@ -203,7 +203,7 @@ class Trajectory:
         
         # parallelization
         if self.parallel:
-            num_processors = mp.cpu_count() - 1
+            num_processors = mp.cpu_count() - 2
             self.reset_data()
             with mp.Pool(num_processors) as pool:
                 _ = list(tqdm(
