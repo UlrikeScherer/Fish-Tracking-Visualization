@@ -140,16 +140,17 @@ For generating single pdf-files with plots with trajectories for every timeframe
     ```bash
     # fishproviz/config.env
     SERVER_FEEDING_TIMES_FILE="path/to/feeding_times.csv"
-    FEEDING_SHAPE="ellipse" # or "patch", "rectangle"
+    FEEDING_SHAPE="ellipse" # or "patch"
+    FEEDING_SHAPE_WIDTH=5
+    FEEDING_SHAPE_HEIGHT=5
+    MAGNET_LENGTH_CM=2.5
     ```
     - Feeding Shape `ellipse`: 
         -   Requirements: Set the `path_recordings` in `config.env` to the correct path where the recordings and annotations are stored containing the data of the feeding ellipses. This is usually on the server, make sure you connect to the server to access the data for the first time. 
         After the first run, the data is stored locally in `config_data/feeding_zones` and the server is not needed anymore.
         -   TODO: In the future we want to store the feeding zones in the `path_csv_local` folder and not with the recordings. 
-    - Feeding Shape `rectangle`:
-        -  Is not implemented yet. Could be done similar to the ellipse shape. Or a general polygon shape could be implemented.
     - Feeding Shape `patch`:
-        -  Requirements: Provide a csv-file (;-separated) with the coordinates of the feeding patches. The file used is [data/feeding_patch_coords.csv](data/feeding_patch_coords.csv). If modified patch coordinates are needed change the path in the program `feeding_shape.py`. 
+        -  Requirements: Provide a csv-file (;-separated) with the coordinates of the feeding patches. The file used is [data/feeding_patch_coords.csv](data/feeding_patch_coords.csv). If modified patch coordinates are needed change the path in the program `feeding_shape.py`. Patch width and height in centimeters should be specified in the configuration file through `FEEDING_SHAPE_WIDTH` and `FEEDING_SHAPE_HEIGHT`, respectively.
     An example template can be found at [data/recordings_feeding_times_template.csv](data/recordings_feeding_times_template.csv)
 
 Bundling these locally created individual timeframes into one combined file is possible using the following bash-script:
