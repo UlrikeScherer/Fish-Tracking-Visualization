@@ -33,6 +33,9 @@ START_END_FEEDING_TIMES_FILE = f"{CONFIG_DATA}/recordings_feeding_times.json"  #
 MAZE_FILE = f"maze_data.json"
 
 FEEDING_SHAPE = os.environ["FEEDING_SHAPE"]  # "square", "ellipse"
+FEEDING_SHAPE_WIDTH = float(os.environ["FEEDING_SHAPE_WIDTH"]) # e.g.: 5 for 5cm width
+FEEDING_SHAPE_HEIGHT = float(os.environ["FEEDING_SHAPE_HEIGHT"]) # e.g.: 5 for 5cm height
+MAGNET_LENGTH_CM = float(os.environ["MAGNET_LENGTH_CM"])
 # TRAJECTORY
 dir_front = os.environ["dir_front"]
 dir_back = os.environ["dir_back"]
