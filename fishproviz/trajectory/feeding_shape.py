@@ -104,8 +104,8 @@ def get_feeding_box(data, TL_x, TL_y, TR_x, TR_y):
         box = np.array(
             [
                 (midpoint_x, midpoint_y + target_width/2),
-                (midpoint_x - target_width, midpoint_y + target_width/2),
-                (midpoint_x - target_width, midpoint_y - target_width/2),
+                (midpoint_x - target_height, midpoint_y + target_width/2),
+                (midpoint_x - target_height, midpoint_y - target_width/2),
                 (midpoint_x, midpoint_y - target_width/2),
                 (midpoint_x, midpoint_y + target_width/2),
             ]
