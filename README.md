@@ -144,7 +144,7 @@ For generating single pdf-files with plots with trajectories for every timeframe
 ```bash
     # fishproviz/config.env
     SERVER_FEEDING_TIMES_FILE="path/to/feeding_times.csv"
-    FEEDING_SHAPE="ellipse" # or "patch"
+    FEEDING_SHAPE="patch" # or "ellipse"
     FEEDING_SHAPE_WIDTH=5
     FEEDING_SHAPE_HEIGHT=5
     MAGNET_LENGTH_CM=2.5
