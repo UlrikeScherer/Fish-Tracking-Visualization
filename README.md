@@ -10,6 +10,7 @@ Tracking genetically identical individuals from day 1 of their life to understan
 - python3
 - gcc
 - latex
+
 #### Installing dependencies
 ```bash
 python3 -m pip install -r requirements.txt
@@ -71,6 +72,7 @@ Necessary Variables:
 - `path_csv_local`: root folder of the data directory
 - `POSITION_STR_FRONT`: specified sub-directory for the front compartment 
 - `POSITION_STR_BACK`: specified sub-directory for the back compartment
+
 #### Plot Generation for Activity Analyses
 For generating single pdf-files with plots with trajectories for every timeframe run the following command, a parallel execution is recommended but not required, the argument `parallel` accepts the values "True" or "False":
 ```bash 
@@ -80,79 +82,93 @@ The individual pdf-files are stored in `./visualisations/plots/trajectory`.\
 Trajectory Logs are stored in the directory `./logs` and include information about erroneous data that has been filtered out.
 
 Bundling these locally created individual timeframes into one combined file is possible using the following bash-script:
+
 ```bash
 bash scripts/build-trajectories.sh -l #-l flag for using the local configurations
 ```
+
 The resulting bundeled pdf-files for every individual are then stored in `./visualisations/trajectory`
 
 >##### Usage on the Lab Computer - Trajectories
 >As the lab computers use windows, an instance of the Windows Subsystem for Linux needs to be started on the Left PC. This is configured there with Ubuntu as the target Linux-Derivate.
 >1. open Ubuntu in WSL on Windows by typing into the terminal: `bash`
 >2. check, whether the external drive is correctly mounted into ubuntu and expect not an empty folder to appear: 
->    ```bash 
+>```bash 
 >    ls /mnt/e
->    ``` 
+>``` 
 >    * if the folder is unexpectedly empty, the drive seems not to be mounted correctly. Mounting it requires administration-priviledges, for that, please contact your supervisor. Afterwards execute the following command:
->        ```bash 
+>```bash 
 >        sudo mount -t drvfs e: /mnt/e
->        ```
+>```
 >    * the mounted drive is dependent on the variable assigned by windows, in this ongoing example this drive is referenced with `e`. please note, that creating the directory in `mnt` is neccessary, if this has not already been created. this can be done with the following command: 
->        ```bash
+>```bash
 >        sudo mkdir /mnt/e
->        ```
+>```
 >3. change the active working directory to 
->    ```bash 
+>```bash 
 >    cd ~/project21/fishproviz
->    ```
+>```
 >4. open the file `fishproviz/config.env` to configure the environment file and set the path variables that point to your working directory
->    ```bash
+>```bash
 >    notepad.exe fishproviz/config.env &
->    ```
+>```
 >    * please note, that linux doesn't accept whitespaces or special characters (like braces) in file names. These need to be escaped with a backslash
 >    * note that the prefix to the different data sources is `/mnt/e`.
 >5. for calculating trajectories, run 
->    ```bash 
+>```bash 
 >    python3 main.py trajectory
->    ```
+>```
 >6. bundling each trajectory file into one trajectory-file per individual using:
->    ```bash
+>```bash
 >    bash scripts/build-trajectories.sh -l #-l flag for using the local configurations
->    ```
+>```
 >   * if the execution of this bash-script results in permission errors, check the access-rights for this files using 
->   ```bash
+>```bash
 >    ls -las scripts/build-trajectories.sh
 >    # output: >>> 16 -rw-r--r--  1  user user-group date time scripts/build-trajectories.sh
 >    chmod u+x scripts/build-trajectories.sh # users receive execution-rights for this file
 >    ls -las scripts/build-trajectories.sh
 >    # output: >>> 16 -rwxr--r--  1  user user-group date time scripts/build-trajectories.sh
->    ```
+>```
 
 #### Plot Generation for Feeding Trajectories
 For generating single pdf-files with plots with trajectories for every timeframe, run the following command:
 -   Feeding Trajectories: `python3 main.py feeding`
         The CSV-file for time spend, feeding and number of visits are stored at `results/feeding`.
-    -   Optional requirement: Provide a csv-file (;-separated) with start and end time for the feeding measures with columns in the following format:
+-   Optional requirement: Provide a csv-file (;-separated) with start and end time for the feeding measures with columns in the following format:
 
-        | day | time_in_start | time_in_stop | time_out_start | time_out_stop |
-        |-----|---------------|--------------|----------------|---------------|
-        | dd.mm.yy| hh:mm | hh:mm | hh:mm | hh:mm |
+| day | time_in_start | time_in_stop | time_out_start | time_out_stop |
+|-----|---------------|--------------|----------------|---------------|
+| dd.mm.yy| hh:mm | hh:mm | hh:mm | hh:mm |
 
-    ```bash
+```bash
     # fishproviz/config.env
     SERVER_FEEDING_TIMES_FILE="path/to/feeding_times.csv"
-    FEEDING_SHAPE="ellipse" # or "patch", "rectangle"
-    ```
+    FEEDING_SHAPE="patch" # or "ellipse"
+    FEEDING_SHAPE_WIDTH=5
+    FEEDING_SHAPE_HEIGHT=5
+    MAGNET_LENGTH_CM=2.5
+```
     - Feeding Shape `ellipse`: 
-        -   Requirements: Set the `path_recordings` in `config.env` to the correct path where the recordings and annotations are stored containing the data of the feeding ellipses. This is usually on the server, make sure you connect to the server to access the data for the first time. 
-        After the first run, the data is stored locally in `config_data/feeding_zones` and the server is not needed anymore.
-        -   TODO: In the future we want to store the feeding zones in the `path_csv_local` folder and not with the recordings. 
-    - Feeding Shape `rectangle`:
-        -  Is not implemented yet. Could be done similar to the ellipse shape. Or a general polygon shape could be implemented.
+        -   Requirements: Set the `path_recordings` in `config.env` to the correct path where the recordings
+            and annotations are stored containing the data of the feeding ellipses. This is usually on the 
+            server, make sure you connect to the server to access the data for the first time. 
+        After the first run, the data is stored locally in `config_data/feeding_zones` and the server is not 
+        needed anymore.
+        -   TODO: In the future we want to store the feeding zones in the `path_csv_local` folder and not 
+            with the recordings. 
     - Feeding Shape `patch`:
-        -  Requirements: Provide a csv-file (;-separated) with the coordinates of the feeding patches. The file used is [data/feeding_patch_coords.csv](data/feeding_patch_coords.csv). If modified patch coordinates are needed change the path in the program `feeding_shape.py`. 
-    An example template can be found at [data/recordings_feeding_times_template.csv](data/recordings_feeding_times_template.csv)
+        -  Requirements: Provide a csv-file (;-separated) with the coordinates of the feeding patches. The 
+           file used is [data/feeding_patch_coords.csv](data/feeding_patch_coords.csv). If modified patch 
+           coordinates are needed change the path in the program `feeding_shape.py`. Patch width and height 
+           in centimeters should be specified in the configuration file through `FEEDING_SHAPE_WIDTH` and 
+           `FEEDING_SHAPE_HEIGHT`, respectively.
+    An example template can be found at 
+    
+    [data/recordings_feeding_times_template.csv](data/recordings_feeding_times_template.csv)
 
 Bundling these locally created individual timeframes into one combined file is possible using the following bash-script:
+
 -   `bash scripts/build-trajectories.sh`
 -   Optional argument:
     -   `--feeding` or `-f` for the feeding trajectories.
@@ -165,16 +181,17 @@ Bundling these locally created individual timeframes into one combined file is p
 
 **Remark:** For the bash-script you can not build feeding and non
 feeding trajectories in parallel as they use the same files.
+
 ##### Usage on the Lab Computer - Feeding
 >1. the configurations for feeding are analog to the trajectory configuration, please refer to the steps 1-4 in the [trajectory section](#usage-on-the-lab-computer---trajectories)
 >2. for calculating trajectories, run 
->    ```bash 
+>```bash 
 >    python3 main.py feeding
->    ```
+>```
 >3. bundling each trajectory file into one trajectory-file per individual using:
->    ```bash
+>```bash
 >    bash scripts/build-trajectories.sh -f -l  #-l flag for using the local configurations
->    ```
+>```
 
 ### 2. Data File and Path Validation
 
@@ -186,8 +203,10 @@ usage: python3 path_validation.py [-h] [--delete] [--n_files N_FILES] [--path PA
 options:
   -h, --help         show this help message and exit
   --delete           If set, the duplicates will be deleted.
-  --n_files N_FILES  Number of files to expect in each folder, default is 15, for feeding use 8, for a log file that is cleaner.
-  --path PATH        Path to the directory that contains the folders front and back, default is /Volumes/Extreme_SSD/test_tracks.
+  --n_files N_FILES  Number of files to expect in each folder, default is 15, for feeding use 8, for a log 
+                     file that is cleaner.
+  --path PATH        Path to the directory that contains the folders front and back, default is 
+                     /Volumes/Extreme_SSD/test_tracks.
 ```
 
 ### 3. Trajectory Analysis
@@ -253,7 +272,7 @@ The variable *path_csv_local* in [fishproviz/config.env](fishproviz/config.env) 
 |   |-- config_data         # where we store feeding zones, area coordinates, calibration, etc. once generated
 |   |-- results             # folder we the results of metrics are stored
 |   |   |-- feeding         # feeding metrics 
-|   |   |-- <metric>         # each metric has its own folder
+|   |   |-- <metric>        # each metric has its own folder
 ```
 ___
 
@@ -284,8 +303,7 @@ pandoc README.md -o README.pdf
 2. In `utils.transformations` we have two dictionaries `global FUNCS_PX2CM, global AREA_FUNCS` with function to return the area and calibration data, respectively, give a `camera_position` string. When the area_config is updated these global variables need to be set to `None` such that the new data is loaded.
 
 ## Possible Future Work
-* latex scripts are slow on the PC of the lab, suspicion that the `ls` search is slow. 
-* feeding trajectories for rectangle.
+* latex scripts are slow on the PC of the lab, suspicion that the `ls` search is slow.
 * feeding-shapes: In the future we want to store the feeding zones in the `path_csv_local` folder and not with the recordings. 
 
 
