@@ -59,7 +59,7 @@ class FeedingPatch(FeedingShape):
 
 
 def get_feeding_patches():
-    patches = pd.read_csv("data/feeding_patch_coords.csv", delimiter=";")
+    patches = pd.read_csv(config.FEEDING_PATCH_COORDS_FILE, delimiter=config.FEEDING_PATCH_COORDS_SEP)
     return dict(
         zip(
             map(
@@ -84,7 +84,7 @@ def find_cords(camera_id, position, csv):
 
 def get_feeding_cords(data, camera_id, is_back):
     pos = config.BACK if is_back else config.FRONT
-    patches = pd.read_csv("data/feeding_patch_coords.csv", delimiter=";")
+    patches = pd.read_csv(config.FEEDING_PATCH_COORDS_FILE, delimiter=config.FEEDING_PATCH_COORDS_SEP)
     return get_feeding_box(data, *find_cords(camera_id, pos, patches))
 
 
