@@ -25,9 +25,12 @@ RESULTS_PATH = f"{DIR_CSV_LOCAL}/" + os.environ["RESULTS"]
 P_TRAJECTORY = os.environ["P_TRAJECTORY"]
 P_FEEDING = os.environ["P_FEEDING"]
 TEX_DIR = f"{PLOTS_DIR}/" + os.environ["TEX_DIR"]
+FEEDING_PATCH_COORDS_FILE = os.environ["FEEDING_PATCH_COORDS_FILE"]
+FEEDING_PATCH_COORDS_SEP = os.environ["FEEDING_PATCH_COORDS_SEP"]
 SERVER_FEEDING_TIMES_FILE = os.environ[
     "SERVER_FEEDING_TIMES_FILE"
 ]  # "/Volumes/Extreme_SSD/SE_tracks_final/SE_recordings_phasell_maze_trials_times.csv"
+SERVER_FEEDING_TIMES_SEP = os.environ["SERVER_FEEDING_TIMES_SEP"]
 TRIAL_TIMES_CSV = os.environ["TRIAL_TIMES_CSV"]
 START_END_FEEDING_TIMES_FILE = f"{CONFIG_DATA}/recordings_feeding_times.json"  #
 MAZE_FILE = f"maze_data.json"
