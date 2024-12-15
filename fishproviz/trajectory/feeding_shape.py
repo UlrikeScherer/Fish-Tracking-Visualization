@@ -90,17 +90,19 @@ def get_feeding_cords(data, camera_id, is_back):
 
 def get_feeding_box(data, TL_x, TL_y, TR_x, TR_y):
     cm_len = config.MAGNET_LENGTH_CM
+    p_len = np.sqrt((TL_y - TR_y) ** 2 + (TL_x - TR_x) ** 2)
+    midpoint_y = abs(TL_y + TR_y) / 2
+    midpoint_x = abs(TL_x + TR_x) / 2
+
+    target_width = config.FEEDING_SHAPE_WIDTH * p_len / cm_len
+    target_height = config.FEEDING_SHAPE_HEIGHT * p_len / cm_len
     # if x has the same value.
     if abs(TL_x - TR_x) < abs(TL_y - TR_y):
         # config.FRONT
-        p_len = abs(TL_y - TR_y)
-        target_width = config.FEEDING_SHAPE_WIDTH * p_len / cm_len
-        target_height = config.FEEDING_SHAPE_HEIGHT * p_len / cm_len
-        midpoint_y = abs(TL_y - TR_y)/2 + min(TL_y, TR_y)
-        midpoint_x = TL_x
         f1 = data["xpx"] > midpoint_x - target_height
         f2 = data["ypx"] < midpoint_y + target_width/2
         f3 = data["ypx"] > midpoint_y - target_width/2
+        f4 = data["xpx"] < midpoint_x
         box = np.array(
             [
                 (midpoint_x, midpoint_y + target_width/2),
@@ -112,14 +114,10 @@ def get_feeding_box(data, TL_x, TL_y, TR_x, TR_y):
         )
     else:
         # config.BACK
-        p_len = abs(TL_x - TR_x)
-        target_width = config.FEEDING_SHAPE_WIDTH * p_len / cm_len
-        target_height = config.FEEDING_SHAPE_HEIGHT * p_len / cm_len
-        midpoint_x = abs(TL_x - TR_x) / 2 + min(TL_x, TR_x)
-        midpoint_y = TL_y
         f1 = data["ypx"] > midpoint_y - target_height
-        f2 = data["xpx"] > midpoint_x - target_width/2
-        f3 = data["xpx"] < midpoint_x + target_width/2
+        f2 = data["xpx"] < midpoint_x + target_width/2
+        f3 = data["xpx"] > midpoint_x - target_width/2
+        f4 = data["ypx"] < midpoint_y
         box = np.array(
             [
                 (midpoint_x - target_width/2, midpoint_y),
@@ -129,5 +127,5 @@ def get_feeding_box(data, TL_x, TL_y, TR_x, TR_y):
                 (midpoint_x - target_width/2, midpoint_y),
             ]
         )
-    feeding = data[f1 & f2 & f3]
+    feeding = data[f1 & f2 & f3 & f4]
     return feeding, box
