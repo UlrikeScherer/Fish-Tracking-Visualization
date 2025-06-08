@@ -1,20 +1,11 @@
-from abc import ABC, abstractmethod
+from fishproviz.trajectory.shapes import Shape
 import pandas as pd
 import numpy as np
 import fishproviz.config as config
 from fishproviz.utils.feeding_maze_config import MAZE, read_maze_data_from_json
 
 
-class FeedingShape(ABC):
-    """Class for feeding shapes"""
-
-    @abstractmethod
-    def contains(self, data_points, fish_key, day=None):
-        """Checks which points are inside the shape"""
-        pass
-
-
-class FeedingEllipse(FeedingShape):
+class FeedingEllipse(Shape):
     """Class for feeding ellipses"""
 
     def __init__(self):
@@ -45,7 +36,7 @@ class FeedingEllipse(FeedingShape):
         )
 
 
-class FeedingPatch(FeedingShape):
+class FeedingPatch(Shape):
     """Class for feeding squares"""
 
     def __init__(self):

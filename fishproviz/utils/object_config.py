@@ -1,0 +1,22 @@
+import fishproviz.config as config
+import os
+import json
+
+
+def read_object_data_from_json():
+    """Reads the novel object zone data from the json-file and returns a dictionary with the
+    data for each fish.
+    """
+    maze_dict = {}
+    for file in os.listdir(config.NOVEL_OBJECT_ZONE_COORDS_PATH):
+        if file.endswith(".json"):
+            if not '_'.join([file.split('_')[0], "front"]) in maze_dict:
+                maze_dict['_'.join([file.split('_')[0], "front"])] = {}
+                maze_dict['_'.join([file.split('_')[0], "back"])] = {}
+            with open(os.path.join(config.NOVEL_OBJECT_ZONE_COORDS_PATH, file), "r") as f:
+                file_data = json.load(f)
+                for data in file_data:
+                    maze_dict['_'.join([file.split('_')[0], data['comment']])]['_'.join(file.split('_')[1:3]).split('.')[0]] = data
+
+    return maze_dict
+

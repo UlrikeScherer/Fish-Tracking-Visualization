@@ -5,7 +5,7 @@ import warnings
 from time import gmtime, strftime
 import fishproviz.config as config
 from fishproviz.metrics.metrics import compute_step_lengths, num_of_spikes
-from fishproviz.trajectory.feeding_shape import FeedingEllipse, FeedingPatch
+from fishproviz.trajectory.novel_object_shape import ObjectEllipse
 from fishproviz.utils import (
     get_days_in_order,
     get_all_days_of_context,
@@ -15,7 +15,7 @@ from fishproviz.utils.utile import start_time_of_day_to_seconds, get_seconds_fro
 from .trajectory import Trajectory
 from fishproviz.utils.transformation import pixel_to_cm
 
-map_shape = {"patch": FeedingPatch, "ellipse": FeedingEllipse}
+map_shape = {"ellipse": ObjectEllipse}
 FT_DATE, FT_START, FT_END = (
     "day",
     "time_in_start",
@@ -23,31 +23,30 @@ FT_DATE, FT_START, FT_END = (
 )  # time_in_stop, time_out_start
 
 
-class FeedingTrajectory(Trajectory):
-    is_feeding = True
-    dir_data_feeding = "%s/%s" % (
+class NovelObjectTrajectory(Trajectory):
+    dir_data_object = "%s/%s" % (
         config.RESULTS_PATH,
-        config.P_FEEDING,
+        config.P_NOVEL_OBJECT,
     )
-    dir_tex_feeding = config.TEX_DIR
+    dir_tex_object = config.TEX_DIR
 
-    def __init__(self, shape=config.FEEDING_SHAPE, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.set_feeding_box(is_back=False)
-        self.set_feeding_box(is_back=True)
+        self.set_object_box(is_back=False)
+        self.set_object_box(is_back=True)
         self.feeding_times = []
         self.visits = []
         self.num_df_feeding = []
         self.start_end_times = feeding_times_start_end_dict()
         self.reset_data()
-        self.FeedingShape = map_shape[shape]()
+        self.ObjectShape = map_shape["ellipse"]()
 
     def reset_data(self):
         self.feeding_times = [dict() for i in range(self.N_fishes)]
         self.visits = [dict() for i in range(self.N_fishes)]
         self.num_df_feeding = [dict() for i in range(self.N_fishes)]
 
-    def set_feeding_box(self, is_back=False):
+    def set_object_box(self, is_back=False):
         F = self.fig_back if is_back else self.fig_front
         _ = F.ax.plot([0, 0], [0, 0], "y--")
 
@@ -102,7 +101,7 @@ class FeedingTrajectory(Trajectory):
         batchxy = pixel_to_cm(batch[["xpx", "ypx"]].to_numpy(), fish_key=fish_key)
         F.line.set_data(*batchxy.T)
 
-        feeding_b, box = self.FeedingShape.contains(
+        feeding_b, box = self.ObjectShape.contains(
             batch[feeding_filter], fish_key, date
         )  # feeding_b: array of data frames that are inside the feeding box.
         feeding_size = feeding_b.shape[
@@ -180,7 +179,7 @@ class FeedingTrajectory(Trajectory):
         self.visits[fish_id][date] += visits
         self.num_df_feeding[fish_id][date] += num_df_feeding
 
-    def feeding_data_to_csv(self):
+    def object_data_to_csv(self):
         fish_names = get_camera_pos_keys()
         days = get_all_days_of_context()
         df_feeding = pd.DataFrame(columns=[fish_names], index=days)
@@ -193,14 +192,14 @@ class FeedingTrajectory(Trajectory):
                     df_visits.loc[d, fn] = self.visits[i][d]
                     df_num_df_feeding.loc[d, fn] = self.num_df_feeding[i][d]
 
-        os.makedirs(self.dir_data_feeding, exist_ok=True)
-        df_feeding.to_csv("%s/%s.csv" % (self.dir_data_feeding, "feeding_times"))
-        df_visits.to_csv("%s/%s.csv" % (self.dir_data_feeding, "visits"))
+        os.makedirs(self.dir_data_object, exist_ok=True)
+        df_feeding.to_csv("%s/%s.csv" % (self.dir_data_object, "feeding_times"))
+        df_visits.to_csv("%s/%s.csv" % (self.dir_data_object, "visits"))
         df_num_df_feeding.to_csv(
-            "%s/%s.csv" % (self.dir_data_feeding, "num_df_feeding")
+            "%s/%s.csv" % (self.dir_data_object, "num_df_feeding")
         )
 
-    def feeding_data_to_tex(self):
+    def object_data_to_tex(self):
         text = """\newcommand\ftlist{}\newcommand\setft[2]{\csdef{ft#1}{#2}}\newcommand\getft[1]{\csuse{ft#1}}""".replace(
             "\n", "\\n"
         ).replace(
@@ -224,7 +223,7 @@ class FeedingTrajectory(Trajectory):
                         d,
                         strftime("%H:%M:%S", gmtime(self.num_df_feeding[i][d] / 5)),
                     )
-        text_file = open("%s/feedingtime.tex" % (self.dir_tex_feeding), "w")
+        text_file = open("%s/feedingtime.tex" % (self.dir_tex_object), "w")
         text_file.write(text)
         text_file.close()
 

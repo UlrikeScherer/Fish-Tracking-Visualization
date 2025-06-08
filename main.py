@@ -14,7 +14,7 @@ from fishproviz.config import (
     RESULTS_PATH,
     create_directories,
 )
-from fishproviz.trajectory import Trajectory, FeedingTrajectory
+from fishproviz.trajectory import Trajectory, FeedingTrajectory, NovelObjectTrajectory
 from fishproviz.metrics import (
     activity_per_interval,
     turning_angle_per_interval,
@@ -26,6 +26,7 @@ from fishproviz.metrics import (
 
 TRAJECTORY = "trajectory"
 FEEDING = "feeding"
+NOVEL_OBJECT = "novel_object"
 TRIAL_TIMES = "trial_times"
 ACTIVITY = "activity"
 TURNING_ANGLE = "turning_angle"
@@ -36,7 +37,7 @@ WALL_DISTANCE = "wall_distance"
 ALL_METRICS = "all"
 CLEAR = "clear"
 metric_names = [ACTIVITY, TURNING_ANGLE, ABS_ANGLE, TORTUOSITY, ENTROPY, WALL_DISTANCE]
-programs = [TRAJECTORY, FEEDING, TRIAL_TIMES, *metric_names, ALL_METRICS, CLEAR]
+programs = [TRAJECTORY, FEEDING, TRIAL_TIMES, *metric_names, ALL_METRICS, CLEAR, NOVEL_OBJECT]
 
 
 def main_metrics(program, time_interval=100, include_median=None, **kwargs_metrics):
@@ -146,6 +147,11 @@ def main(
         FT.plots_for_tex(fish_ids)
         FT.feeding_data_to_csv()
         FT.feeding_data_to_tex()
+    elif program == NOVEL_OBJECT:
+        NT = NovelObjectTrajectory()
+        NT.plots_for_tex(fish_ids)
+        NT.object_data_to_csv()
+        NT.object_data_to_tex()
     elif program == TRIAL_TIMES:
         exploration_trials()
     elif program in metric_names:
