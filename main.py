@@ -21,6 +21,7 @@ from fishproviz.metrics import (
     tortuosity_per_interval,
     entropy_per_interval,
     distance_to_wall_per_interval,
+    distance_to_object_per_interval,
     absolute_angle_per_interval,
 )
 
@@ -34,9 +35,10 @@ ABS_ANGLE = "abs_angle"
 TORTUOSITY = "tortuosity"
 ENTROPY = "entropy"
 WALL_DISTANCE = "wall_distance"
+NOVEL_OBJECT_DISTANCE = "novel_object_distance"
 ALL_METRICS = "all"
 CLEAR = "clear"
-metric_names = [ACTIVITY, TURNING_ANGLE, ABS_ANGLE, TORTUOSITY, ENTROPY, WALL_DISTANCE]
+metric_names = [ACTIVITY, TURNING_ANGLE, ABS_ANGLE, TORTUOSITY, ENTROPY, WALL_DISTANCE, NOVEL_OBJECT_DISTANCE]
 programs = [TRAJECTORY, FEEDING, TRIAL_TIMES, *metric_names, ALL_METRICS, CLEAR, NOVEL_OBJECT]
 
 
@@ -74,6 +76,7 @@ def main_metrics(program, time_interval=100, include_median=None, **kwargs_metri
         ABS_ANGLE: absolute_angle_per_interval,
         ENTROPY: entropy_per_interval,
         WALL_DISTANCE: distance_to_wall_per_interval,
+        NOVEL_OBJECT_DISTANCE: distance_to_object_per_interval
     }
 
     if program not in metric_functions:

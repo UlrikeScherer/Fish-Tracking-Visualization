@@ -108,3 +108,36 @@ cdef np.ndarray[double, ndim=2] distance_to_line(
     np.ndarray[double, ndim=1] b, np.ndarray[double, ndim=1] c,
     np.ndarray[double, ndim=1] n):
     return np.abs(a[:,np.newaxis]*x+b[:,np.newaxis]*y+c[:,np.newaxis])/n[:,np.newaxis]
+
+cpdef np.ndarray[double, ndim=1] distance_to_object_chunk(np.ndarray[double, ndim=2] data,
+                                                          np.ndarray[double, ndim=1] ellipse_center,
+                                                          double ellipse_rx, double ellipse_ry):
+    cdef np.ndarray[double, ndim=1] dists
+    #for i in range(size):
+    dists = min_distance_to_ellipse(data[:,0], data[:,1], ellipse_center[0], ellipse_center[1], ellipse_rx, ellipse_ry)
+    return dists
+
+cdef np.ndarray[double, ndim=2] min_distance_to_ellipse(
+    np.ndarray[double, ndim=1] x,
+    np.ndarray[double, ndim=1] y,
+    double c_x,
+    double c_y, double r_x,
+    double r_y):
+    cdef np.ndarray[double, ndim=1] a
+    cdef np.ndarray[double, ndim=1] b
+    a = (y - np.full_like(y, c_y)) / (x - np.full_like(x, c_x))
+    b = y - a * x
+    cdef np.ndarray[double, ndim=1] min_dists
+    min_dists = np.zeros_like(x)
+    for i in range(len(x)):
+        if np.isfinite(a[i]):
+            roots_x = np.roots([(r_y**2) + (r_x**2) * (a[i]**2),
+                                -2*c_x*(r_y**2) + 2*a[i]*(b[i]-c_y)*(r_x**2),
+                                (r_y**2)*((c_x**2) - 1) + (r_x**2)*((b[i]-c_y)**2 - 1)])
+            roots_y = a[i] * roots_x + b[i]
+        else:
+            roots_x = np.array([c_x, c_x])
+            roots_y = np.array([r_y + c_y, -r_y + c_y])
+        min_dists[i] = np.min(np.sqrt((roots_x - x[i])**2 + (roots_y - y[i])**2))
+
+    return min_dists

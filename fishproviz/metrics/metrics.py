@@ -7,7 +7,7 @@ from fishproviz.utils import (
 )
 from fishproviz.utils.tank_area_config import get_area_functions
 from fishproviz.utils.transformation import pixel_to_cm, px2cm
-from fishproviz.methods import tortuosity_of_chunk, distance_to_wall_chunk, mean_std
+from fishproviz.methods import tortuosity_of_chunk, distance_to_wall_chunk, mean_std, distance_to_object_chunk
 from .results_to_csv import metric_result_to_csv
 from .compute_metrics import (
     compute_step_lengths,
@@ -19,6 +19,7 @@ import numpy as np
 import bisect
 
 from fishproviz.utils.utile import start_time_of_day_to_seconds
+from fishproviz.utils.object_config import read_object_data_from_json
 
 NDIM = 3
 
@@ -86,6 +87,17 @@ def distance_to_wall(data, frame_interval, error_index, area):
         error_index,
     )
 
+def distance_to_object(data, frame_interval, error_index, area):
+    print(area)
+    fish_key = area[0]
+    return calculate_result_for_interval(
+        data,
+        frame_interval,
+        lambda chunk: mean_std(
+            px2cm(distance_to_object_chunk(chunk, area[1], area[2], area[3]), fish_key=fish_key)
+        ),
+        error_index,
+    )
 
 def tortuosity(data, frame_interval, error_index):
     return calculate_result_for_interval(
@@ -167,6 +179,9 @@ def metric_per_interval(
         out_dim = out_dim + 1
         metric_kwargs.update(include_median=include_median)
 
+    if metric.__name__ in [ distance_to_object.__name__]:
+        dict_ellipses = read_object_data_from_json()
+
     for i, fish in enumerate(fish_ids):
         camera_id, is_back = fish2camera[fish, 0], fish2camera[fish, 1] == config.BACK
         fish_key = "%s_%s" % (camera_id, fish2camera[fish, 1])
@@ -216,6 +231,18 @@ def metric_per_interval(
                         area_tuple,
                         **metric_kwargs
                     )
+                elif metric.__name__ in [ distance_to_object.__name__]:
+                    # DISTANCE TO ELLIPSE
+                    ellipse = dict_ellipses[fish_key][day]
+                    ori_x = (ellipse["end_x"] + ellipse["origin_x"]) / 2
+                    ori_y = (ellipse["end_y"] + ellipse["origin_y"]) / 2
+                    r_x = (ellipse["end_x"] - ellipse["origin_x"]) / 2
+                    r_y = (ellipse["end_y"] - ellipse["origin_y"]) / 2
+                    result = metric(data,
+                                    split_by_interval_idx,
+                                    err_filter,
+                                    (fish_key, np.array([ori_x, ori_y]), r_x, r_y),
+                                    **metric_kwargs)
                 else:
                     data_cm = pixel_to_cm(data, fish_key=fish_key)
                     result = metric(
@@ -255,3 +282,6 @@ def entropy_per_interval(*args, **kwargs):
 
 def distance_to_wall_per_interval(*args, **kwargs):
     return metric_per_interval(*args, **kwargs, metric=distance_to_wall)
+
+def distance_to_object_per_interval(*args, **kwargs):
+    return metric_per_interval(*args, **kwargs, metric=distance_to_object)

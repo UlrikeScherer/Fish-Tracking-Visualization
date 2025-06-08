@@ -8,6 +8,8 @@ from .metrics import (
     entropy,
     distance_to_wall_per_interval,
     distance_to_wall,
+    distance_to_object_per_interval,
+    distance_to_object,
     num_of_spikes,
     get_gaps_in_dataframes,
     activity_mean_sd,
@@ -36,6 +38,7 @@ metric_names = [
         turning_angle,
         absolute_angles,
         distance_to_wall,
+        distance_to_object,
         entropy,
     ]
 ]
@@ -52,6 +55,8 @@ __all__ = [
     "entropy",
     "distance_to_wall_per_interval",
     "distance_to_wall",
+    "distance_to_object_per_interval",
+    "distance_to_object",
     "metric_result_to_csv",
     "num_of_spikes",
     "compute_step_lengths",
