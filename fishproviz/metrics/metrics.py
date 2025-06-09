@@ -88,7 +88,6 @@ def distance_to_wall(data, frame_interval, error_index, area):
     )
 
 def distance_to_object(data, frame_interval, error_index, area):
-    print(area)
     fish_key = area[0]
     return calculate_result_for_interval(
         data,
