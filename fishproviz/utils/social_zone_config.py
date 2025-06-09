@@ -3,7 +3,7 @@ import os
 import json
 
 
-def read_object_data_from_json():
+def read_social_zone_data_from_json():
     """Reads the novel object zone data from the json-file and returns a dictionary with the
     data for each fish.
     """
@@ -16,7 +16,9 @@ def read_object_data_from_json():
             with open(os.path.join(config.OBJECT_ZONE_COORDS_PATH, file), "r") as f:
                 file_data = json.load(f)
                 for data in file_data:
-                    maze_dict['_'.join([file.split('_')[0], data['comment']])]['_'.join(file.split('_')[1:3]).split('.')[0]] = data
+                    if not '_'.join(file.split('_')[1:3]).split('.')[0] in maze_dict['_'.join([file.split('_')[0], data['comment'].split('_')[0]])]:
+                        maze_dict['_'.join([file.split('_')[0], data['comment'].split('_')[0]])]['_'.join(file.split('_')[1:3]).split('.')[0]] = {}
+                    maze_dict['_'.join([file.split('_')[0], data['comment'].split('_')[0]])]['_'.join(file.split('_')[1:3]).split('.')[0]][data['comment'].split('_')[1]] = data
 
     return maze_dict
 

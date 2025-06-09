@@ -25,6 +25,7 @@ RESULTS_PATH = f"{DIR_CSV_LOCAL}/" + os.environ["RESULTS"]
 P_TRAJECTORY = os.environ["P_TRAJECTORY"]
 P_FEEDING = os.environ["P_FEEDING"]
 P_NOVEL_OBJECT = os.environ["P_NOVEL_OBJECT"]
+P_SOCIABILITY = os.environ["P_SOCIABILITY"]
 TEX_DIR = f"{PLOTS_DIR}/" + os.environ["TEX_DIR"]
 FEEDING_PATCH_COORDS_FILE = os.environ["FEEDING_PATCH_COORDS_FILE"]
 FEEDING_PATCH_COORDS_SEP = os.environ["FEEDING_PATCH_COORDS_SEP"]
@@ -41,7 +42,7 @@ FEEDING_SHAPE_WIDTH = float(os.environ["FEEDING_SHAPE_WIDTH"]) # e.g.: 5 for 5cm
 FEEDING_SHAPE_HEIGHT = float(os.environ["FEEDING_SHAPE_HEIGHT"]) # e.g.: 5 for 5cm height
 MAGNET_LENGTH_CM = float(os.environ["MAGNET_LENGTH_CM"])
 
-NOVEL_OBJECT_ZONE_COORDS_PATH = os.environ["NOVEL_OBJECT_ZONE_COORDS_PATH"]
+OBJECT_ZONE_COORDS_PATH = os.environ["OBJECT_ZONE_COORDS_PATH"]
 
 # TRAJECTORY
 dir_front = os.environ["dir_front"]

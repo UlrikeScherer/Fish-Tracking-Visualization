@@ -2,20 +2,26 @@ from fishproviz.trajectory.shapes import Shape
 import pandas as pd
 import numpy as np
 from fishproviz.utils.object_config import read_object_data_from_json
+from fishproviz.utils.social_zone_config import read_social_zone_data_from_json
 
 
 class ObjectEllipse(Shape):
     """Class for feeding ellipses"""
 
-    def __init__(self):
+    def __init__(self, sociability: bool = False):
         """Initializes the ellipse data"""
-        self.dict_ellipses = read_object_data_from_json()
+        if sociability:
+            self.dict_ellipses = read_social_zone_data_from_json()
+        else:
+            self.dict_ellipses = read_object_data_from_json()
 
     # overrideing the contains method
-    def contains(self, data_points, fish_key, day=None):
+    def contains(self, data_points, fish_key, day=None, sociability_zone: str=None):
         """Checks which points are inside the ellipse, returns these points and a linspace of the ellipse"""
         try:
             ellipse = self.dict_ellipses[fish_key][day]
+            if sociability_zone is not None:
+                ellipse = ellipse[sociability_zone]
         except KeyError as e:
             print(e, "No ellipse data for fish %s on day %s" % (fish_key, day))
             return pd.DataFrame(columns=data_points.columns), np.array([(0, 0), (0, 0)])

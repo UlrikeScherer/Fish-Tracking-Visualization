@@ -14,7 +14,7 @@ from fishproviz.config import (
     RESULTS_PATH,
     create_directories,
 )
-from fishproviz.trajectory import Trajectory, FeedingTrajectory, NovelObjectTrajectory
+from fishproviz.trajectory import Trajectory, FeedingTrajectory, NovelObjectTrajectory, SociabilityTrajectory
 from fishproviz.metrics import (
     activity_per_interval,
     turning_angle_per_interval,
@@ -28,6 +28,7 @@ from fishproviz.metrics import (
 TRAJECTORY = "trajectory"
 FEEDING = "feeding"
 NOVEL_OBJECT = "novel_object"
+SOCIABILITY = "sociability"
 TRIAL_TIMES = "trial_times"
 ACTIVITY = "activity"
 TURNING_ANGLE = "turning_angle"
@@ -39,7 +40,7 @@ NOVEL_OBJECT_DISTANCE = "novel_object_distance"
 ALL_METRICS = "all"
 CLEAR = "clear"
 metric_names = [ACTIVITY, TURNING_ANGLE, ABS_ANGLE, TORTUOSITY, ENTROPY, WALL_DISTANCE, NOVEL_OBJECT_DISTANCE]
-programs = [TRAJECTORY, FEEDING, TRIAL_TIMES, *metric_names, ALL_METRICS, CLEAR, NOVEL_OBJECT]
+programs = [TRAJECTORY, FEEDING, TRIAL_TIMES, *metric_names, ALL_METRICS, CLEAR, NOVEL_OBJECT, SOCIABILITY]
 
 
 def main_metrics(program, time_interval=100, include_median=None, **kwargs_metrics):
@@ -155,6 +156,11 @@ def main(
         NT.plots_for_tex(fish_ids)
         NT.object_data_to_csv()
         NT.object_data_to_tex()
+    elif program == SOCIABILITY:
+        ST = SociabilityTrajectory()
+        ST.plots_for_tex(fish_ids)
+        ST.object_data_to_csv()
+        ST.object_data_to_tex()
     elif program == TRIAL_TIMES:
         exploration_trials()
     elif program in metric_names:
