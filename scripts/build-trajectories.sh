@@ -27,6 +27,8 @@ while [[ "$#" -gt 0 ]]; do
             #-b|--block) block="$2"; shift ;;
             -t|--test) test=1 ;;
             -f|--feeding) feeding=1;;
+            -n|--novelobject) novelobject=1;;
+            -s|--sociability) sociability=1;;
             -l|--local) local=1;;
             -cam|--cam-id) set_cam=1;;
             *) echo "Unknown parameter passed: $1"; exit 1 ;;
@@ -40,6 +42,18 @@ if [ $feeding ]; then
     SUBFIGURE_WIDTH="0.33\textwidth"
     SUBFIGURE_HEIGHT="0.33\textheight"
     LEGEND="\feedinglegend"
+fi
+if [ $novelobject ]; then
+    PROGRAMNAME=$P_NOVEL_OBJECT
+    SUBFIGURE_WIDTH="0.33\textwidth"
+    SUBFIGURE_HEIGHT="0.33\textheight"
+    LEGEND="\novelobjectlegend"
+fi
+if [ $sociability ]; then
+    PROGRAMNAME=$P_SOCIABILITY
+    SUBFIGURE_WIDTH="0.33\textwidth"
+    SUBFIGURE_HEIGHT="0.33\textheight"
+    LEGEND="\sociabilitylegend"
 fi
 if [ $test ]; then
     cameras=('23442333')
@@ -146,11 +160,22 @@ for b in ${!position[@]}; do
             # CSV Files
             # -----------
             filescsv="$(ls $CSV_DIR/$POSITION_STR/${camera}/*${STARTTIME}.${camera}*/${camera}_$day*.csv | sort -V)"
-            C_i=0
+            C_is=()
             for f in $filescsv; do
-                texheader="$texheader \setcsv{${day_id}$C_i}{\href{${PREFIX}${f}}{csv}}
-                "
-                let C_i++
+              parsed_C_i="$(basename ${f} | cut -d '_' -f 4)"
+              re='^[0-9]*$'
+              if ! [[ $parsed_C_i =~ $re ]] ; then
+                parsed_C_i="$(basename ${f} | cut -d '_' -f 5)"
+              fi
+              if ! [[ $parsed_C_i =~ $re ]] ; then
+                parsed_C_i="$(basename ${f} | cut -d '_' -f 6)"
+              fi
+              C_is+=("$(expr $parsed_C_i + 0)")
+            done
+            k=0
+            for f in $filescsv; do
+                texheader="$texheader \setcsv{${day_id}${C_is[k]}}{\href{${PREFIX}${f}}{csv}}"
+                let k++
             done
             # ---------
             # MP4 video files
@@ -177,8 +202,15 @@ for b in ${!position[@]}; do
         if [ $feeding ]; then
             echo "\input{$FILES/${BLOCK}feedingtime.tex}" >> $FILES/arrayoflinks.tex
         fi
+        if [ $novelobject ]; then
+            echo "\input{$FILES/${BLOCK}novelobject.tex}" >> $FILES/arrayoflinks.tex
+        fi
+        if [ $sociability ]; then
+            echo "\input{$FILES/${BLOCK}sociability_inflow.tex}" >> $FILES/arrayoflinks.tex
+            echo "\input{$FILES/${BLOCK}sociability_outflow.tex}" >> $FILES/arrayoflinks.tex
+        fi
         # run pdflatex two times
-        END=2
+        END=1
         for k in $(seq 1 $END); do
             #pdflatex "\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}"
             pdflatex --interaction=nonstopmode "\newcommand\arrayoflinks{${FILES}/arrayoflinks}\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}" > log_tex.txt

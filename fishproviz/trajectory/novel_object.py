@@ -223,7 +223,7 @@ class NovelObjectTrajectory(Trajectory):
                         d,
                         strftime("%H:%M:%S", gmtime(self.num_df_feeding[i][d] / 5)),
                     )
-        text_file = open("%s/feedingtime.tex" % (self.dir_tex_object), "w")
+        text_file = open("%s/novelobject.tex" % (self.dir_tex_object), "w")
         text_file.write(text)
         text_file.close()
 

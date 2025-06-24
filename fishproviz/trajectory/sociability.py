@@ -246,7 +246,7 @@ class SociabilityTrajectory(Trajectory):
                             d,
                             strftime("%H:%M:%S", gmtime(self.data[zone]['num_df_feeding'][i][d] / 5)),
                         )
-            text_file = open(f"%s/feedingtime_{zone}.tex" % (self.dir_tex_object), "w")
+            text_file = open(f"%s/sociability_{zone}.tex" % (self.dir_tex_object), "w")
             text_file.write(text)
             text_file.close()
 
