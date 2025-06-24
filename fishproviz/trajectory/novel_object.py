@@ -17,9 +17,9 @@ from fishproviz.utils.transformation import pixel_to_cm
 
 map_shape = {"ellipse": ObjectEllipse}
 FT_DATE, FT_START, FT_END = (
-    "day",
-    "time_in_start",
-    "time_out_stop",
+    "date",
+    "trial_start",
+    "trial_end",
 )  # time_in_stop, time_out_start
 
 
@@ -98,7 +98,7 @@ class NovelObjectTrajectory(Trajectory):
         feeding_filter = batch.FRAME.between(start_idx, end_idx)
         fish_key = "%s_%s" % tuple(self.fish2camera[fish_id])
 
-        batchxy = pixel_to_cm(batch[["xpx", "ypx"]].to_numpy(), fish_key=fish_key)
+        batchxy = pixel_to_cm(batch[feeding_filter][["xpx", "ypx"]].to_numpy(), fish_key=fish_key)
         F.line.set_data(*batchxy.T)
 
         feeding_b, box = self.ObjectShape.contains(
