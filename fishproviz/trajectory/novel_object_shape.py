@@ -20,11 +20,15 @@ class ObjectEllipse(Shape):
         """Checks which points are inside the ellipse, returns these points and a linspace of the ellipse"""
         try:
             ellipse = self.dict_ellipses[fish_key][day]
-            if sociability_zone is not None:
-                ellipse = ellipse[sociability_zone]
         except KeyError as e:
             print(e, "No ellipse data for fish %s on day %s" % (fish_key, day))
             return pd.DataFrame(columns=data_points.columns), np.array([(0, 0), (0, 0)])
+        if sociability_zone is not None:
+            try:
+                ellipse = ellipse[sociability_zone]
+            except KeyError as e:
+                print(e, f"Sociability zone {sociability_zone} for fish {fish_key} on day {day} does not match existing zones {list(ellipse.keys())}.")
+
         ori_x = (ellipse["end_x"] + ellipse["origin_x"]) / 2
         ori_y = (ellipse["end_y"] + ellipse["origin_y"]) / 2
         a = (ellipse["end_x"] - ellipse["origin_x"]) / 2
