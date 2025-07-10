@@ -16,8 +16,9 @@ from .trajectory import Trajectory
 from fishproviz.utils.transformation import pixel_to_cm
 
 map_shape = {"ellipse": ObjectEllipse}
-FT_DATE, FT_START, FT_END = (
+FT_DATE, FT_ID, FT_START, FT_END = (
     "date",
+    "tank_ID",
     "trial_start",
     "trial_end",
 )  # time_in_stop, time_out_start
@@ -50,12 +51,12 @@ class NovelObjectTrajectory(Trajectory):
         F = self.fig_back if is_back else self.fig_front
         _ = F.ax.plot([0, 0], [0, 0], "y--")
 
-    def get_start_end_index(self, day_key, batch_number):
+    def get_start_end_index(self, day_key, batch_number, tank_id):
         if self.start_end_times is None:
             return 0, config.BATCH_SIZE
         (day, track_start) = day_key.split("_")[:2]
         ts_sec = start_time_of_day_to_seconds(track_start)
-        (f_start, f_end) = self.start_end_times[day]
+        (f_start, f_end) = self.start_end_times['_'.join([day, tank_id])]
         if f_start is None or f_end is None:
             warnings.warn("No start or end time for day %s" % day)
             return 0, config.BATCH_SIZE
@@ -89,7 +90,7 @@ class NovelObjectTrajectory(Trajectory):
     ):
         F = self.fig_back if is_back else self.fig_front
 
-        start_idx, end_idx = self.get_start_end_index(date, batch_number)
+        start_idx, end_idx = self.get_start_end_index(date, batch_number, '_'.join([directory.split('/')[-2], 'back' if is_back else 'front']))
         F.ax.set_title(time_span, fontsize=10)
         last_frame = batch.FRAME.array[-1]
         if batch.x.array[-1] <= -1:
@@ -244,10 +245,10 @@ def feeding_times_start_end_dict():
         start_end = dict(
             [
                 (
-                    ''.join(d.split("-")),
+                    '_'.join([''.join(d.split("-")), i]),
                     (get_seconds_from_time(s), get_seconds_from_time(e)),
                 )
-                for (d, s, e) in zip(ft_df[FT_DATE], ft_df[FT_START], ft_df[FT_END])
+                for (d, i, s, e) in zip(ft_df[FT_DATE], ft_df[FT_ID], ft_df[FT_START], ft_df[FT_END])
             ]
         )
         return start_end
