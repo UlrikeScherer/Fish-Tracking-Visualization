@@ -25,8 +25,11 @@ def is_valid_dir(directory):
         return True
 
 
-def get_start_time_directory(is_feeding):
-    return config.P_FEEDING if is_feeding else config.P_TRAJECTORY
+def get_start_time_directory(is_feeding, is_novel_object, is_sociability):
+    return config.P_FEEDING if is_feeding else (
+        config.P_NOVEL_OBJECT) if is_novel_object else (
+        config.P_SOCIABILITY) if is_sociability else (
+        config.P_TRAJECTORY)
 
 
 def get_interval_name_from_seconds(seconds):

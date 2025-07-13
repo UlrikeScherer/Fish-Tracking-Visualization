@@ -25,6 +25,7 @@ FT_DATE, FT_ID, FT_START, FT_END = (
 
 
 class NovelObjectTrajectory(Trajectory):
+    is_novel_object = True
     dir_data_object = "%s/%s" % (
         config.RESULTS_PATH,
         config.P_NOVEL_OBJECT,

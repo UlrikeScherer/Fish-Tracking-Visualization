@@ -137,6 +137,8 @@ class Trajectory:
         self.fig_front = Figure(is_back=False, marker_char=marker_char)
         self.fig_back = Figure(is_back=True, marker_char=marker_char)
 
+
+
     def reset_data(self):
         pass
 

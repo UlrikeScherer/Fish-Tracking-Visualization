@@ -26,6 +26,7 @@ FT_DATE, FT_ID, FT_START, FT_END = (
 
 
 class SociabilityTrajectory(Trajectory):
+    is_sociability = True
     dir_data_object = "%s/%s" % (
         config.RESULTS_PATH,
         config.P_SOCIABILITY,
