@@ -124,6 +124,8 @@ class Figure:
 
 class Trajectory:
     is_feeding = False
+    is_novel_object = False
+    is_sociability = False
 
     def __init__(self, marker_char="", write_fig=True, parallel=False):
         dir = create_directory("logs")
@@ -266,7 +268,7 @@ class Trajectory:
 
     def plot_day_camera_fast(self, data, keys, camera_id, date, fish_id, is_back):
         position = get_position_string(is_back)
-        prog_name = get_start_time_directory(self.is_feeding)
+        prog_name = get_start_time_directory(self.is_feeding, self.is_novel_object, self.is_sociability)
         plots_dir = "{}/{}/{}/{}/{}".format(
             config.PLOTS_DIR, prog_name, position, camera_id, date
         )

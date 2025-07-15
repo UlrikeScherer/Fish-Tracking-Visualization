@@ -239,7 +239,7 @@ def feeding_times_start_end_dict():
     else:
         ft_df = pd.read_csv(
             config.SERVER_FEEDING_TIMES_FILE,
-            usecols=[FT_DATE, FT_START, FT_END],
+            usecols=[FT_DATE, FT_ID, FT_START, FT_END],
             sep=config.SERVER_FEEDING_TIMES_SEP,
         )
         ft_df = ft_df[~ft_df[FT_START].isna()]
