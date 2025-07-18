@@ -1,6 +1,7 @@
 import fishproviz.config as config
 import os
 import json
+import codecs
 
 
 def read_social_zone_data_from_json():
@@ -13,6 +14,8 @@ def read_social_zone_data_from_json():
             if not '_'.join([file.split('_')[0], "front"]) in maze_dict:
                 maze_dict['_'.join([file.split('_')[0], "front"])] = {}
                 maze_dict['_'.join([file.split('_')[0], "back"])] = {}
+            with codecs.open(os.path.join(config.OBJECT_ZONE_COORDS_PATH, file), "r", encoding='utf-8',
+                             errors='ignore') as f:
             with open(os.path.join(config.OBJECT_ZONE_COORDS_PATH, file), "r") as f:
                 file_data = json.load(f)
                 for data in file_data:
