@@ -1,7 +1,6 @@
 import pandas as pd
 import os
 import numpy as np
-import warnings
 from time import gmtime, strftime
 import fishproviz.config as config
 from fishproviz.metrics.metrics import compute_step_lengths, num_of_spikes
@@ -11,19 +10,13 @@ from fishproviz.utils import (
     get_all_days_of_context,
     get_camera_pos_keys,
 )
-from fishproviz.utils.utile import start_time_of_day_to_seconds, get_seconds_from_time
-from .trajectory import Trajectory
+from .trajectory import ExperimentalTrajectory
 from fishproviz.utils.transformation import pixel_to_cm
 
 map_shape = {"patch": FeedingPatch, "ellipse": FeedingEllipse}
-FT_DATE, FT_START, FT_END = (
-    "day",
-    "time_in_start",
-    "time_out_stop",
-)  # time_in_stop, time_out_start
 
 
-class FeedingTrajectory(Trajectory):
+class FeedingTrajectory(ExperimentalTrajectory):
     is_feeding = True
     dir_data_feeding = "%s/%s" % (
         config.RESULTS_PATH,
@@ -38,7 +31,6 @@ class FeedingTrajectory(Trajectory):
         self.feeding_times = []
         self.visits = []
         self.num_df_feeding = []
-        self.start_end_times = feeding_times_start_end_dict()
         self.reset_data()
         self.FeedingShape = map_shape[shape]()
 
@@ -50,33 +42,6 @@ class FeedingTrajectory(Trajectory):
     def set_feeding_box(self, is_back=False):
         F = self.fig_back if is_back else self.fig_front
         _ = F.ax.plot([0, 0], [0, 0], "y--")
-
-    def get_start_end_index(self, day_key, batch_number):
-        if self.start_end_times is None:
-            return 0, config.BATCH_SIZE
-        (day, track_start) = day_key.split("_")[:2]
-        ts_sec = start_time_of_day_to_seconds(track_start)
-        (f_start, f_end) = self.start_end_times[day]
-        if f_start is None or f_end is None:
-            warnings.warn("No start or end time for day %s" % day)
-            return 0, config.BATCH_SIZE
-        start = int((f_start - ts_sec) * config.FRAMES_PER_SECOND)
-        end = int((f_end - ts_sec) * config.FRAMES_PER_SECOND)
-        # get start index
-        if start < int(batch_number) * config.BATCH_SIZE:
-            start_idx = 0
-        elif start > (int(batch_number) + 1) * config.BATCH_SIZE:
-            start_idx = config.BATCH_SIZE
-        else:
-            start_idx = start - int(batch_number) * config.BATCH_SIZE
-        # get end index
-        if end < int(batch_number) * config.BATCH_SIZE:
-            end_idx = 0
-        elif end > (int(batch_number) + 1) * config.BATCH_SIZE:
-            end_idx = config.BATCH_SIZE
-        else:
-            end_idx = end - int(batch_number) * config.BATCH_SIZE
-        return start_idx, end_idx
 
     def subplot_function(
         self,
@@ -227,28 +192,3 @@ class FeedingTrajectory(Trajectory):
         text_file = open("%s/feedingtime.tex" % (self.dir_tex_feeding), "w")
         text_file.write(text)
         text_file.close()
-
-
-def feeding_times_start_end_dict():
-    if not os.path.exists(config.SERVER_FEEDING_TIMES_FILE):
-        warnings.warn(
-            f"File {config.SERVER_FEEDING_TIMES_FILE} not found, thus feeding times will be calculated over all provided batches, if this is not intended please check the path in scripts/env.sh"
-        )
-        return None
-    else:
-        ft_df = pd.read_csv(
-            config.SERVER_FEEDING_TIMES_FILE,
-            usecols=[FT_DATE, FT_START, FT_END],
-            sep=config.SERVER_FEEDING_TIMES_SEP,
-        )
-        ft_df = ft_df[~ft_df[FT_START].isna()]
-        start_end = dict(
-            [
-                (
-                    ''.join(d.split("-")),
-                    (get_seconds_from_time(s), get_seconds_from_time(e)),
-                )
-                for (d, s, e) in zip(ft_df[FT_DATE], ft_df[FT_START], ft_df[FT_END])
-            ]
-        )
-        return start_end

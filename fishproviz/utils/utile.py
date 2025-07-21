@@ -1,3 +1,4 @@
+import warnings
 from datetime import datetime
 from time import gmtime, strftime
 import pandas as pd
@@ -329,3 +330,86 @@ def create_directory(directory_name: str):
     dir_path = path.join(os.getcwd(), directory_name)
     makedirs(dir_path, exist_ok=True)
     return dir_path
+
+
+def get_start_end_index(start_end_times, day_key, batch_number, tank_id=None):
+    if start_end_times is None:
+        return 0, config.BATCH_SIZE
+    (day, track_start) = day_key.split("_")[:2]
+    ts_sec = start_time_of_day_to_seconds(track_start)
+    (f_start, f_end) = start_end_times['_'.join([day, tank_id]) if tank_id is not None else day]
+    if f_start is None or f_end is None:
+        warnings.warn("No start or end time for day %s" % day)
+        return 0, config.BATCH_SIZE
+    start = int((f_start - ts_sec) * config.FRAMES_PER_SECOND)
+    end = int((f_end - ts_sec) * config.FRAMES_PER_SECOND)
+    # get start index
+    if start < int(batch_number) * config.BATCH_SIZE:
+        start_idx = 0
+    elif start > (int(batch_number) + 1) * config.BATCH_SIZE:
+        start_idx = config.BATCH_SIZE
+    else:
+        start_idx = start - int(batch_number) * config.BATCH_SIZE
+    # get end index
+    if end < int(batch_number) * config.BATCH_SIZE:
+        end_idx = 0
+    elif end > (int(batch_number) + 1) * config.BATCH_SIZE:
+        end_idx = config.BATCH_SIZE
+    else:
+        end_idx = end - int(batch_number) * config.BATCH_SIZE
+    return start_idx, end_idx
+
+
+def feeding_times_start_end_dict(is_feeding: bool, is_novel_object: bool, is_sociability: bool):
+    if not os.path.exists(config.SERVER_FEEDING_TIMES_FILE):
+        warnings.warn(
+            f"File {config.SERVER_FEEDING_TIMES_FILE} not found, thus feeding times will be calculated over all provided batches, if this is not intended please check the path in scripts/env.sh"
+        )
+        return None
+    else:
+        if is_feeding:
+            FT_DATE, FT_START, FT_END = (
+                "day",
+                "time_in_start",
+                "time_out_stop",
+            )
+            ft_df = pd.read_csv(
+                config.SERVER_FEEDING_TIMES_FILE,
+                usecols=[FT_DATE, FT_START, FT_END],
+                sep=config.SERVER_FEEDING_TIMES_SEP,
+            )
+            ft_df = ft_df[~ft_df[FT_START].isna()]
+            start_end = dict(
+                [
+                    (
+                        ''.join(d.split("-")),
+                        (get_seconds_from_time(s), get_seconds_from_time(e)),
+                    )
+                    for (d, s, e) in zip(ft_df[FT_DATE], ft_df[FT_START], ft_df[FT_END])
+                ]
+            )
+            return start_end
+        else:
+            FT_DATE, FT_ID, FT_START, FT_END = (
+                "date",
+                "tank_ID",
+                "trial_start",
+                "trial_end",
+            )  # time_in_stop, time_out_start
+
+            ft_df = pd.read_csv(
+                config.SERVER_FEEDING_TIMES_FILE,
+                usecols=[FT_DATE, FT_ID, FT_START, FT_END],
+                sep=config.SERVER_FEEDING_TIMES_SEP,
+            )
+            ft_df = ft_df[~ft_df[FT_START].isna()]
+            start_end = dict(
+                [
+                    (
+                        '_'.join([''.join(d.split("-")), i]),
+                        (get_seconds_from_time(s), get_seconds_from_time(e)),
+                    )
+                    for (d, i, s, e) in zip(ft_df[FT_DATE], ft_df[FT_ID], ft_df[FT_START], ft_df[FT_END])
+                ]
+            )
+            return start_end

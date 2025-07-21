@@ -24,8 +24,10 @@ from fishproviz.utils.transformation import pixel_to_cm
 from fishproviz.utils.utile import (
     get_start_time_directory,
     get_timestamp,
-    create_directory
-) 
+    create_directory,
+    feeding_times_start_end_dict,
+    get_start_end_index
+)
 
 mpl.rcParams["lines.linewidth"] = 0.5
 mpl.rcParams["lines.linestyle"] = "-"
@@ -139,8 +141,6 @@ class Trajectory:
         self.fig_front = Figure(is_back=False, marker_char=marker_char)
         self.fig_back = Figure(is_back=True, marker_char=marker_char)
 
-
-
     def reset_data(self):
         pass
 
@@ -202,7 +202,6 @@ class Trajectory:
         remove_text()
         return F.fig
 
-
     def plots_for_tex(self, fish_ids):
         
         # parallelization
@@ -245,7 +244,6 @@ class Trajectory:
                     self.plot_day_camera_fast(
                         day_df, keys, camera_id, day, fish_idx, is_back=is_back
                     )
-
     
     def plot_for_individual_parallel(
         self,
@@ -299,3 +297,13 @@ class Trajectory:
         return fig
 
         # __set_figure = self.set_figure # copy set_figure
+
+
+class ExperimentalTrajectory(Trajectory):
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.start_end_times = feeding_times_start_end_dict(self.is_feeding, self.is_novel_object, self.is_sociability)
+
+    def get_start_end_index(self, day_key, batch_number, tank_id=None):
+        return get_start_end_index(self.start_end_times, day_key, batch_number, tank_id)
