@@ -121,20 +121,21 @@ cdef np.ndarray[double, ndim=2] min_distance_to_ellipse(
     np.ndarray[double, ndim=1] x,
     np.ndarray[double, ndim=1] y,
     double c_x,
-    double c_y, double r_x,
+    double c_y,
+    double r_x,
     double r_y):
-    cdef np.ndarray[double, ndim=1] a
-    cdef np.ndarray[double, ndim=1] b
-    a = (y - np.full_like(y, c_y)) / (x - np.full_like(x, c_x))
-    b = y - a * x
+    cdef double a
+    cdef double b
     cdef np.ndarray[double, ndim=1] min_dists
     min_dists = np.zeros_like(x)
     for i in range(len(x)):
-        if np.isfinite(a[i]):
-            roots_x = np.roots([(r_y**2) + (r_x**2) * (a[i]**2),
-                                -2*c_x*(r_y**2) + 2*a[i]*(b[i]-c_y)*(r_x**2),
-                                (r_y**2)*((c_x**2) - 1) + (r_x**2)*((b[i]-c_y)**2 - 1)])
-            roots_y = a[i] * roots_x + b[i]
+        if (x[i] - c_x) != 0:
+            a = (y[i] - c_y) / (x[i] - c_x)
+            b = y[i] - a * x[i]
+            roots_x = np.roots([(r_y**2) + (r_x**2) * (a**2),
+                                -2*c_x*(r_y**2) + 2*a*(b-c_y)*(r_x**2),
+                                (r_y**2)*(c_x**2) + (r_x**2)*((b-c_y)**2) - (r_x**2)*(r_y**2)])
+            roots_y = a * roots_x + b
         else:
             roots_x = np.array([c_x, c_x])
             roots_y = np.array([r_y + c_y, -r_y + c_y])
