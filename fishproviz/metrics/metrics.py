@@ -20,6 +20,7 @@ import bisect
 
 from fishproviz.utils.utile import start_time_of_day_to_seconds
 from fishproviz.utils.object_config import read_object_data_from_json
+from fishproviz.utils.utile import feeding_times_start_end_dict, get_start_end_index
 
 NDIM = 3
 
@@ -55,6 +56,8 @@ def get_gaps_in_dataframes(frames):
 
 
 def calculate_result_for_interval(data, split_index, avg_metric_f, error_index, NDIM=3):
+    if split_index is None:
+        split_index = [len(data) - 1]
     len_out = len(split_index) + 1
     mu_sd = np.zeros([len_out, NDIM], dtype=float)
     for i, (chunk, err_flt) in enumerate(
@@ -87,6 +90,7 @@ def distance_to_wall(data, frame_interval, error_index, area):
         error_index,
     )
 
+
 def distance_to_object(data, frame_interval, error_index, area):
     fish_key = area[0]
     return calculate_result_for_interval(
@@ -97,6 +101,7 @@ def distance_to_object(data, frame_interval, error_index, area):
         ),
         error_index,
     )
+
 
 def tortuosity(data, frame_interval, error_index):
     return calculate_result_for_interval(
@@ -149,6 +154,10 @@ def metric_per_interval(
     out_dim=3,
     include_median=False,
     print_logs=False,
+    is_feeding:bool=False,
+    is_novel_object:bool=False,
+    is_sociability:bool=False,
+    all_points: bool = False,
 ):
     """
     Applies a given function to all fishes in fish_ids with the time_interval, for all days in the day_interval interval
@@ -190,6 +199,8 @@ def metric_per_interval(
             camera=camera_id,
             is_back=is_back,
         )
+        start_end_times = feeding_times_start_end_dict(is_feeding, is_novel_object, is_sociability)
+
         for j, day in enumerate(days):
             keys, data_in_batches = csv_of_the_day(
                 camera_id,
@@ -204,10 +215,21 @@ def metric_per_interval(
                     * config.FRAMES_PER_SECOND
                 )
                 # use index frames to get the precis time of the data when averaging
+                dfis = []
                 for k, dfi in zip(keys, data_in_batches):
                     dfi.index = dfi.FRAME + (int(k) * config.BATCH_SIZE)  # +daytime_DF
+                    start_idx, end_idx = get_start_end_index(start_end_times, day, k, fish_key)
+                    feeding_filter = dfi.FRAME.between(start_idx, end_idx)
+                    dfi = dfi[feeding_filter]
+                    dfis.append(dfi)
+
+                data_in_batches = dfis
+
+
                 df = pd.concat(data_in_batches)
                 step = time_interval * config.FRAMES_PER_SECOND
+                if all_points:
+                    step = int(df.index[-1])
                 time_points = np.arange(0, int(df.index[-1]), step)
                 split_by_interval_idx = [
                     bisect.bisect_left(df.index, h) for h in time_points[1:]
@@ -255,7 +277,7 @@ def metric_per_interval(
 
         results[fish_key] = day_dict
     if write_to_csv:
-        metric_result_to_csv(**package)
+        metric_result_to_csv(**package, all_points=all_points)
     return package
 
 

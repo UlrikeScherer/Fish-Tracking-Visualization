@@ -25,7 +25,7 @@ def get_csv_columns_from_results_dim(dimension, metric_name):
         raise ValueError("dimension must be either 2, 3 or 4, but was %s" % dimension)
 
 
-def metric_result_to_csv(results=None, metric_name=None, time_interval=None):
+def metric_result_to_csv(results=None, metric_name=None, time_interval=None, all_points: bool = False):
     columns = ["cam_pos", "day", "df_index"]
     interval_name = get_interval_name_from_seconds(time_interval)
     df_sum = pd.concat(
@@ -50,7 +50,7 @@ def metric_result_to_csv(results=None, metric_name=None, time_interval=None):
             time_interval * config.FRAMES_PER_SECOND
         )
     df_sum.to_csv(
-        get_filename_for_metric_csv(metric_name, interval_name),
+        get_filename_for_metric_csv(metric_name, interval_name, all_points=all_points),
         float_format=config.float_format,
         sep=config.sep,
     )
@@ -58,7 +58,7 @@ def metric_result_to_csv(results=None, metric_name=None, time_interval=None):
 
 # generates csv file name for a metric and a time interval
 def get_filename_for_metric_csv(
-    metric_name, time_interval, measure_name=None, cam_pos=None
+    metric_name, time_interval, measure_name=None, cam_pos=None, all_points: bool = False
 ):
     """
     :param metric_name: name of the metric
@@ -68,14 +68,17 @@ def get_filename_for_metric_csv(
     :return: filename for csv file
     """
     directory = get_results_directory(metric_name)
-    if measure_name:
-        if metric_name == measure_name:
-            return "%s/%s_%s.csv" % (directory, time_interval, metric_name)
-        return "%s/%s_%s_%s.csv" % (directory, time_interval, metric_name, measure_name)
-    elif cam_pos:
-        return "%s/%s_%s.csv" % (directory, time_interval, cam_pos)
+    if all_points:
+        return "%s/%s.csv" % (directory, metric_name)
     else:
-        return "%s/%s_%s.csv" % (directory, time_interval, metric_name)
+        if measure_name:
+            if metric_name == measure_name:
+                return "%s/%s_%s.csv" % (directory, time_interval, metric_name)
+            return "%s/%s_%s_%s.csv" % (directory, time_interval, metric_name, measure_name)
+        elif cam_pos:
+            return "%s/%s_%s.csv" % (directory, time_interval, cam_pos)
+        else:
+            return "%s/%s_%s.csv" % (directory, time_interval, metric_name)
 
 
 def get_results_directory(metric_name):

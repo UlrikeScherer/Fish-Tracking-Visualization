@@ -39,8 +39,8 @@ WALL_DISTANCE = "wall_distance"
 NOVEL_OBJECT_DISTANCE = "novel_object_distance"
 ALL_METRICS = "all"
 CLEAR = "clear"
-metric_names = [ACTIVITY, TURNING_ANGLE, ABS_ANGLE, TORTUOSITY, ENTROPY, WALL_DISTANCE, NOVEL_OBJECT_DISTANCE]
-programs = [TRAJECTORY, FEEDING, TRIAL_TIMES, *metric_names, ALL_METRICS, CLEAR, NOVEL_OBJECT, SOCIABILITY]
+metric_names = [ACTIVITY, TURNING_ANGLE, ABS_ANGLE, TORTUOSITY, ENTROPY, WALL_DISTANCE]
+programs = [TRAJECTORY, FEEDING, TRIAL_TIMES, *metric_names, NOVEL_OBJECT_DISTANCE, ALL_METRICS, CLEAR, NOVEL_OBJECT, SOCIABILITY]
 
 
 def main_metrics(program, time_interval=100, include_median=None, **kwargs_metrics):
@@ -86,6 +86,7 @@ def main_metrics(program, time_interval=100, include_median=None, **kwargs_metri
 
     results = metric_functions[program](include_median=include_median, **kwargs_metrics)
     return None
+
 
 def get_fish_ids_to_run(program, fish_id):
     '''
@@ -137,6 +138,10 @@ def main(
         write_to_csv=True,
         include_median=include_median,
         print_logs=print_logs,
+        is_feeding=program == FEEDING,
+        is_novel_object=program == NOVEL_OBJECT_DISTANCE,
+        is_sociability=program == SOCIABILITY,
+        all_points=True
     )
     # PROGRAM METRICS or TRAJECTORY or CLEAR
     if program == TRAJECTORY:
@@ -163,7 +168,7 @@ def main(
         ST.object_data_to_tex()
     elif program == TRIAL_TIMES:
         exploration_trials()
-    elif program in metric_names:
+    elif program in metric_names or program == NOVEL_OBJECT_DISTANCE:
         main_metrics(program, **kwargs_metrics)
     elif program == ALL_METRICS:
         for p in metric_names:
