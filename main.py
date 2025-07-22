@@ -14,7 +14,7 @@ from fishproviz.config import (
     RESULTS_PATH,
     create_directories,
 )
-from fishproviz.trajectory import Trajectory, FeedingTrajectory, NovelObjectTrajectory, SociabilityTrajectory
+from fishproviz.trajectory import ExperimentalTrajectory, FeedingTrajectory, NovelObjectTrajectory, SociabilityTrajectory
 from fishproviz.metrics import (
     activity_per_interval,
     turning_angle_per_interval,
@@ -145,7 +145,7 @@ def main(
     )
     # PROGRAM METRICS or TRAJECTORY or CLEAR
     if program == TRAJECTORY:
-        T = Trajectory(
+        T = ExperimentalTrajectory(
             parallel = json.loads(
                 str(parallel).lower()
             )

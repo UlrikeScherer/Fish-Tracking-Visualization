@@ -307,3 +307,38 @@ class ExperimentalTrajectory(Trajectory):
 
     def get_start_end_index(self, day_key, batch_number, tank_id=None):
         return get_start_end_index(self.start_end_times, day_key, batch_number, tank_id)
+
+    def subplot_function(
+        self,
+        batch,
+        date,
+        directory,
+        batch_number,
+        fish_id,
+        time_span="batch: 1,   00:00:00 - 00:30:00",
+        is_back=False,
+    ):
+        F = self.fig_back if is_back else self.fig_front
+
+        start_idx, end_idx = self.get_start_end_index(date, batch_number, '_'.join([directory.split('/')[-2], 'back' if is_back else 'front']))
+        F.ax.set_title(time_span, fontsize=10)
+        last_frame = batch.FRAME.array[-1]
+        if batch.x.array[-1] <= -1:
+            batch.drop(batch.tail(1).index)
+
+        feeding_filter = batch.FRAME.between(start_idx, end_idx)
+        fish_key = "%s_%s" % tuple(self.fish2camera[fish_id])
+
+        batchxy = pixel_to_cm(batch[feeding_filter][["xpx", "ypx"]].to_numpy(), fish_key=fish_key)
+        F.line.set_data(*batchxy.T)
+
+        steps = compute_step_lengths(batchxy)
+        spikes, spike_places = num_of_spikes(steps)
+        N = batchxy.shape[0]
+        text_r = F.meta_text_rhs(N, last_frame - N, spikes)
+        remove_text = F.meta_text_for_plot(text_r=text_r)
+
+        if self.write_fig:
+            F.write_figure(directory, batch_number)
+        remove_text()
+        return F.fig
