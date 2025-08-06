@@ -19,9 +19,12 @@ def read_social_zone_data_from_json():
                              errors='ignore') as f:
                 file_data = json.load(f)
                 for data in file_data:
-                    if not '_'.join(file.split('_')[1:3]).split('.')[0] in maze_dict['_'.join([file.split('_')[0], data['comment'].split('_')[0]])]:
-                        maze_dict['_'.join([file.split('_')[0], data['comment'].split('_')[0]])]['_'.join(file.split('_')[1:3]).split('.')[0]] = {}
-                    maze_dict['_'.join([file.split('_')[0], data['comment'].split('_')[0]])]['_'.join(file.split('_')[1:3]).split('.')[0]][data['comment'].split('_')[1]] = data
-
+                    try:
+                        if not '_'.join(file.split('_')[1:3]).split('.')[0] in maze_dict['_'.join([file.split('_')[0], data['comment'].split('_')[0]])]:
+                            maze_dict['_'.join([file.split('_')[0], data['comment'].split('_')[0]])]['_'.join(file.split('_')[1:3]).split('.')[0]] = {}
+                        maze_dict['_'.join([file.split('_')[0], data['comment'].split('_')[0]])]['_'.join(file.split('_')[1:3]).split('.')[0]][data['comment'].split('_')[1]] = data
+                    except IndexError as e:
+                        print(f"Something wrong with filename {file}, raises IndexError")
+                        raise e
     return maze_dict
 
