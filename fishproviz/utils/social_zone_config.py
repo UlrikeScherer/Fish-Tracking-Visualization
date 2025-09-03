@@ -18,6 +18,7 @@ def read_social_zone_data_from_json():
             with codecs.open(os.path.join(config.OBJECT_ZONE_COORDS_PATH, file), "r", encoding='utf-8',
                              errors='ignore') as f:
                 file_data = json.load(f)
+                print(file)
                 for data in file_data:
                     try:
                         if not '_'.join(file.split('_')[1:3]).split('.')[0] in maze_dict['_'.join([file.split('_')[0], data['comment'].split('_')[0]])]:
