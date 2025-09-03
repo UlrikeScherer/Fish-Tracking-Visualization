@@ -20,15 +20,12 @@ def read_social_zone_data_from_json():
                 file_data = json.load(f)
                 for data in file_data:
                     try:
-                        try:
-                            if not '_'.join(file.split('_')[1:3]).split('.')[0] in maze_dict['_'.join([file.split('_')[0], data['comment'].split('_')[0]])]:
-                                maze_dict['_'.join([file.split('_')[0], data['comment'].split('_')[0]])]['_'.join(file.split('_')[1:3]).split('.')[0]] = {}
-                            maze_dict['_'.join([file.split('_')[0], data['comment'].split('_')[0]])]['_'.join(file.split('_')[1:3]).split('.')[0]][data['comment'].split('_')[1]] = data
-                        except json.decoder.JSONDecodeError as e2:
-                            print(f"Something wrong with filename {file}, raises json.decoder.JSONDecodeError")
-                            raise e2
-                    except IndexError as e:
-                        print(f"Something wrong with filename {file}, raises IndexError")
+                        if not '_'.join(file.split('_')[1:3]).split('.')[0] in maze_dict['_'.join([file.split('_')[0], data['comment'].split('_')[0]])]:
+                            maze_dict['_'.join([file.split('_')[0], data['comment'].split('_')[0]])]['_'.join(file.split('_')[1:3]).split('.')[0]] = {}
+                        maze_dict['_'.join([file.split('_')[0], data['comment'].split('_')[0]])]['_'.join(file.split('_')[1:3]).split('.')[0]][data['comment'].split('_')[1]] = data
+
+                    except json.decoder.JSONDecodeError as e:
+                        print(f"Something wrong with filename {file}, raises json.decoder.JSONDecodeError")
                         raise e
     return maze_dict
 
