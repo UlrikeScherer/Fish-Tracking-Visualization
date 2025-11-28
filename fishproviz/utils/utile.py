@@ -337,7 +337,11 @@ def get_start_end_index(start_end_times, day_key, batch_number, tank_id=None):
         return 0, config.BATCH_SIZE
     (day, track_start) = day_key.split("_")[:2]
     ts_sec = start_time_of_day_to_seconds(track_start)
-    (f_start, f_end) = start_end_times['_'.join([day, tank_id]) if tank_id is not None else day]
+    try:
+        (f_start, f_end) = start_end_times['_'.join([day, tank_id]) if tank_id is not None else day]
+    except KeyError:
+        (f_start, f_end) = None, None
+
     if f_start is None or f_end is None:
         warnings.warn("No start or end time for day %s" % day)
         return 0, config.BATCH_SIZE
