@@ -68,6 +68,8 @@ def get_filename_for_metric_csv(
     :return: filename for csv file
     """
     directory = get_results_directory(metric_name)
+    if metric_name == "turning_angle":
+        metric_name = metric_name + f"_skip{config.tangle_n_skip}"
     if all_points:
         return "%s/%s.csv" % (directory, metric_name)
     else:
