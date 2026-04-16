@@ -18,7 +18,7 @@ path_csv="$rootserver/FE_tracks"
 
 # --- The Path to the local data ------------
 
-path_csv_local="/Volumes/Lettuce_Impetus/data/PE_for_Ghadi/PE_feeding_final_block3" #"/Volumes/Lettuce_Impetus/data/FE_BT_final_tracks_3/FE_BT_final_tracks_new_tank" #"/Volumes/Lettuce_Impetus/data/FE_BT_final_tracks_3/FE_BT_final_tracks_sociability" #"/Volumes/Lettuce_Impetus/data/FE_BT_final_tracks_3/FE_BT_final_tracks_novel_object" #"/Volumes/Lettuce_Impetus/data/FE_offspring_feeding"
+path_csv_local="data/PE/PE_feeding_final_block3" #"data/FE_BT_final_tracks_3/FE_BT_final_tracks_new_tank" #"data/FE_BT_final_tracks_3/FE_BT_final_tracks_sociability" #"data/FE_BT_final_tracks_3/FE_BT_final_tracks_novel_object" #"data/FE_offspring_feeding"
 POSITION_STR_FRONT="PE_feeding_final_block3_front" #"FE_BT_final_tracks_new_tank_front" #"FE_BT_final_tracks_sociability_front" #"FE_BT_final_tracks_novel_object_front" #"FE_offspring_feeding_tracks_front"
 POSITION_STR_BACK="PE_feeding_final_block3_back" #"FE_BT_final_tracks_new_tank_back" #"FE_BT_final_tracks_sociability_back" #"FE_BT_final_tracks_novel_object_back" #"FE_offspring_feeding_tracks_back"
 
@@ -29,11 +29,11 @@ dir_back=$path_csv_local/$POSITION_STR_BACK
 #SERVER_FEEDING_TIMES_FILE="/Volumes/Extreme_SSD/PE_feeding_times.csv"
 #TRIAL_TIMES_CSV="/Volumes/Extreme_SSD/PE_feeding_times.csv"
 #SERVER_FEEDING_TIMES_SEP=","
-SERVER_FEEDING_TIMES_FILE="/Volumes/Lettuce_Impetus/data/PE_for_Ghadi/PE_feeding_times.csv" #"/Volumes/Lettuce_Impetus/data/PE_feeding/PE_feeding_times_with15May2023" #"/Volumes/Lettuce_Impetus/data/FE_BT_final_tracks_3/FE_BT_trial_times_1minDelay_60minDuration.csv" #"/Volumes/Lettuce_Impetus/data/FE_BT_original_tracks/FE_BT_original_tracks_sociability/FE_BT_fake_trial_time_sociability_test.csv" #"/Volumes/Lettuce_Impetus/data/FE_BT_original_tracks/FE_BT_original_tracks_novel_object/FE_BT_fake_trial_time_novel_object_test.csv"
-TRIAL_TIMES_CSV="/Volumes/Lettuce_Impetus/data/PE_for_Ghadi/PE_feeding_times.csv" #"/Volumes/Lettuce_Impetus/data/PE_feeding/PE_feeding_times_with15May2023" #"/Volumes/Lettuce_Impetus/data/FE_BT_final_tracks_3/FE_BT_trial_times_1minDelay_60minDuration.csv" #"/Volumes/Lettuce_Impetus/data/FE_BT_original_tracks/FE_BT_original_tracks_sociability/FE_BT_fake_trial_time_sociability_test.csv" #"/Volumes/Lettuce_Impetus/data/FE_BT_original_tracks/FE_BT_original_tracks_novel_object/FE_BT_fake_trial_time_novel_object_test.csv"
+SERVER_FEEDING_TIMES_FILE="data/PE/PE_feeding_times.csv" #"data/PE_feeding/PE_feeding_times_with15May2023" #"data/FE_BT_final_tracks_3/FE_BT_trial_times_1minDelay_60minDuration.csv" #"data/FE_BT_original_tracks/FE_BT_original_tracks_sociability/FE_BT_fake_trial_time_sociability_test.csv" #"data/FE_BT_original_tracks/FE_BT_original_tracks_novel_object/FE_BT_fake_trial_time_novel_object_test.csv"
+TRIAL_TIMES_CSV="data/PE/PE_feeding_times.csv" #"data/PE_feeding/PE_feeding_times_with15May2023" #"data/FE_BT_final_tracks_3/FE_BT_trial_times_1minDelay_60minDuration.csv" #"data/FE_BT_original_tracks/FE_BT_original_tracks_sociability/FE_BT_fake_trial_time_sociability_test.csv" #"data/FE_BT_original_tracks/FE_BT_original_tracks_novel_object/FE_BT_fake_trial_time_novel_object_test.csv"
 SERVER_FEEDING_TIMES_SEP=","
 
-FEEDING_PATCH_COORDS_FILE="/Volumes/Lettuce_Impetus/data/PE_feeding/PE_feeding_patch_coords.csv"
+FEEDING_PATCH_COORDS_FILE="data/PE_feeding/PE_feeding_patch_coords.csv"
 FEEDING_PATCH_COORDS_SEP=","
 
 FEEDING_SHAPE="patch" # or "ellipse" 
@@ -41,7 +41,7 @@ FEEDING_SHAPE_WIDTH=10
 FEEDING_SHAPE_HEIGHT=5
 MAGNET_LENGTH_CM=2.5
 
-OBJECT_ZONE_COORDS_PATH="" #"/Volumes/Lettuce_Impetus/data/FE_BT_final_tracks_3/FE_BT_final_tracks_sociability/FE_BT_sociability_zones" #"/Volumes/Lettuce_Impetus/data/FE_BT_final_tracks_3/FE_BT_final_tracks_novel_object/FE_BT_novel_object_zones"
+OBJECT_ZONE_COORDS_PATH="" #"data/FE_BT_final_tracks_3/FE_BT_final_tracks_sociability/FE_BT_sociability_zones" #"data/FE_BT_final_tracks_3/FE_BT_final_tracks_novel_object/FE_BT_novel_object_zones"
 
 
 # SERVER_FEEDING_TIMES_FILE="/Volumes/Extreme_SSD/FE_offspring_feeding_times_coordinates/feeding_times.csv"
