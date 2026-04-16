@@ -19,11 +19,11 @@ def calc_step_per_frame(batchxy, frames):
     return c
 
 
-def compute_turning_angles(points):
+def compute_turning_angles(points, skip: int = config.tangle_n_skip):
     # Compute the differences between adjacent points
-    vectors = np.diff(points, axis=0)
+    vectors = np.diff(points[::skip+1], axis=0)
 
-    # Find the indices where the difference vector is non-zero and finit
+    # Find the indices where the difference vector is non-zero and finite
     wanted_indices = np.any(vectors != 0, axis=1) & np.all(np.isfinite(vectors), axis=1)
 
     vectors = vectors[wanted_indices]
