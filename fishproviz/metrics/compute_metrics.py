@@ -33,7 +33,7 @@ def compute_turning_angles(points, skip: int = config.tangle_n_skip):
 
     # Compute the turning angles
     turning_angles = np.arctan2(determinants, dot_products)
-    turning_angles_result = np.zeros(points.shape[0] - 2)
+    turning_angles_result = np.zeros(points[::skip+1].shape[0] - 2)
     # the last one is buried in the angle if not False anyways
     wanted_angles = np.where(wanted_indices)[0][1:] - 1
     # Set the turning angles to 0 for equal consecutive points
