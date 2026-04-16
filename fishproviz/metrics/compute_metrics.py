@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 import pandas as pd
 import scipy.stats as scipy_stats
@@ -20,6 +22,8 @@ def calc_step_per_frame(batchxy, frames):
 
 
 def compute_turning_angles(points, skip: int = config.tangle_n_skip):
+    if skip > math.ceil((len(points) - 3)/3):
+        raise ValueError("Not enough data for this resolution of turning angle")
     # Compute the differences between adjacent points
     vectors = np.diff(points[::skip+1], axis=0)
 
@@ -33,11 +37,21 @@ def compute_turning_angles(points, skip: int = config.tangle_n_skip):
 
     # Compute the turning angles
     turning_angles = np.arctan2(determinants, dot_products)
-    turning_angles_result = np.zeros(points[::skip+1].shape[0] - 2)
-    # the last one is buried in the angle if not False anyways
-    wanted_angles = np.where(wanted_indices)[0][1:] - 1
-    # Set the turning angles to 0 for equal consecutive points
-    turning_angles_result[wanted_angles] = turning_angles
+    if skip == 0:
+        turning_angles_result = np.zeros(points.shape[0] - 2)
+        # the last one is buried in the angle if not False anyways
+        wanted_angles = np.where(wanted_indices)[0][1:] - 1
+        # Set the turning angles to 0 for equal consecutive points
+        turning_angles_result[wanted_angles] = turning_angles
+    else: # in case of skip > 0, make sure to modify array to maintain same length as skip = 0 but with nan values placed accordingly (for compatibility with further processing)
+        # Creating a new array 'new_nums' of length len(nums) + (len(nums) - 1) * p filled with zeros
+        turning_angles_result = np.full(len(turning_angles) + (len(turning_angles) - 1) * (skip), np.nan)
+
+        # Filling the 'new_nums' array with elements from 'nums' at intervals of (p + 1)
+        turning_angles_result[::skip + 1] = turning_angles
+        turning_angles_result = np.concatenate([np.full(skip, np.nan), turning_angles_result, np.full(skip, np.nan)])
+        turning_angles_result = np.concatenate([turning_angles_result, np.full(points.shape[0] - 2 - len(turning_angles_result), np.nan)])
+
     return turning_angles_result
 
 

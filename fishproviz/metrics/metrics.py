@@ -55,7 +55,7 @@ def get_gaps_in_dataframes(frames):
     return np.where(gaps_select)[0], gaps_select
 
 
-def calculate_result_for_interval(data, split_index, avg_metric_f, error_index, NDIM=3):
+def calculate_result_for_interval(data, split_index, avg_metric_f, error_index, NDIM=3, checkfornans=False):
     if split_index is None:
         split_index = [len(data) - 1]
     len_out = len(split_index) + 1
@@ -64,8 +64,13 @@ def calculate_result_for_interval(data, split_index, avg_metric_f, error_index, 
         zip(np.split(data, split_index), np.split(error_index, split_index))
     ):
         chunk = chunk[~err_flt]
-        mu_sd[i, :-1] = avg_metric_f(chunk)
-        mu_sd[i, -1] = len(chunk)
+
+        if checkfornans:
+            chunk_pro = chunk[~np.isnan(chunk)]
+        else:
+            chunk_pro = chunk
+        mu_sd[i, :-1] = avg_metric_f(chunk_pro)
+        mu_sd[i, -1] = len(chunk_pro)
     return mu_sd
 
 
@@ -140,7 +145,7 @@ def activity(data, frame_interval, filter_index, include_median=False):
 def turning_angle(data, frame_interval, filter_index):
     error_index = update_filter_three_points(compute_step_lengths(data), filter_index)
     return calculate_result_for_interval(
-        compute_turning_angles(data), frame_interval, mean_std, error_index
+        compute_turning_angles(data), frame_interval, mean_std, error_index, checkfornans=True
     )
 
 
