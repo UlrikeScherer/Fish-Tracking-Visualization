@@ -63,7 +63,7 @@ def calculate_result_for_interval(data, split_index, avg_metric_f, error_index, 
     for i, (chunk, err_flt) in enumerate(
         zip(np.split(data, split_index), np.split(error_index, split_index))
     ):
-        chunk = chunk[~err_flt]
+        #chunk = chunk[~err_flt]
 
         if checkfornans:
             chunk_pro = chunk[~np.isnan(chunk)]
