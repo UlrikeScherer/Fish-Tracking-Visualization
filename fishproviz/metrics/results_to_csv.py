@@ -45,6 +45,10 @@ def metric_result_to_csv(results=None, metric_name=None, time_interval=None, all
     df_sum.columns = [*columns, *measures]
     # update the type of the columns
     df_sum[num_datapoints] = df_sum[num_datapoints].astype(int)
+
+    if metric_name == "turning_angle":
+        df_sum[num_datapoints] = len(np.arange(df_sum[num_datapoints])[::config.tangle_n_skip+1])
+
     if "hour" == interval_name:
         df_sum["hour"] = df_sum["df_index"] // (
             time_interval * config.FRAMES_PER_SECOND
