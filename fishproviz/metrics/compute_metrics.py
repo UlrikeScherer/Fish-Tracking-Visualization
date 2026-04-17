@@ -29,7 +29,6 @@ def compute_turning_angles(points, skip: int = config.tangle_n_skip):
 
     # Find the indices where the difference vector is non-zero and finite
     wanted_indices = np.any(vectors != 0, axis=1) & np.all(np.isfinite(vectors), axis=1)
-
     vectors = vectors[wanted_indices]
     # Compute the dot products and determinants between pairs of vectors
     dot_products = np.einsum("ij,ij->i", vectors[:-1], vectors[1:])
@@ -45,6 +44,10 @@ def compute_turning_angles(points, skip: int = config.tangle_n_skip):
         turning_angles_result[wanted_angles] = turning_angles
     else: # in case of skip > 0, make sure to modify array to maintain same length as skip = 0 but with nan values placed accordingly (for compatibility with further processing)
         # Creating a new array 'new_nums' of length len(nums) + (len(nums) - 1) * p filled with zeros
+        org_vectors = np.diff(points[::skip + 1], axis=0)
+        zero_arr = np.zeros(len(org_vectors) - 1)
+        zero_arr[np.any(org_vectors != 0, axis=1)[1:]] = turning_angles
+        turning_angles = zero_arr # take into consideration zero vectors that were discarded by wanted_indeces and put these 0 instead of NaN
         turning_angles_result = np.full(len(turning_angles) + (len(turning_angles) - 1) * (skip), np.nan)
 
         # Filling the 'new_nums' array with elements from 'nums' at intervals of (p + 1)
