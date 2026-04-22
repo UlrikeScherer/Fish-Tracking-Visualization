@@ -13,6 +13,7 @@ from fishproviz.config import (
     PLOTS_DIR,
     RESULTS_PATH,
     create_directories,
+    UNAVERAGED
 )
 from fishproviz.trajectory import ExperimentalTrajectory, FeedingTrajectory, NovelObjectTrajectory, SociabilityTrajectory
 from fishproviz.metrics import (
@@ -23,6 +24,7 @@ from fishproviz.metrics import (
     distance_to_wall_per_interval,
     distance_to_object_per_interval,
     absolute_angle_per_interval,
+    step_length_per_interval
 )
 
 TRAJECTORY = "trajectory"
@@ -37,9 +39,10 @@ TORTUOSITY = "tortuosity"
 ENTROPY = "entropy"
 WALL_DISTANCE = "wall_distance"
 NOVEL_OBJECT_DISTANCE = "novel_object_distance"
+STEP_LENGTH = "step_length"
 ALL_METRICS = "all"
 CLEAR = "clear"
-metric_names = [ACTIVITY, TURNING_ANGLE, ABS_ANGLE, TORTUOSITY, ENTROPY, WALL_DISTANCE]
+metric_names = [ACTIVITY, TURNING_ANGLE, ABS_ANGLE, TORTUOSITY, ENTROPY, WALL_DISTANCE, STEP_LENGTH]
 programs = [TRAJECTORY, FEEDING, TRIAL_TIMES, *metric_names, NOVEL_OBJECT_DISTANCE, ALL_METRICS, CLEAR, NOVEL_OBJECT, SOCIABILITY]
 
 
@@ -77,7 +80,8 @@ def main_metrics(program, time_interval=100, include_median=None, **kwargs_metri
         ABS_ANGLE: absolute_angle_per_interval,
         ENTROPY: entropy_per_interval,
         WALL_DISTANCE: distance_to_wall_per_interval,
-        NOVEL_OBJECT_DISTANCE: distance_to_object_per_interval
+        NOVEL_OBJECT_DISTANCE: distance_to_object_per_interval,
+        STEP_LENGTH: step_length_per_interval
     }
 
     if program not in metric_functions:
@@ -141,7 +145,8 @@ def main(
         is_feeding=program == FEEDING,
         is_novel_object=program == NOVEL_OBJECT_DISTANCE,
         is_sociability=program == SOCIABILITY,
-        all_points=True
+        all_points=True,
+        every_point=UNAVERAGED
     )
     # PROGRAM METRICS or TRAJECTORY or CLEAR
     if program == TRAJECTORY:

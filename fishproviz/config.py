@@ -64,6 +64,7 @@ N_SECONDS_OF_DAY = 24 * N_SECONDS_PER_HOUR
 float_format = "%.10f"
 sep = ";"
 tangle_n_skip = int(os.environ["TANGLE_N_SKIP"])
+UNAVERAGED = bool(int(os.environ["UNAVERAGED"]))
 
 # Calibrations
 # AREA CONFIG

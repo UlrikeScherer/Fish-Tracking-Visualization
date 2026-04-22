@@ -25,36 +25,46 @@ def get_csv_columns_from_results_dim(dimension, metric_name):
         raise ValueError("dimension must be either 2, 3 or 4, but was %s" % dimension)
 
 
-def metric_result_to_csv(results=None, metric_name=None, time_interval=None, all_points: bool = False):
-    columns = ["cam_pos", "day", "df_index"]
-    interval_name = get_interval_name_from_seconds(time_interval)
-    df_sum = pd.concat(
-        [
-            pd.concat(
-                [pd.DataFrame(day_data) for day_data in fish_data.values()],
-                keys=fish_data.keys(),
-            )
-            if len(fish_data) > 0
-            else None
-            for fish_data in results.values()
-        ],
-        keys=results.keys(),
-    )
-    measures = get_csv_columns_from_results_dim(df_sum.shape[1], metric_name)
-    df_sum = df_sum.reset_index()
-    df_sum.columns = [*columns, *measures]
-    # update the type of the columns
-    df_sum[num_datapoints] = df_sum[num_datapoints].astype(int)
-
-    if "hour" == interval_name:
-        df_sum["hour"] = df_sum["df_index"] // (
-            time_interval * config.FRAMES_PER_SECOND
+def metric_result_to_csv(results=None, metric_name=None, time_interval=None, all_points: bool = False, every_point: bool = False):
+    if not every_point:
+        columns = ["cam_pos", "day", "df_index"]
+        interval_name = get_interval_name_from_seconds(time_interval)
+        df_sum = pd.concat(
+            [
+                pd.concat(
+                    [pd.DataFrame(day_data) for day_data in fish_data.values()],
+                    keys=fish_data.keys(),
+                )
+                if len(fish_data) > 0
+                else None
+                for fish_data in results.values()
+            ],
+            keys=results.keys(),
         )
-    df_sum.to_csv(
-        get_filename_for_metric_csv(metric_name, interval_name, all_points=all_points),
-        float_format=config.float_format,
-        sep=config.sep,
-    )
+        measures = get_csv_columns_from_results_dim(df_sum.shape[1], metric_name)
+        df_sum = df_sum.reset_index()
+        df_sum.columns = [*columns, *measures]
+        # update the type of the columns
+        df_sum[num_datapoints] = df_sum[num_datapoints].astype(int)
+
+        if "hour" == interval_name:
+            df_sum["hour"] = df_sum["df_index"] // (
+                time_interval * config.FRAMES_PER_SECOND
+            )
+        df_sum.to_csv(
+            get_filename_for_metric_csv(metric_name, interval_name, all_points=all_points),
+            float_format=config.float_format,
+            sep=config.sep,
+        )
+    else:
+        directory = get_results_directory(metric_name)
+        for key in results.keys():
+            for subkey in results[key].keys():
+                subdir = f"{directory}/raw"
+                if not os.path.exists(subdir):
+                    os.makedirs(subdir)
+                if len(results[key][subkey]) > 0:
+                    results[key][subkey].to_csv(f"{subdir}/{key}_{subkey}.csv", index_label='i')
 
 
 # generates csv file name for a metric and a time interval

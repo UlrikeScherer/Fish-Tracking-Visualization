@@ -59,7 +59,10 @@ def calculate_result_for_interval(data, split_index, avg_metric_f, error_index, 
     if split_index is None:
         split_index = [len(data) - 1]
     len_out = len(split_index) + 1
-    mu_sd = np.zeros([len_out, NDIM], dtype=float)
+    if avg_metric_f is not None:
+        mu_sd = np.zeros([len_out, NDIM], dtype=float)
+    else:
+        mu_sd = []
     for i, (chunk, err_flt) in enumerate(
         zip(np.split(data, split_index), np.split(error_index, split_index))
     ):
@@ -70,9 +73,15 @@ def calculate_result_for_interval(data, split_index, avg_metric_f, error_index, 
             chunk_pro = chunk[~np.isnan(chunk)]
         else:
             chunk_pro = chunk
-        mu_sd[i, :-1] = avg_metric_f(chunk_pro)
-        mu_sd[i, -1] = len(chunk_pro)
-    return mu_sd
+        if avg_metric_f is not None:
+            mu_sd[i, :-1] = avg_metric_f(chunk_pro)
+            mu_sd[i, -1] = len(chunk_pro)
+        else:
+            mu_sd += chunk_pro.tolist()
+    if avg_metric_f is not None:
+        return mu_sd
+    else:
+        return np.array(mu_sd).reshape((-1, 1))
 
 
 def entropy(data, frame_interval, error_index, area):
@@ -143,10 +152,16 @@ def activity(data, frame_interval, filter_index, include_median=False):
     )
 
 
+def step_length(data, frame_interval, filter_index):
+    steps = compute_step_lengths(data)
+    filter_index = update_filter_two_points(steps, filter_index)
+    return calculate_result_for_interval(steps, frame_interval, None, filter_index)
+
+
 def turning_angle(data, frame_interval, filter_index):
     error_index = update_filter_three_points(compute_step_lengths(data), filter_index)
     return calculate_result_for_interval(
-        compute_turning_angles(data), frame_interval, mean_std, error_index, checkfornans=True
+        compute_turning_angles(data), frame_interval, mean_std if not config.UNAVERAGED else None, error_index, checkfornans=True
     )
 
 
@@ -164,6 +179,7 @@ def metric_per_interval(
     is_novel_object:bool=False,
     is_sociability:bool=False,
     all_points: bool = False,
+    every_point: bool = False,
 ):
     """
     Applies a given function to all fishes in fish_ids with the time_interval, for all days in the day_interval interval
@@ -276,19 +292,26 @@ def metric_per_interval(
                         data_cm, split_by_interval_idx, err_filter, **metric_kwargs
                     )
                 # concat the results array with the index of df for every time_interval step
-                result = pd.DataFrame(result, index=time_points)
+                if every_point:
+                    result = pd.DataFrame({ metric.__name__: result.reshape((-1,))})
+                else:
+                    result = pd.DataFrame(result, index=time_points)
                 day_dict[day] = result
             else:
                 day_dict[day] = pd.DataFrame(np.empty([0, out_dim]))
 
         results[fish_key] = day_dict
     if write_to_csv:
-        metric_result_to_csv(**package, all_points=all_points)
+        metric_result_to_csv(**package, all_points=all_points, every_point=every_point)
     return package
 
 
 def activity_per_interval(*args, **kwargs):
     return metric_per_interval(*args, **kwargs, metric=activity)
+
+
+def step_length_per_interval(*args, **kwargs):
+    return metric_per_interval(*args, **kwargs, metric=step_length)
 
 
 def turning_angle_per_interval(*args, **kwargs):

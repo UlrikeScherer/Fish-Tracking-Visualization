@@ -14,6 +14,8 @@ from .metrics import (
     get_gaps_in_dataframes,
     activity_mean_sd,
     activity,
+    step_length,
+    step_length_per_interval,
     tortuosity,
     turning_angle,
     absolute_angles,
@@ -40,6 +42,7 @@ metric_names = [
         distance_to_wall,
         distance_to_object,
         entropy,
+        step_length
     ]
 ]
 
@@ -47,6 +50,7 @@ metric_names = [
 __all__ = [
     "metric_per_interval",
     "activity_per_interval",
+    "step_length_per_interval",
     "tortuosity_per_interval",
     "turning_angle_per_interval",
     "absolute_angle_per_interval",
