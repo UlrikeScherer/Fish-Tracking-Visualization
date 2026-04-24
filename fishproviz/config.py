@@ -65,6 +65,7 @@ float_format = "%.10f"
 sep = ";"
 tangle_n_skip = int(os.environ["TANGLE_N_SKIP"])
 UNAVERAGED = bool(int(os.environ["UNAVERAGED"]))
+AGGREGATE_EVERY_N = int(os.environ["AGGREGATE_EVERY_N"])
 
 # Calibrations
 # AREA CONFIG

@@ -293,7 +293,7 @@ def metric_per_interval(
                     )
                 # concat the results array with the index of df for every time_interval step
                 if every_point:
-                    result = pd.DataFrame({ metric.__name__: result.reshape((-1,))})
+                    result = pd.DataFrame({ metric.__name__: np.add.reduceat(result, np.arange(0, len(result), config.AGGREGATE_EVERY_N)).reshape((-1,))})
                 else:
                     result = pd.DataFrame(result, index=time_points)
                 day_dict[day] = result
