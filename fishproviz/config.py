@@ -66,6 +66,7 @@ sep = ";"
 tangle_n_skip = int(os.environ["TANGLE_N_SKIP"])
 UNAVERAGED = bool(int(os.environ["UNAVERAGED"]))
 AGGREGATE_EVERY_N = int(os.environ["AGGREGATE_EVERY_N"])
+REMOVE_0_VECS = bool(int(os.environ["REMOVE_0_VECS"]))
 
 # Calibrations
 # AREA CONFIG

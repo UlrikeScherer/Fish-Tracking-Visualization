@@ -67,6 +67,7 @@ THRESHOLD_AREA_PX=5000  # The threshold in pixels for the exclusion of data poin
 TANGLE_N_SKIP=0 # Number of data points to skip when computing turning angle. Set to 0 for no data points skipped (highest resolution of turning angle of 2 values per second)
 UNAVERAGED=0 #1 for True, 0 for False: If metrics should be saved as averaged or raw
 AGGREGATE_EVERY_N=1 #for UNAVERAGED=1 save every observation, for UNAVERAGED=N>1 aggregate with a non-overlapping window of size N
+REMOVE_0_VECS=0 #Whether to remove (REMOVE_0_VECS=1) or not (REMOVE_0_VECS=0) 0 vectors from turning angle calculation
 
 # shared variables that are used in the scripts
 # NO Changes needed
