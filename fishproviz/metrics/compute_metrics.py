@@ -45,7 +45,7 @@ def compute_turning_angles(points, skip: int = config.tangle_n_skip):
     else: # in case of skip > 0, make sure to modify array to maintain same length as skip = 0 but with nan values placed accordingly (for compatibility with further processing)
         # Creating a new array 'new_nums' of length len(nums) + (len(nums) - 1) * p filled with zeros
         zero_arr = np.zeros(len(np.diff(points[::skip + 1], axis=0)) - 1)
-        zero_arr[wanted_indices[1:]] = turning_angles
+        zero_arr[np.where(wanted_indices)[0][1:] - 1] = turning_angles
         turning_angles = zero_arr # take into consideration zero vectors that were discarded by wanted_indeces and put these 0 instead of NaN
         turning_angles_result = np.full(len(turning_angles) + (len(turning_angles) - 1) * (skip), np.nan)
 
