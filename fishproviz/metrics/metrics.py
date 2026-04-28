@@ -155,7 +155,7 @@ def activity(data, frame_interval, filter_index, include_median=False):
 def step_length(data, frame_interval, filter_index):
     steps = compute_step_lengths(data)
     filter_index = update_filter_two_points(steps, filter_index)
-    return calculate_result_for_interval(steps, frame_interval, None, filter_index)
+    return calculate_result_for_interval(steps, frame_interval,  mean_std if not config.UNAVERAGED else None, filter_index)
 
 
 def turning_angle(data, frame_interval, filter_index):
