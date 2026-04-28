@@ -22,10 +22,6 @@ path_csv_local="data/PE/PE_feeding_final_block3"
 POSITION_STR_FRONT="PE_feeding_final_block3_front"
 POSITION_STR_BACK="PE_feeding_final_block3_back"
 
-
-dir_front=$path_csv_local/$POSITION_STR_FRONT
-dir_back=$path_csv_local/$POSITION_STR_BACK
-
 #SERVER_FEEDING_TIMES_FILE="/Volumes/Extreme_SSD/PE_feeding_times.csv"
 #TRIAL_TIMES_CSV="/Volumes/Extreme_SSD/PE_feeding_times.csv"
 #SERVER_FEEDING_TIMES_SEP=","
@@ -80,13 +76,3 @@ P_SOCIABILITY="sociability"
 CONFIG_DATA="config_data" # To store the config data, feeding times, area coordinates, calibration, etc.
 RESULTS="results" # To store the results of the analysis
 TEX_DIR="tex" # To store the tex files
-
-
-export rootserver
-export path_csv
-export path_csv_local
-export path_recordings
-export POSITION_STR_BACK
-export POSITION_STR_FRONT
-export dir_back
-export dir_front

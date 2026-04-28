@@ -1,9 +1,11 @@
-from envbash import load_envbash
+#from envbash import load_envbash
+from dotenv import load_dotenv
 import os
 import fishproviz
 
 module_path = os.path.dirname(fishproviz.__file__)
-load_envbash(os.path.join(module_path, "config.env"))
+#load_envbash(os.path.join(module_path, "config.env"))
+load_dotenv(os.path.join(module_path, "config.env"))
 # THRESHOLDS for the data set filtered for erroneous frames
 SPIKE_THRESHOLD = int(os.environ["SPIKE_THRESHOLD"])
 DIRT_THRESHOLD = int(os.environ["DIRT_THRESHOLD"])
@@ -45,8 +47,8 @@ MAGNET_LENGTH_CM = float(os.environ["MAGNET_LENGTH_CM"])
 OBJECT_ZONE_COORDS_PATH = os.environ["OBJECT_ZONE_COORDS_PATH"]
 
 # TRAJECTORY
-dir_front = os.environ["dir_front"]
-dir_back = os.environ["dir_back"]
+dir_front = os.path.join(DIR_CSV_LOCAL, os.environ["POSITION_STR_FRONT"])
+dir_back = os.path.join(DIR_CSV_LOCAL, os.environ["POSITION_STR_BACK"])
 PROJECT_ID = os.environ["PROJECT_ID"]
 # print("PROJECTID:",PROJECT_ID)
 DIR_TRACES = os.path.join(str(RESULTS_PATH), str(PROJECT_ID), "traces")
