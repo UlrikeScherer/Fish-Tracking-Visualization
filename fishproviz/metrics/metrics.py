@@ -95,13 +95,14 @@ def entropy(data, frame_interval, error_index, area):
 
 
 def distance_to_wall(data, frame_interval, error_index, area):
+    avg_func = lambda chunk: mean_std(
+            px2cm(distance_to_wall_chunk(chunk, area[1]), fish_key=fish_key)
+        )
     fish_key = area[0]
     return calculate_result_for_interval(
         data,
         frame_interval,
-        lambda chunk: mean_std(
-            px2cm(distance_to_wall_chunk(chunk, area[1]), fish_key=fish_key)
-        ),
+        avg_func if not config.UNAVERAGED else None,
         error_index,
     )
 
