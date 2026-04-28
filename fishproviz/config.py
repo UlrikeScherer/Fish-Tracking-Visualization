@@ -17,16 +17,16 @@ DIR_CSV_LOCAL = os.environ["path_csv_local"]
 PATH_RECORDINGS = os.environ["path_recordings"]
 FRONT, BACK = "front", "back"
 
-projectPath = "/Volumes/Extreme_SSD/content/Fish_moves_final"
-CONFIG_DATA = f"{DIR_CSV_LOCAL}/" + os.environ["CONFIG_DATA"]
-VIS_DIR = f"{DIR_CSV_LOCAL}/" + os.environ["VIS_DIR"]
-PLOTS_DIR = f"{DIR_CSV_LOCAL}/" + os.environ["PLOTS_DIR"]
-RESULTS_PATH = f"{DIR_CSV_LOCAL}/" + os.environ["RESULTS"]
+#projectPath = "/Volumes/Extreme_SSD/content/Fish_moves_final"
+CONFIG_DATA = os.path.join(DIR_CSV_LOCAL, os.environ["CONFIG_DATA"])
+VIS_DIR = os.path.join(DIR_CSV_LOCAL, os.environ["VIS_DIR"])
+PLOTS_DIR = os.path.join(DIR_CSV_LOCAL, os.environ["PLOTS_DIR"])
+RESULTS_PATH = os.path.join(DIR_CSV_LOCAL, os.environ["RESULTS"])
 P_TRAJECTORY = os.environ["P_TRAJECTORY"]
 P_FEEDING = os.environ["P_FEEDING"]
 P_NOVEL_OBJECT = os.environ["P_NOVEL_OBJECT"]
 P_SOCIABILITY = os.environ["P_SOCIABILITY"]
-TEX_DIR = f"{PLOTS_DIR}/" + os.environ["TEX_DIR"]
+TEX_DIR = os.path.join(PLOTS_DIR, os.environ["TEX_DIR"])
 FEEDING_PATCH_COORDS_FILE = os.environ["FEEDING_PATCH_COORDS_FILE"]
 FEEDING_PATCH_COORDS_SEP = os.environ["FEEDING_PATCH_COORDS_SEP"]
 SERVER_FEEDING_TIMES_FILE = os.environ[
@@ -34,7 +34,7 @@ SERVER_FEEDING_TIMES_FILE = os.environ[
 ]  # "/Volumes/Extreme_SSD/SE_tracks_final/SE_recordings_phasell_maze_trials_times.csv"
 SERVER_FEEDING_TIMES_SEP = os.environ["SERVER_FEEDING_TIMES_SEP"]
 TRIAL_TIMES_CSV = os.environ["TRIAL_TIMES_CSV"]
-START_END_FEEDING_TIMES_FILE = f"{CONFIG_DATA}/recordings_feeding_times.json"  #
+START_END_FEEDING_TIMES_FILE = os.path.join(CONFIG_DATA, "recordings_feeding_times.json")  #
 MAZE_FILE = f"maze_data.json"
 
 FEEDING_SHAPE = os.environ["FEEDING_SHAPE"]  # "square", "ellipse"
@@ -49,7 +49,7 @@ dir_front = os.environ["dir_front"]
 dir_back = os.environ["dir_back"]
 PROJECT_ID = os.environ["PROJECT_ID"]
 # print("PROJECTID:",PROJECT_ID)
-DIR_TRACES = "%s/%s/%s" % (RESULTS_PATH, PROJECT_ID, "traces")
+DIR_TRACES = os.path.join(str(RESULTS_PATH), str(PROJECT_ID), "traces")
 
 N_BATCHES = int(os.environ["N_BATCHES"])
 MIN_BATCH_IDX = int(os.environ["MIN_BATCH_IDX"])
@@ -74,18 +74,18 @@ area_back = os.environ["area_back"]
 area_front = os.environ["area_front"]
 CALIBRATION_DIST_CM = float(os.environ["CALIBRATION_DIST_CM"])
 DEFAULT_CALIBRATION = float(os.environ["DEFAULT_CALIBRATION"])
-err_file = f"{RESULTS_PATH}/log_error.csv"
+err_file = os.path.join(RESULTS_PATH, "log_error.csv")
 
 
 def set_config_paths(root):
     global DIR_CSV_LOCAL, CONFIG_DATA, VIS_DIR, PLOTS_DIR, RESULTS_PATH, err_file, TEX_DIR
     DIR_CSV_LOCAL = f"{root}"
-    CONFIG_DATA = f"{root}/" + os.environ["CONFIG_DATA"]
-    VIS_DIR = f"{root}/" + os.environ["VIS_DIR"]
-    PLOTS_DIR = f"{root}/" + os.environ["PLOTS_DIR"]
-    RESULTS_PATH = f"{root}/" + os.environ["RESULTS"]
-    err_file = f"{RESULTS_PATH}/log_error.csv"
-    TEX_DIR = f"{PLOTS_DIR}/" + os.environ["TEX_DIR"]
+    CONFIG_DATA = os.path.join(root, os.environ["CONFIG_DATA"])
+    VIS_DIR = os.path.join(root, os.environ["VIS_DIR"])
+    PLOTS_DIR = os.path.join(root, os.environ["PLOTS_DIR"])
+    RESULTS_PATH = os.path.join(root, os.environ["RESULTS"])
+    err_file = os.path.join(RESULTS_PATH, "log_error.csv")
+    TEX_DIR = os.path.join(PLOTS_DIR, os.environ["TEX_DIR"])
 
 
 def create_directories():
