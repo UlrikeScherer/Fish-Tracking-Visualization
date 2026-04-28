@@ -100,7 +100,7 @@ def distance_to_wall(data, frame_interval, error_index, area):
         )
     fish_key = area[0]
     return calculate_result_for_interval(
-        data,
+        data.astype('double'),
         frame_interval,
         avg_func if not config.UNAVERAGED else None,
         error_index,
@@ -110,7 +110,7 @@ def distance_to_wall(data, frame_interval, error_index, area):
 def distance_to_object(data, frame_interval, error_index, area):
     fish_key = area[0]
     return calculate_result_for_interval(
-        data,
+        data.astype('double'),
         frame_interval,
         lambda chunk: mean_std(
             px2cm(distance_to_object_chunk(chunk, area[1], area[2], area[3]), fish_key=fish_key)
@@ -121,7 +121,7 @@ def distance_to_object(data, frame_interval, error_index, area):
 
 def tortuosity(data, frame_interval, error_index):
     return calculate_result_for_interval(
-        data,
+        data.astype('double'),
         frame_interval,
         lambda chunk: mean_std(tortuosity_of_chunk(chunk)),
         error_index,
@@ -131,13 +131,13 @@ def tortuosity(data, frame_interval, error_index):
 def mean_std_median(chunk):
     if len(chunk) == 0:
         return (np.nan, np.nan, np.nan)
-    return (*mean_std(chunk), np.percentile(chunk, 50))
+    return (*mean_std(chunk.astype('double')), np.percentile(chunk, 50))
 
 
 def absolute_angles(data, frame_interval, filter_index):
     error_index = update_filter_three_points(compute_step_lengths(data), filter_index)
     return calculate_result_for_interval(
-        np.abs(compute_turning_angles(data)), frame_interval, mean_std, error_index
+        np.abs(compute_turning_angles(data)).astype('double'), frame_interval, mean_std, error_index
     )
 
 
@@ -145,7 +145,7 @@ def activity(data, frame_interval, filter_index, include_median=False):
     steps = compute_step_lengths(data)
     filter_index = update_filter_two_points(steps, filter_index)
     return calculate_result_for_interval(
-        steps,
+        steps.astype('double'),
         frame_interval,
         mean_std_median if include_median else mean_std,
         filter_index,
@@ -156,13 +156,13 @@ def activity(data, frame_interval, filter_index, include_median=False):
 def step_length(data, frame_interval, filter_index):
     steps = compute_step_lengths(data)
     filter_index = update_filter_two_points(steps, filter_index)
-    return calculate_result_for_interval(steps, frame_interval,  mean_std if not config.UNAVERAGED else None, filter_index)
+    return calculate_result_for_interval(steps.astype('double'), frame_interval,  mean_std if not config.UNAVERAGED else None, filter_index)
 
 
 def turning_angle(data, frame_interval, filter_index):
     error_index = update_filter_three_points(compute_step_lengths(data), filter_index)
     return calculate_result_for_interval(
-        compute_turning_angles(data), frame_interval, mean_std if not config.UNAVERAGED else None, error_index, checkfornans=True
+        compute_turning_angles(data).astype('double'), frame_interval, mean_std if not config.UNAVERAGED else None, error_index, checkfornans=True
     )
 
 
