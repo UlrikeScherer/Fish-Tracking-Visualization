@@ -48,9 +48,10 @@ OBJECT_ZONE_COORDS_PATH="data/FE_BT_final_tracks_3/FE_BT_final_tracks_sociabilit
 CALIBRATION_DIST_CM=83.0
 DEFAULT_CALIBRATION=0.02278
 
-# Area Data Directory 
-area_back="$path_csv_local/area_config/areas_back"
-area_front="$path_csv_local/area_config/areas_front"
+# Area Data Directory
+area_folder="area_config"
+area_back="areas_back"
+area_front="areas_front"
 
 # FILTERING 
 AREA_FILTER=0 # 1 to filter by area, 0 to not filter

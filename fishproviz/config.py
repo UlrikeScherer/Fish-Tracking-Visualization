@@ -72,8 +72,8 @@ REMOVE_0_VECS = bool(int(os.environ["REMOVE_0_VECS"]))
 
 # Calibrations
 # AREA CONFIG
-area_back = os.environ["area_back"]
-area_front = os.environ["area_front"]
+area_back = os.path.join(DIR_CSV_LOCAL, os.environ["area_folder"], os.environ["area_back"])
+area_front = os.path.join(DIR_CSV_LOCAL, os.environ["area_folder"], os.environ["area_front"])
 CALIBRATION_DIST_CM = float(os.environ["CALIBRATION_DIST_CM"])
 DEFAULT_CALIBRATION = float(os.environ["DEFAULT_CALIBRATION"])
 err_file = os.path.join(RESULTS_PATH, "log_error.csv")
