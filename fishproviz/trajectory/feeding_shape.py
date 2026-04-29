@@ -50,7 +50,9 @@ class FeedingPatch(Shape):
 
 
 def get_feeding_patches():
-    patches = pd.read_csv(config.FEEDING_PATCH_COORDS_FILE, delimiter=config.FEEDING_PATCH_COORDS_SEP)
+    patches = pd.read_csv(
+        config.FEEDING_PATCH_COORDS_FILE, delimiter=config.FEEDING_PATCH_COORDS_SEP
+    )
     return dict(
         zip(
             map(
@@ -75,7 +77,9 @@ def find_cords(camera_id, position, csv):
 
 def get_feeding_cords(data, camera_id, is_back):
     pos = config.BACK if is_back else config.FRONT
-    patches = pd.read_csv(config.FEEDING_PATCH_COORDS_FILE, delimiter=config.FEEDING_PATCH_COORDS_SEP)
+    patches = pd.read_csv(
+        config.FEEDING_PATCH_COORDS_FILE, delimiter=config.FEEDING_PATCH_COORDS_SEP
+    )
     return get_feeding_box(data, *find_cords(camera_id, pos, patches))
 
 
@@ -91,31 +95,31 @@ def get_feeding_box(data, TL_x, TL_y, TR_x, TR_y):
     if abs(TL_x - TR_x) < abs(TL_y - TR_y):
         # config.FRONT
         f1 = data["xpx"] > midpoint_x - target_height
-        f2 = data["ypx"] < midpoint_y + target_width/2
-        f3 = data["ypx"] > midpoint_y - target_width/2
+        f2 = data["ypx"] < midpoint_y + target_width / 2
+        f3 = data["ypx"] > midpoint_y - target_width / 2
         f4 = data["xpx"] < midpoint_x
         box = np.array(
             [
-                (midpoint_x, midpoint_y + target_width/2),
-                (midpoint_x - target_height, midpoint_y + target_width/2),
-                (midpoint_x - target_height, midpoint_y - target_width/2),
-                (midpoint_x, midpoint_y - target_width/2),
-                (midpoint_x, midpoint_y + target_width/2),
+                (midpoint_x, midpoint_y + target_width / 2),
+                (midpoint_x - target_height, midpoint_y + target_width / 2),
+                (midpoint_x - target_height, midpoint_y - target_width / 2),
+                (midpoint_x, midpoint_y - target_width / 2),
+                (midpoint_x, midpoint_y + target_width / 2),
             ]
         )
     else:
         # config.BACK
         f1 = data["ypx"] > midpoint_y - target_height
-        f2 = data["xpx"] < midpoint_x + target_width/2
-        f3 = data["xpx"] > midpoint_x - target_width/2
+        f2 = data["xpx"] < midpoint_x + target_width / 2
+        f3 = data["xpx"] > midpoint_x - target_width / 2
         f4 = data["ypx"] < midpoint_y
         box = np.array(
             [
-                (midpoint_x - target_width/2, midpoint_y),
-                (midpoint_x - target_width/2, midpoint_y - target_height),
-                (midpoint_x + target_width/2, midpoint_y - target_height),
-                (midpoint_x + target_width/2, midpoint_y),
-                (midpoint_x - target_width/2, midpoint_y),
+                (midpoint_x - target_width / 2, midpoint_y),
+                (midpoint_x - target_width / 2, midpoint_y - target_height),
+                (midpoint_x + target_width / 2, midpoint_y - target_height),
+                (midpoint_x + target_width / 2, midpoint_y),
+                (midpoint_x - target_width / 2, midpoint_y),
             ]
         )
     feeding = data[f1 & f2 & f3 & f4]

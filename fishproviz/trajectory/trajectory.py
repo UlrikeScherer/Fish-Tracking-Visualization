@@ -26,7 +26,7 @@ from fishproviz.utils.utile import (
     get_timestamp,
     create_directory,
     feeding_times_start_end_dict,
-    get_start_end_index
+    get_start_end_index,
 )
 
 mpl.rcParams["lines.linewidth"] = 0.5
@@ -131,9 +131,9 @@ class Trajectory:
 
     def __init__(self, marker_char="", write_fig=True, parallel=False):
         dir = create_directory("logs")
-        log_filename = f'trajectory_{get_timestamp()}.log'
+        log_filename = f"trajectory_{get_timestamp()}.log"
         self.log_filepath = os.path.join(dir, log_filename)
-        print(f'Logs can be found here: {self.log_filepath}')
+        print(f"Logs can be found here: {self.log_filepath}")
         self.parallel = parallel
         self.write_fig = write_fig
         self.fish2camera = get_fish2camera_map()
@@ -185,8 +185,10 @@ class Trajectory:
         # prevention of negative dimension when computing alphas: check for erroneous data
         # mean should be numeric and not nan, which indicates erroneous data without any tracking (consistent -1 values)
         if np.isnan(mean):
-            with open(self.log_filepath, 'a') as file:
-                file.write(f'\terroneous data filtered out for key: <{fish_key}>, date: {date} in timespan {time_span}\n')
+            with open(self.log_filepath, "a") as file:
+                file.write(
+                    f"\terroneous data filtered out for key: <{fish_key}>, date: {date} in timespan {time_span}\n"
+                )
             # print(f'\terroneous data filtered out for key: <{fish_key}>, date: {date} in timespan {time_span}')
             return -1
         alphas = compute_turning_angles(batchxy)
@@ -203,23 +205,22 @@ class Trajectory:
         return F.fig
 
     def plots_for_tex(self, fish_ids):
-        
         # parallelization
         if self.parallel:
             num_processors = mp.cpu_count() - 2
             self.reset_data()
             with mp.Pool(num_processors) as pool:
-                _ = list(tqdm(
-                    pool.imap(
-                        self.plot_for_individual_parallel,
-                        [(
-                            fish_idx,
-                        ) for i, fish_idx in enumerate(fish_ids)]
-                    ), 
-                    total= len(fish_ids),
-                    position=0,
-                    bar_format='{desc}'
-                ))
+                _ = list(
+                    tqdm(
+                        pool.imap(
+                            self.plot_for_individual_parallel,
+                            [(fish_idx,) for i, fish_idx in enumerate(fish_ids)],
+                        ),
+                        total=len(fish_ids),
+                        position=0,
+                        bar_format="{desc}",
+                    )
+                )
             pool.close()
             pool.join()
         else:
@@ -244,7 +245,7 @@ class Trajectory:
                     self.plot_day_camera_fast(
                         day_df, keys, camera_id, day, fish_idx, is_back=is_back
                     )
-    
+
     def plot_for_individual_parallel(
         self,
         fish_idx,
@@ -253,9 +254,13 @@ class Trajectory:
         camera_id, pos = self.fish2camera[fish_idx]
         is_back = pos == config.BACK
         day_list = get_days_in_order(camera=camera_id, is_back=is_back)
-        N_days = len(day_list)
-        for j, day in enumerate(tqdm(day_list, desc=f'id: {camera_id}_{pos}', position=current._identity[0]+1)):
-
+        for j, day in enumerate(
+            tqdm(
+                day_list,
+                desc=f"id: {camera_id}_{pos}",
+                position=current._identity[0] + 1,
+            )
+        ):
             keys, day_df = csv_of_the_day(
                 camera_id, day, is_back=is_back, drop_out_of_scope=True
             )
@@ -263,10 +268,11 @@ class Trajectory:
                 day_df, keys, camera_id, day, fish_idx, is_back=is_back
             )
 
-
     def plot_day_camera_fast(self, data, keys, camera_id, date, fish_id, is_back):
         position = get_position_string(is_back)
-        prog_name = get_start_time_directory(self.is_feeding, self.is_novel_object, self.is_sociability)
+        prog_name = get_start_time_directory(
+            self.is_feeding, self.is_novel_object, self.is_sociability
+        )
         plots_dir = "{}/{}/{}/{}/{}".format(
             config.PLOTS_DIR, prog_name, position, camera_id, date
         )
@@ -300,10 +306,11 @@ class Trajectory:
 
 
 class ExperimentalTrajectory(Trajectory):
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.start_end_times = feeding_times_start_end_dict(self.is_feeding, self.is_novel_object, self.is_sociability)
+        self.start_end_times = feeding_times_start_end_dict(
+            self.is_feeding, self.is_novel_object, self.is_sociability
+        )
 
     def get_start_end_index(self, day_key, batch_number, tank_id=None):
         return get_start_end_index(self.start_end_times, day_key, batch_number, tank_id)
@@ -320,7 +327,11 @@ class ExperimentalTrajectory(Trajectory):
     ):
         F = self.fig_back if is_back else self.fig_front
 
-        start_idx, end_idx = self.get_start_end_index(date, batch_number, '_'.join([directory.split('/')[-2], 'back' if is_back else 'front']))
+        start_idx, end_idx = self.get_start_end_index(
+            date,
+            batch_number,
+            "_".join([directory.split("/")[-2], "back" if is_back else "front"]),
+        )
         F.ax.set_title(time_span, fontsize=10)
         last_frame = batch.FRAME.array[-1]
         if batch.x.array[-1] <= -1:
@@ -329,7 +340,9 @@ class ExperimentalTrajectory(Trajectory):
         feeding_filter = batch.FRAME.between(start_idx, end_idx)
         fish_key = "%s_%s" % tuple(self.fish2camera[fish_id])
 
-        batchxy = pixel_to_cm(batch[feeding_filter][["xpx", "ypx"]].to_numpy(), fish_key=fish_key)
+        batchxy = pixel_to_cm(
+            batch[feeding_filter][["xpx", "ypx"]].to_numpy(), fish_key=fish_key
+        )
         F.line.set_data(*batchxy.T)
 
         steps = compute_step_lengths(batchxy)

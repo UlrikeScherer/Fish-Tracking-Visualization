@@ -1,7 +1,6 @@
 import math
 
 import numpy as np
-import pandas as pd
 import scipy.stats as scipy_stats
 import matplotlib.pyplot as plt
 import fishproviz.config as config
@@ -21,11 +20,15 @@ def calc_step_per_frame(batchxy, frames):
     return c
 
 
-def compute_turning_angles(points, skip: int = config.TANGLE_N_SKIP, remove_zero_vectors: bool = config.REMOVE_0_VECS):
-    if skip > math.ceil((len(points) - 3)/3):
+def compute_turning_angles(
+    points,
+    skip: int = config.TANGLE_N_SKIP,
+    remove_zero_vectors: bool = config.REMOVE_0_VECS,
+):
+    if skip > math.ceil((len(points) - 3) / 3):
         raise ValueError("Not enough data for this resolution of turning angle")
     # Compute the differences between adjacent points
-    vectors = np.diff(points[::skip+1], axis=0)
+    vectors = np.diff(points[:: skip + 1], axis=0)
 
     # Find the indices where the difference vector is non-zero and finite
     wanted_indices = np.any(vectors != 0, axis=1) & np.all(np.isfinite(vectors), axis=1)
@@ -37,22 +40,37 @@ def compute_turning_angles(points, skip: int = config.TANGLE_N_SKIP, remove_zero
     # Compute the turning angles
     turning_angles = np.arctan2(determinants, dot_products)
     if skip == 0:
-        turning_angles_result = np.full(points.shape[0] - 2, np.nan if remove_zero_vectors else 0)
+        turning_angles_result = np.full(
+            points.shape[0] - 2, np.nan if remove_zero_vectors else 0, dtype=float
+        )
         # the last one is buried in the angle if not False anyways
         wanted_angles = np.where(wanted_indices)[0][1:] - 1
         # Set the turning angles to 0 for equal consecutive points
         turning_angles_result[wanted_angles] = turning_angles
-    else: # in case of skip > 0, make sure to modify array to maintain same length as skip = 0 but with nan values placed accordingly (for compatibility with further processing)
+    else:  # in case of skip > 0, make sure to modify array to maintain same length as skip = 0 but with nan values placed accordingly (for compatibility with further processing)
         # Creating a new array 'new_nums' of length len(nums) + (len(nums) - 1) * p filled with zeros
-        zero_arr = np.full(len(np.diff(points[::skip + 1], axis=0)) - 1, np.nan if remove_zero_vectors else 0)
+        zero_arr = np.full(
+            len(np.diff(points[:: skip + 1], axis=0)) - 1,
+            np.nan if remove_zero_vectors else 0,
+            dtype=float,
+        )
         zero_arr[np.where(wanted_indices)[0][1:] - 1] = turning_angles
-        turning_angles = zero_arr # take into consideration zero vectors that were discarded by wanted_indeces and put these 0 instead of NaN
-        turning_angles_result = np.full(len(turning_angles) + (len(turning_angles) - 1) * (skip), np.nan)
+        turning_angles = zero_arr  # take into consideration zero vectors that were discarded by wanted_indeces and put these 0 instead of NaN
+        turning_angles_result = np.full(
+            len(turning_angles) + (len(turning_angles) - 1) * (skip), np.nan
+        )
 
         # Filling the 'new_nums' array with elements from 'nums' at intervals of (p + 1)
-        turning_angles_result[::skip + 1] = turning_angles
-        turning_angles_result = np.concatenate([np.full(skip, np.nan), turning_angles_result, np.full(skip, np.nan)])
-        turning_angles_result = np.concatenate([turning_angles_result, np.full(points.shape[0] - 2 - len(turning_angles_result), np.nan)])
+        turning_angles_result[:: skip + 1] = turning_angles
+        turning_angles_result = np.concatenate(
+            [np.full(skip, np.nan), turning_angles_result, np.full(skip, np.nan)]
+        )
+        turning_angles_result = np.concatenate(
+            [
+                turning_angles_result,
+                np.full(points.shape[0] - 2 - len(turning_angles_result), np.nan),
+            ]
+        )
 
     return turning_angles_result
 

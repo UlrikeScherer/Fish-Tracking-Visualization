@@ -7,7 +7,12 @@ import argparse
 from fishproviz.metrics.exploration_trials import exploration_trials
 from fishproviz.utils import get_camera_pos_keys
 import fishproviz.config as config
-from fishproviz.trajectory import ExperimentalTrajectory, FeedingTrajectory, NovelObjectTrajectory, SociabilityTrajectory
+from fishproviz.trajectory import (
+    ExperimentalTrajectory,
+    FeedingTrajectory,
+    NovelObjectTrajectory,
+    SociabilityTrajectory,
+)
 from fishproviz.metrics import (
     activity_per_interval,
     turning_angle_per_interval,
@@ -16,7 +21,7 @@ from fishproviz.metrics import (
     distance_to_wall_per_interval,
     distance_to_object_per_interval,
     absolute_angle_per_interval,
-    step_length_per_interval
+    step_length_per_interval,
 )
 
 TRAJECTORY = "trajectory"
@@ -34,12 +39,30 @@ NOVEL_OBJECT_DISTANCE = "novel_object_distance"
 STEP_LENGTH = "step_length"
 ALL_METRICS = "all"
 CLEAR = "clear"
-metric_names = [ACTIVITY, TURNING_ANGLE, ABS_ANGLE, TORTUOSITY, ENTROPY, WALL_DISTANCE, STEP_LENGTH]
-programs = [TRAJECTORY, FEEDING, TRIAL_TIMES, *metric_names, NOVEL_OBJECT_DISTANCE, ALL_METRICS, CLEAR, NOVEL_OBJECT, SOCIABILITY]
+metric_names = [
+    ACTIVITY,
+    TURNING_ANGLE,
+    ABS_ANGLE,
+    TORTUOSITY,
+    ENTROPY,
+    WALL_DISTANCE,
+    STEP_LENGTH,
+]
+programs = [
+    TRAJECTORY,
+    FEEDING,
+    TRIAL_TIMES,
+    *metric_names,
+    NOVEL_OBJECT_DISTANCE,
+    ALL_METRICS,
+    CLEAR,
+    NOVEL_OBJECT,
+    SOCIABILITY,
+]
 
 
 def main_metrics(program, time_interval=100, include_median=None, **kwargs_metrics):
-    '''
+    """
     updates overloaded time-interval in kwargs_metrics and writes out metric results to csv-file
     params:
         program: str
@@ -48,7 +71,7 @@ def main_metrics(program, time_interval=100, include_median=None, **kwargs_metri
         kwargs_metrics
     returns:
         int status code
-    '''
+    """
     if time_interval in ["hour", "day"]:
         time_interval = {
             "hour": 3600,
@@ -58,13 +81,15 @@ def main_metrics(program, time_interval=100, include_median=None, **kwargs_metri
         time_interval = int(time_interval)
 
     if time_interval < 30:
-        raise ValueError("time_interval must be at least 30 seconds otherwise the csv files will be too large")
+        raise ValueError(
+            "time_interval must be at least 30 seconds otherwise the csv files will be too large"
+        )
 
     if include_median and program != ACTIVITY:
         raise ValueError("include_median is only valid for activity")
 
     kwargs_metrics.update(time_interval=time_interval)
-    
+
     metric_functions = {
         ACTIVITY: activity_per_interval,
         TORTUOSITY: tortuosity_per_interval,
@@ -73,25 +98,25 @@ def main_metrics(program, time_interval=100, include_median=None, **kwargs_metri
         ENTROPY: entropy_per_interval,
         WALL_DISTANCE: distance_to_wall_per_interval,
         NOVEL_OBJECT_DISTANCE: distance_to_object_per_interval,
-        STEP_LENGTH: step_length_per_interval
+        STEP_LENGTH: step_length_per_interval,
     }
 
     if program not in metric_functions:
         print("TERMINATED: Invalid program")
         return -1
 
-    results = metric_functions[program](include_median=include_median, **kwargs_metrics)
+    metric_functions[program](include_median=include_median, **kwargs_metrics)
     return None
 
 
 def get_fish_ids_to_run(program, fish_id):
-    '''
+    """
     calculates fish-ids from camera positions to distinguish program runs for fishes
-    params: 
+    params:
         program: str
         fish_id: int
     returns: np-array of ids
-    '''
+    """
     fish_keys = get_camera_pos_keys()
 
     n_fishes = len(fish_keys)
@@ -120,9 +145,9 @@ def main(
     print_logs=False,
 ):
     """
-    params:  
+    params:
         program: str (trajectory, activity, turning_angle)
-        time_interval: int 
+        time_interval: int
         fish_id: int
         include_median: bool
         kwargs for the programs activity, turning_angle
@@ -138,15 +163,11 @@ def main(
         is_novel_object=program == NOVEL_OBJECT_DISTANCE,
         is_sociability=program == SOCIABILITY,
         all_points=True,
-        every_point=config.UNAVERAGED
+        every_point=config.UNAVERAGED,
     )
     # PROGRAM METRICS or TRAJECTORY or CLEAR
     if program == TRAJECTORY:
-        T = ExperimentalTrajectory(
-            parallel = json.loads(
-                str(parallel).lower()
-            )
-        )
+        T = ExperimentalTrajectory(parallel=json.loads(str(parallel).lower()))
         T.plots_for_tex(fish_ids)
     elif program == FEEDING:
         FT = FeedingTrajectory()

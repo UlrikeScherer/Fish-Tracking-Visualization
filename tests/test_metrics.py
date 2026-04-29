@@ -16,7 +16,6 @@ print(fpv_path)
 
 class TestUtils(unittest.TestCase):
     # set the config variables to test_data folder
-    global config
     config.set_config_paths(f"{fpv_path}/test_data")
     config.dir_front = f"{fpv_path}/test_data/front"
     config.dir_back = f"{fpv_path}/test_data/back"
@@ -33,28 +32,28 @@ class TestUtils(unittest.TestCase):
         print("Fish Keys for test:", self.fish_keys)
         print("Testing activity")
         t = time.time()
-        results = metrics.activity_per_interval(
+        metrics.activity_per_interval(
             fish_ids=self.fish_ids, time_interval=100, write_to_csv=True
         )
-        results = metrics.activity_per_interval(
+        metrics.activity_per_interval(
             fish_ids=self.fish_ids, time_interval=(60**2), write_to_csv=True
         )
         print("Time taken: %.02f seconds" % (time.time() - t))
         print("Testing distance to wall")
         t = time.time()
-        results = metrics.distance_to_wall_per_interval(
+        metrics.distance_to_wall_per_interval(
             fish_ids=self.fish_ids, time_interval=100, write_to_csv=True
         )
-        results = metrics.distance_to_wall_per_interval(
+        metrics.distance_to_wall_per_interval(
             fish_ids=self.fish_ids, time_interval=(60**2), write_to_csv=True
         )
         print("Time taken: %.02f seconds" % (time.time() - t))
         print("Testing turning angle")
         t = time.time()
-        results = metrics.turning_angle_per_interval(
+        metrics.turning_angle_per_interval(
             fish_ids=self.fish_ids, time_interval=100, write_to_csv=True
         )
-        results = metrics.turning_angle_per_interval(
+        metrics.turning_angle_per_interval(
             fish_ids=self.fish_ids, time_interval=(60**2), write_to_csv=True
         )
         print("Time taken: %.02f seconds" % (time.time() - t))

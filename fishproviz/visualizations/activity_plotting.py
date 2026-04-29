@@ -8,7 +8,6 @@ from fishproviz.metrics.results_to_csv import get_filename_for_metric_csv
 from fishproviz.utils import get_date_string
 import fishproviz.config as config
 
-
 colors = (
     np.array(
         [
@@ -263,7 +262,7 @@ def plot_metric_figure_for_days(metric_name, measure=None, write_fig=True):
     batch = int(np.ceil(nfish / ncols))
     for axi, ax in enumerate(axis):
         start = axi * batch
-        fks_to_plot = fish_keys[start : start + batch]
+        fks_to_plot = fish_keys[start : start + batch]  # noqa: F841
         df.query("cam_pos in @fks_to_plot").groupby("cam_pos")[measure].plot(
             # by="cam_pos",
             ax=ax,

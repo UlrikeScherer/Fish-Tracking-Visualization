@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import pandas as pd
 import os
 import numpy as np
@@ -34,16 +33,16 @@ class SociabilityTrajectory(ExperimentalTrajectory):
         self.num_df_feeding = []
         self.reset_data()
         self.ObjectShape = map_shape["ellipse"](sociability=True)
-        self.sociability_zones = ['inflow', 'outflow']
+        self.sociability_zones = ["inflow", "outflow"]
 
     def reset_data(self):
-        self.sociability_zones = ['inflow', 'outflow']
+        self.sociability_zones = ["inflow", "outflow"]
         self.data = {}
         for zone in self.sociability_zones:
             self.data[zone] = {}
-            self.data[zone]['feeding_times'] = [dict() for i in range(self.N_fishes)]
-            self.data[zone]['visits'] = [dict() for i in range(self.N_fishes)]
-            self.data[zone]['num_df_feeding'] = [dict() for i in range(self.N_fishes)]
+            self.data[zone]["feeding_times"] = [dict() for i in range(self.N_fishes)]
+            self.data[zone]["visits"] = [dict() for i in range(self.N_fishes)]
+            self.data[zone]["num_df_feeding"] = [dict() for i in range(self.N_fishes)]
 
     def set_object_box(self, is_back=False):
         F = self.fig_back if is_back else self.fig_front
@@ -60,7 +59,11 @@ class SociabilityTrajectory(ExperimentalTrajectory):
         is_back=False,
     ):
         F = self.fig_back if is_back else self.fig_front
-        start_idx, end_idx = self.get_start_end_index(date, batch_number, '_'.join([directory.split('/')[-2], 'back' if is_back else 'front']))
+        start_idx, end_idx = self.get_start_end_index(
+            date,
+            batch_number,
+            "_".join([directory.split("/")[-2], "back" if is_back else "front"]),
+        )
         F.ax.set_title(time_span, fontsize=10)
         last_frame = batch.FRAME.array[-1]
         if batch.x.array[-1] <= -1:
@@ -69,7 +72,9 @@ class SociabilityTrajectory(ExperimentalTrajectory):
         feeding_filter = batch.FRAME.between(start_idx, end_idx)
         fish_key = "%s_%s" % tuple(self.fish2camera[fish_id])
 
-        batchxy = pixel_to_cm(batch[feeding_filter][["xpx", "ypx"]].to_numpy(), fish_key=fish_key)
+        batchxy = pixel_to_cm(
+            batch[feeding_filter][["xpx", "ypx"]].to_numpy(), fish_key=fish_key
+        )
         F.line.set_data(*batchxy.T)
         n_entries_per_zone = []
         feeding_sizes = []
@@ -103,8 +108,8 @@ class SociabilityTrajectory(ExperimentalTrajectory):
                 lines = F.ax.get_lines().copy()
             # UPDATE BOX
             box_cm = pixel_to_cm(box, fish_key)
-            #lines[1].set_data(*box_cm.T)
-            (box_line, ) = F.ax.plot(*box_cm.T, linestyle='--', color='lightgreen')
+            # lines[1].set_data(*box_cm.T)
+            (box_line,) = F.ax.plot(*box_cm.T, linestyle="--", color="lightgreen")
             all_lines.append(box_line)
             lines = lines[2:]
 
@@ -113,7 +118,7 @@ class SociabilityTrajectory(ExperimentalTrajectory):
                     s, e = index_visits[i], index_visits[i + 1]
                     l.set_data(*fb[:, s:e])
                     all_lines.append(l)
-                #else:
+                # else:
                 #    l.remove()
             for i in range(len(lines), n_entries):
                 s, e = index_visits[i], index_visits[i + 1]
@@ -137,8 +142,10 @@ class SociabilityTrajectory(ExperimentalTrajectory):
         text_l = [
             f"#Visits {self.sociability_zones[0]}: %s" % (n_entries_per_zone[0]),
             f"#Visits {self.sociability_zones[1]}: %s" % (n_entries_per_zone[1]),
-            fr"$\Delta$ {self.sociability_zones[0]}: %s" % (strftime("%M:%S", gmtime(feeding_sizes[0] / 5))),
-            fr"$\Delta$ {self.sociability_zones[1]}: %s" % (strftime("%M:%S", gmtime(feeding_sizes[1] / 5))),
+            rf"$\Delta$ {self.sociability_zones[0]}: %s"
+            % (strftime("%M:%S", gmtime(feeding_sizes[0] / 5))),
+            rf"$\Delta$ {self.sociability_zones[1]}: %s"
+            % (strftime("%M:%S", gmtime(feeding_sizes[1] / 5))),
         ]
 
         steps = compute_step_lengths(batchxy)
@@ -157,13 +164,13 @@ class SociabilityTrajectory(ExperimentalTrajectory):
     def update_feeding_and_visits(
         self, fish_id, date, feeding_size, visits, num_df_feeding, zone
     ):
-        if date not in self.data[zone]['feeding_times'][fish_id]:
-            self.data[zone]['feeding_times'][fish_id][date] = 0
-            self.data[zone]['visits'][fish_id][date] = 0
-            self.data[zone]['num_df_feeding'][fish_id][date] = 0
-        self.data[zone]['feeding_times'][fish_id][date] += feeding_size
-        self.data[zone]['visits'][fish_id][date] += visits
-        self.data[zone]['num_df_feeding'][fish_id][date] += num_df_feeding
+        if date not in self.data[zone]["feeding_times"][fish_id]:
+            self.data[zone]["feeding_times"][fish_id][date] = 0
+            self.data[zone]["visits"][fish_id][date] = 0
+            self.data[zone]["num_df_feeding"][fish_id][date] = 0
+        self.data[zone]["feeding_times"][fish_id][date] += feeding_size
+        self.data[zone]["visits"][fish_id][date] += visits
+        self.data[zone]["num_df_feeding"][fish_id][date] += num_df_feeding
 
     def object_data_to_csv(self):
         fish_names = get_camera_pos_keys()
@@ -174,13 +181,17 @@ class SociabilityTrajectory(ExperimentalTrajectory):
             df_num_df_feeding = pd.DataFrame(columns=[fish_names], index=days)
             for i, fn in enumerate(fish_names):
                 for d in days:
-                    if d in self.data[zone]['feeding_times'][i]:
-                        df_feeding.loc[d, fn] = self.data[zone]['feeding_times'][i][d]
-                        df_visits.loc[d, fn] = self.data[zone]['visits'][i][d]
-                        df_num_df_feeding.loc[d, fn] = self.data[zone]['num_df_feeding'][i][d]
+                    if d in self.data[zone]["feeding_times"][i]:
+                        df_feeding.loc[d, fn] = self.data[zone]["feeding_times"][i][d]
+                        df_visits.loc[d, fn] = self.data[zone]["visits"][i][d]
+                        df_num_df_feeding.loc[d, fn] = self.data[zone][
+                            "num_df_feeding"
+                        ][i][d]
 
             os.makedirs(self.dir_data_object, exist_ok=True)
-            df_feeding.to_csv("%s/%s.csv" % (self.dir_data_object, f"feeding_times_{zone}"))
+            df_feeding.to_csv(
+                "%s/%s.csv" % (self.dir_data_object, f"feeding_times_{zone}")
+            )
             df_visits.to_csv("%s/%s.csv" % (self.dir_data_object, f"visits_{zone}"))
             df_num_df_feeding.to_csv(
                 "%s/%s.csv" % (self.dir_data_object, f"num_df_feeding_{zone}")
@@ -197,19 +208,30 @@ class SociabilityTrajectory(ExperimentalTrajectory):
             for i, (c, p) in enumerate(self.fish2camera):
                 days = get_days_in_order(camera=c, is_back=p == config.BACK)
                 for d in days:
-                    if d in self.data[zone]['feeding_times'][i]:
+                    if d in self.data[zone]["feeding_times"][i]:
                         text += "\setft{%s%s%s}{%s}" % (
                             c,
                             p,
                             d,
-                            strftime("%H:%M:%S", gmtime(self.data[zone]['feeding_times'][i][d] / 5)),
+                            strftime(
+                                "%H:%M:%S",
+                                gmtime(self.data[zone]["feeding_times"][i][d] / 5),
+                            ),
                         )
-                        text += "\setft{%s%s%sv}{%s}" % (c, p, d, self.data[zone]['visits'][i][d])
+                        text += "\setft{%s%s%sv}{%s}" % (
+                            c,
+                            p,
+                            d,
+                            self.data[zone]["visits"][i][d],
+                        )
                         text += "\setft{%s%s%snum}{%s}" % (
                             c,
                             p,
                             d,
-                            strftime("%H:%M:%S", gmtime(self.data[zone]['num_df_feeding'][i][d] / 5)),
+                            strftime(
+                                "%H:%M:%S",
+                                gmtime(self.data[zone]["num_df_feeding"][i][d] / 5),
+                            ),
                         )
             text_file = open(f"%s/sociability_{zone}.tex" % (self.dir_tex_object), "w")
             text_file.write(text)
