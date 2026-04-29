@@ -6,15 +6,7 @@ import numpy as np
 import argparse
 from fishproviz.metrics.exploration_trials import exploration_trials
 from fishproviz.utils import get_camera_pos_keys
-from fishproviz.config import (
-    DIR_CSV_LOCAL,
-    HOURS_PER_DAY,
-    N_SECONDS_PER_HOUR,
-    PLOTS_DIR,
-    RESULTS_PATH,
-    create_directories,
-    UNAVERAGED
-)
+import fishproviz.config as config
 from fishproviz.trajectory import ExperimentalTrajectory, FeedingTrajectory, NovelObjectTrajectory, SociabilityTrajectory
 from fishproviz.metrics import (
     activity_per_interval,
@@ -59,8 +51,8 @@ def main_metrics(program, time_interval=100, include_median=None, **kwargs_metri
     '''
     if time_interval in ["hour", "day"]:
         time_interval = {
-            "hour": N_SECONDS_PER_HOUR,
-            "day": int(N_SECONDS_PER_HOUR * HOURS_PER_DAY),
+            "hour": config.N_SECONDS_PER_HOUR,
+            "day": int(config.N_SECONDS_PER_HOUR * config.HOURS_PER_DAY),
         }[time_interval]
     else:
         time_interval = int(time_interval)
@@ -146,7 +138,7 @@ def main(
         is_novel_object=program == NOVEL_OBJECT_DISTANCE,
         is_sociability=program == SOCIABILITY,
         all_points=True,
-        every_point=UNAVERAGED
+        every_point=config.UNAVERAGED
     )
     # PROGRAM METRICS or TRAJECTORY or CLEAR
     if program == TRAJECTORY:
@@ -179,7 +171,7 @@ def main(
         for p in metric_names:
             main_metrics(p, **kwargs_metrics)
     elif program == CLEAR:  # clear all data remove directories DANGEROUS!
-        for path in [PLOTS_DIR, RESULTS_PATH]:  # VIS_DIR
+        for path in [config.PLOTS_DIR, config.RESULTS_PATH]:  # VIS_DIR
             if os.path.isdir(path):
                 shutil.rmtree(path)
                 print("Removed directory: %s" % path)
@@ -190,7 +182,7 @@ def set_args():
     parser = argparse.ArgumentParser(
         prog="python3 main.py",
         description="This program computes metrics and visualizations for fish trajectories, the results are saved in the directory %s"
-        % DIR_CSV_LOCAL,
+        % config.DIR_CSV_LOCAL,
         epilog="Example of use: python3 main.py trajectory -fid 0",
     )
     parser.add_argument(
@@ -238,7 +230,7 @@ def set_args():
 if __name__ == "__main__":
     args = set_args()
     tstart = time.time()
-    create_directories()
+    config.create_directories()
     main_kwargs = dict(inspect.signature(main).parameters)
 
     main(**args.__dict__)

@@ -21,7 +21,7 @@ def calc_step_per_frame(batchxy, frames):
     return c
 
 
-def compute_turning_angles(points, skip: int = config.tangle_n_skip, remove_zero_vectors: bool = config.REMOVE_0_VECS):
+def compute_turning_angles(points, skip: int = config.TANGLE_N_SKIP, remove_zero_vectors: bool = config.REMOVE_0_VECS):
     if skip > math.ceil((len(points) - 3)/3):
         raise ValueError("Not enough data for this resolution of turning angle")
     # Compute the differences between adjacent points
