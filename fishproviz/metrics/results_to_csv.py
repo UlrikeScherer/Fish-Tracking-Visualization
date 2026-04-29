@@ -80,7 +80,7 @@ def get_filename_for_metric_csv(
     """
     directory = get_results_directory(metric_name)
     if metric_name == "turning_angle":
-        metric_name = metric_name + f"_skip{config.tangle_n_skip}"
+        metric_name = metric_name + f"_skip{config.TANGLE_N_SKIP}"
     if all_points:
         return "%s/%s.csv" % (directory, metric_name)
     else:

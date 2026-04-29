@@ -23,7 +23,7 @@ def calc_step_per_frame(batchxy, frames):
 
 
 def compute_turning_angles(points,
-                           skip: int = config.tangle_n_skip,
+                           skip: int = config.TANGLE_N_SKIP,
                            remove_zero_vectors: bool = config.REMOVE_0_VECS,
                            distance_from_wall_to_ignore: float = config.DIST_FROM_WALL_TANGLE_IGNORED,
                            distance_to_wall: NDArray[float] = None):
