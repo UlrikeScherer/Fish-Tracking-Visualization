@@ -22,6 +22,7 @@ def _env(key: str) -> str:
 FRONT, BACK = "front", "back"
 # TODO: sep is never changed in practice, consider adding to above constants module.
 sep = ";"
+MAZE_FILE = "maze_data.json"
 
 # --- Filtering thresholds ---
 SPIKE_THRESHOLD = int(_env("SPIKE_THRESHOLD"))
@@ -46,6 +47,8 @@ DIST_FROM_WALL_TANGLE_IGNORED = float(_env("DIST_FROM_WALL_TANGLE_IGNORED"))
 
 # --- Paths ---
 DIR_CSV_LOCAL = _env("path_csv_local")
+PATH_RECORDINGS = _env("path_recordings")
+OBJECT_ZONE_COORDS_PATH = _env("OBJECT_ZONE_COORDS_PATH")
 PROJECT_ID = _env("PROJECT_ID")
 dir_front = os.path.join(DIR_CSV_LOCAL, _env("POSITION_STR_FRONT"))
 dir_back = os.path.join(DIR_CSV_LOCAL, _env("POSITION_STR_BACK"))
@@ -81,6 +84,7 @@ TRIAL_TIMES_CSV = _env("TRIAL_TIMES_CSV")
 # --- Calibration / area config ---
 area_back = os.path.join(DIR_CSV_LOCAL, _env("area_folder"), _env("area_back"))
 area_front = os.path.join(DIR_CSV_LOCAL, _env("area_folder"), _env("area_front"))
+CALIBRATION_DIST_CM = float(_env("CALIBRATION_DIST_CM"))
 DEFAULT_CALIBRATION = float(_env("DEFAULT_CALIBRATION"))
 
 

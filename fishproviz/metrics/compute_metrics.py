@@ -2,7 +2,6 @@ import math
 
 import numpy as np
 from numpy._typing import NDArray
-import pandas as pd
 import scipy.stats as scipy_stats
 import matplotlib.pyplot as plt
 import fishproviz.config as config

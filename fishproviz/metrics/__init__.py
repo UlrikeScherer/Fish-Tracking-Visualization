@@ -45,7 +45,7 @@ metric_names = [
         distance_to_wall,
         distance_to_object,
         entropy,
-        step_length
+        step_length,
     ]
 ]
 

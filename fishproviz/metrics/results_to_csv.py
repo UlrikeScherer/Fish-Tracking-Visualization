@@ -1,13 +1,9 @@
 import os
-import numpy as np
 import pandas as pd
 
 # direct import to allow global config changes
 import fishproviz.config as config
-from fishproviz.utils.utile import (
-    get_interval_name_from_seconds,
-    get_seconds_from_day,
-)
+from fishproviz.utils.utile import get_interval_name_from_seconds
 
 csv_columns_time = ["day", "time"]
 csv_columns_results = ["mean", "std", "median"]
@@ -25,18 +21,26 @@ def get_csv_columns_from_results_dim(dimension, metric_name):
         raise ValueError("dimension must be either 2, 3 or 4, but was %s" % dimension)
 
 
-def metric_result_to_csv(results=None, metric_name=None, time_interval=None, all_points: bool = False, every_point: bool = False):
+def metric_result_to_csv(
+    results=None,
+    metric_name=None,
+    time_interval=None,
+    all_points: bool = False,
+    every_point: bool = False,
+):
     if not every_point:
         columns = ["cam_pos", "day", "df_index"]
         interval_name = get_interval_name_from_seconds(time_interval)
         df_sum = pd.concat(
             [
-                pd.concat(
-                    [pd.DataFrame(day_data) for day_data in fish_data.values()],
-                    keys=fish_data.keys(),
+                (
+                    pd.concat(
+                        [pd.DataFrame(day_data) for day_data in fish_data.values()],
+                        keys=fish_data.keys(),
+                    )
+                    if len(fish_data) > 0
+                    else None
                 )
-                if len(fish_data) > 0
-                else None
                 for fish_data in results.values()
             ],
             keys=results.keys(),
@@ -52,7 +56,9 @@ def metric_result_to_csv(results=None, metric_name=None, time_interval=None, all
                 time_interval * config.FRAMES_PER_SECOND
             )
         df_sum.to_csv(
-            get_filename_for_metric_csv(metric_name, interval_name, all_points=all_points),
+            get_filename_for_metric_csv(
+                metric_name, interval_name, all_points=all_points
+            ),
             float_format="%.10f",
             sep=config.sep,
         )
@@ -64,12 +70,18 @@ def metric_result_to_csv(results=None, metric_name=None, time_interval=None, all
                 if not os.path.exists(subdir):
                     os.makedirs(subdir)
                 if len(results[key][subkey]) > 0:
-                    results[key][subkey].to_csv(f"{subdir}/{key}_{subkey}.csv", index_label='i')
+                    results[key][subkey].to_csv(
+                        f"{subdir}/{key}_{subkey}.csv", index_label="i"
+                    )
 
 
 # generates csv file name for a metric and a time interval
 def get_filename_for_metric_csv(
-    metric_name, time_interval, measure_name=None, cam_pos=None, all_points: bool = False
+    metric_name,
+    time_interval,
+    measure_name=None,
+    cam_pos=None,
+    all_points: bool = False,
 ):
     """
     :param metric_name: name of the metric
@@ -87,7 +99,12 @@ def get_filename_for_metric_csv(
         if measure_name:
             if metric_name == measure_name:
                 return "%s/%s_%s.csv" % (directory, time_interval, metric_name)
-            return "%s/%s_%s_%s.csv" % (directory, time_interval, metric_name, measure_name)
+            return "%s/%s_%s_%s.csv" % (
+                directory,
+                time_interval,
+                metric_name,
+                measure_name,
+            )
         elif cam_pos:
             return "%s/%s_%s.csv" % (directory, time_interval, cam_pos)
         else:

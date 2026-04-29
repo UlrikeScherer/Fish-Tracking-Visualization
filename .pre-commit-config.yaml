@@ -24,9 +24,8 @@ repos:
     hooks:
       - id: unittest
         name: unittest
-        entry: python3 -m unittest discover tests
+        entry: bash scripts/run_tests.sh
         language: system
-        types: [python3]
         pass_filenames: false
-        stage: [commit]
+        stages: [commit]
         always_run: true

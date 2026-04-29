@@ -27,10 +27,17 @@ def is_valid_dir(directory):
 
 
 def get_start_time_directory(is_feeding, is_novel_object, is_sociability):
-    return config.P_FEEDING if is_feeding else (
-        config.P_NOVEL_OBJECT) if is_novel_object else (
-        config.P_SOCIABILITY) if is_sociability else (
-        config.P_TRAJECTORY)
+    return (
+        config.P_FEEDING
+        if is_feeding
+        else (
+            (config.P_NOVEL_OBJECT)
+            if is_novel_object
+            else (config.P_SOCIABILITY)
+            if is_sociability
+            else (config.P_TRAJECTORY)
+        )
+    )
 
 
 def get_interval_name_from_seconds(seconds):
@@ -276,7 +283,9 @@ def filter_files(c, d, files, n_files=15, min_idx=0, Logger=None):
     for i in range(min_idx, n_files):
         key_i = "{:06d}".format(i)
         pattern = re.compile(
-            ".*{}_{}.{}(_back|_front)*_{}_\d*-\d*-\d*T\d*_\d*_\d*_\d*.csv".format(c, d[:15], c, key_i)
+            ".*{}_{}.{}(_back|_front)*_{}_\d*-\d*-\d*T\d*_\d*_\d*_\d*.csv".format(
+                c, d[:15], c, key_i
+            )
         )
         i_f = [f for f in files if pattern.match(f) is not None]
 
@@ -287,7 +296,7 @@ def filter_files(c, d, files, n_files=15, min_idx=0, Logger=None):
         elif len(i_f) == 0:
             missing_numbers.append(key_i)
         else:
-            correct_f[key_i] = i_f[-1] # takes the last one
+            correct_f[key_i] = i_f[-1]  # takes the last one
 
     pattern_general = re.compile(
         ".*{}_{}.{}_\d*_\d*-\d*-\d*T\d*_\d*_\d*_\d*.csv".format(c, d[:15], c)
@@ -335,12 +344,14 @@ def create_directory(directory_name: str):
 def get_start_end_index(start_end_times, day_key, batch_number, tank_id=None):
     if start_end_times is None:
         return 0, config.BATCH_SIZE
-    (day, track_start) = day_key.split("_")[:2]
+    day, track_start = day_key.split("_")[:2]
     ts_sec = start_time_of_day_to_seconds(track_start)
     try:
-        (f_start, f_end) = start_end_times['_'.join([day, tank_id]) if tank_id is not None else day]
+        f_start, f_end = start_end_times[
+            "_".join([day, tank_id]) if tank_id is not None else day
+        ]
     except KeyError:
-        (f_start, f_end) = None, None
+        f_start, f_end = None, None
 
     if f_start is None or f_end is None:
         warnings.warn("No start or end time for day %s" % day)
@@ -364,7 +375,9 @@ def get_start_end_index(start_end_times, day_key, batch_number, tank_id=None):
     return start_idx, end_idx
 
 
-def feeding_times_start_end_dict(is_feeding: bool, is_novel_object: bool, is_sociability: bool):
+def feeding_times_start_end_dict(
+    is_feeding: bool, is_novel_object: bool, is_sociability: bool
+):
     if not os.path.exists(config.SERVER_FEEDING_TIMES_FILE):
         warnings.warn(
             f"File {config.SERVER_FEEDING_TIMES_FILE} not found, thus feeding times will be calculated over all provided batches, if this is not intended please check the path in scripts/env.sh"
@@ -386,7 +399,7 @@ def feeding_times_start_end_dict(is_feeding: bool, is_novel_object: bool, is_soc
             start_end = dict(
                 [
                     (
-                        ''.join(d.split("-")),
+                        "".join(d.split("-")),
                         (get_seconds_from_time(s), get_seconds_from_time(e)),
                     )
                     for (d, s, e) in zip(ft_df[FT_DATE], ft_df[FT_START], ft_df[FT_END])
@@ -410,10 +423,12 @@ def feeding_times_start_end_dict(is_feeding: bool, is_novel_object: bool, is_soc
             start_end = dict(
                 [
                     (
-                        '_'.join([''.join(d.split("-")), i]),
+                        "_".join(["".join(d.split("-")), i]),
                         (get_seconds_from_time(s), get_seconds_from_time(e)),
                     )
-                    for (d, i, s, e) in zip(ft_df[FT_DATE], ft_df[FT_ID], ft_df[FT_START], ft_df[FT_END])
+                    for (d, i, s, e) in zip(
+                        ft_df[FT_DATE], ft_df[FT_ID], ft_df[FT_START], ft_df[FT_END]
+                    )
                 ]
             )
             return start_end
