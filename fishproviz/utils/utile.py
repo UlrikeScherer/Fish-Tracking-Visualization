@@ -34,9 +34,9 @@ def get_start_time_directory(is_feeding, is_novel_object, is_sociability):
 
 
 def get_interval_name_from_seconds(seconds):
-    if seconds == config.N_SECONDS_PER_HOUR:
+    if seconds == 3600:
         return "hour"
-    if seconds == int(config.N_SECONDS_PER_HOUR * config.HOURS_PER_DAY):
+    if seconds == int(3600 * config.HOURS_PER_DAY):
         return "day"
     else:
         return "%s_sec" % seconds

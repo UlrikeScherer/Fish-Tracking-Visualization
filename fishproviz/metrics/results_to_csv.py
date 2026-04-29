@@ -53,7 +53,7 @@ def metric_result_to_csv(results=None, metric_name=None, time_interval=None, all
             )
         df_sum.to_csv(
             get_filename_for_metric_csv(metric_name, interval_name, all_points=all_points),
-            float_format=config.float_format,
+            float_format="%.10f",
             sep=config.sep,
         )
     else:

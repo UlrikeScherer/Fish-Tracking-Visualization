@@ -17,9 +17,10 @@ def _env(key: str) -> str:
 
 
 # --- Hardcoded constants ---
+# TODO: FRONT and BACK are domain identifiers, not user config. Move to a
+#       constants module and remove from config (touches 28+ sites across 8 files).
 FRONT, BACK = "front", "back"
-N_SECONDS_PER_HOUR = 3600
-float_format = "%.10f"
+# TODO: sep is never changed in practice, consider adding to above constants module.
 sep = ";"
 
 # --- Filtering thresholds ---
@@ -58,6 +59,8 @@ DIR_TRACES = os.path.join(RESULTS_PATH, PROJECT_ID, "traces")
 err_file = os.path.join(RESULTS_PATH, "log_error.csv")
 
 # --- Program section names ---
+# TODO: These are output directory names that users should never change. Move
+#       to a constants module alongside FRONT/BACK and drop from default_config.env.
 P_TRAJECTORY = _env("P_TRAJECTORY")
 P_FEEDING = _env("P_FEEDING")
 P_NOVEL_OBJECT = _env("P_NOVEL_OBJECT")

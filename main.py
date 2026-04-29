@@ -51,8 +51,8 @@ def main_metrics(program, time_interval=100, include_median=None, **kwargs_metri
     '''
     if time_interval in ["hour", "day"]:
         time_interval = {
-            "hour": config.N_SECONDS_PER_HOUR,
-            "day": int(config.N_SECONDS_PER_HOUR * config.HOURS_PER_DAY),
+            "hour": 3600,
+            "day": int(3600 * config.HOURS_PER_DAY),
         }[time_interval]
     else:
         time_interval = int(time_interval)
