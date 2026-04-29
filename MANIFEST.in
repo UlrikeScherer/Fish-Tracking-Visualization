@@ -1,3 +1,1 @@
-include fishproviz/config.env
-README.txt
-setup.py
+include fishproviz/default_config.env
