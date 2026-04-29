@@ -9,10 +9,7 @@ load_dotenv(os.path.join(module_path, "config.env"))
 def _env(key: str) -> str:
     val = os.environ.get(key)
     if val is None:
-        raise KeyError(
-            f"Missing required config variable '{key}'. "
-            f"Copy fishproviz/default_config.env to fishproviz/config.env and fill in the values."
-        )
+        raise KeyError(f"Missing required config variable '{key}'. " f"Copy fishproviz/default_config.env to fishproviz/config.env and fill in the values.")
     return val
 
 
@@ -96,6 +93,10 @@ def set_config_paths(root):
     RESULTS_PATH = os.path.join(root, _env("RESULTS"))
     err_file = os.path.join(RESULTS_PATH, "log_error.csv")
     TEX_DIR = os.path.join(PLOTS_DIR, _env("TEX_DIR"))
+    # Clear cached area/calibration functions so they are reloaded from the new paths.
+    from fishproviz.utils.transformation import clear_transformation_cache
+
+    clear_transformation_cache()
 
 
 def create_directories():
