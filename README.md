@@ -318,4 +318,3 @@ pandoc README.md -o README.pdf
 -  `git add .` to add all files to the staging area
 -  `git commit -m "commit message"` to commit the changes
 -  `git push` to push the changes to the remote repository
-
