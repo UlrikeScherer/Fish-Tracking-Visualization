@@ -25,14 +25,8 @@ def check_foldersystem(path, n_files=15, delete=False):
     """
     Logger.debug(f"For path: {path}")
 
-    for camera_dir in [
-        name for name in os.listdir(path) if len(name) == 8 and name.isnumeric()
-    ]:
-        day_dir_list = [
-            name
-            for name in os.listdir("{}/{}".format(path, camera_dir))
-            if name[:8].isnumeric()
-        ]
+    for camera_dir in [name for name in os.listdir(path) if len(name) == 8 and name.isnumeric()]:
+        day_dir_list = [name for name in os.listdir("{}/{}".format(path, camera_dir)) if name[:8].isnumeric()]
         days_unique = set()
         for day_dir in day_dir_list:
             working_dir = f"{path}/{camera_dir}/{day_dir}"
@@ -54,19 +48,13 @@ def check_foldersystem(path, n_files=15, delete=False):
             else:
                 if len(files) != n_files:
                     wrote_folder = True
-                    Logger.debug(
-                        f"In folder {working_dir} the number of csv files is unequal the expected number {n_files}, it is {len(files)} instead"
-                    )
-                msg_counter, duplicate_f_list, _correct_f = utile.filter_files(
-                    camera_dir, day_dir, files, n_files, Logger=Logger
-                )
+                    Logger.debug(f"In folder {working_dir} the number of csv files is unequal the expected number {n_files}, it is {len(files)} instead")
+                msg_counter, duplicate_f_list, _correct_f = utile.filter_files(camera_dir, day_dir, files, n_files, Logger=Logger)
 
             # if the are any complains add them to the LOG list
             if msg_counter > 0:
                 if not wrote_folder:
-                    Logger.debug(
-                        f"In folder {working_dir} has the correct number of csv files: "
-                    )
+                    Logger.debug(f"In folder {working_dir} has the correct number of csv files: ")
                 # if the delete flag is set and they are duplicates ==> remove them
                 if delete and len(duplicate_f_list) > 0:
                     Logger.debug("----DELETING DUPLICATES----")
@@ -86,11 +74,7 @@ def main(delete=False, n_files=15, path=DIR_CSV_LOCAL):
     if not os.path.exists(path):
         raise ValueError("Path %s does not exist" % path)
     else:
-        PATHS = [
-            "%s/%s" % (path, dir_p)
-            for dir_p in os.listdir(path)
-            if dir_p[0] != "." and any([p in dir_p for p in position])
-        ]
+        PATHS = ["%s/%s" % (path, dir_p) for dir_p in os.listdir(path) if dir_p[0] != "." and any([p in dir_p for p in position])]
 
     if len(PATHS) < 2:
         raise ValueError("Path %s does not contain enough folders" % path)
@@ -98,22 +82,19 @@ def main(delete=False, n_files=15, path=DIR_CSV_LOCAL):
         Logger.debug(p.upper() + "-" * 100 + "\n")
 
         check_foldersystem(p, n_files=n_files, delete=delete)
-    Logger.info(
-        f"LOG: see log-file {Logger.filepath}, {Logger.debug.counter} errors and warnings found."
-    )
+    Logger.info(f"LOG: see log-file {Logger.filepath}, {Logger.debug.counter} errors and warnings found.")
 
 
 if __name__ == "__main__":
     tstart = time.time()
     parser = argparse.ArgumentParser(
         prog="python3 path_validation.py",
-        description="This program validate the file structure below the directory %s or if provided with a PATH argument the corresponding directory."
-        % DIR_CSV_LOCAL,
+        description="This program validate the file structure below the directory %s or if provided with a PATH argument the corresponding directory." % DIR_CSV_LOCAL,
         epilog="Example of use: python3 path_validation.py --delete --n_files 15 --path /Volumes/Extreme_SSD/FE_tracks",
     )
     parser.add_argument(
         "--delete",
-        action="store_false",
+        action="store_true",
         help="If set, the duplicates will be deleted.",
     )
     parser.add_argument(
@@ -126,8 +107,7 @@ if __name__ == "__main__":
         "--path",
         type=str,
         default=DIR_CSV_LOCAL,
-        help="Path to the directory that contains the folders front and back, default is %s."
-        % DIR_CSV_LOCAL,
+        help="Path to the directory that contains the folders front and back, default is %s." % DIR_CSV_LOCAL,
     )
     args = parser.parse_args()
     Logger.info("Starting")
