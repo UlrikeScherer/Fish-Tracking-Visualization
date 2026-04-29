@@ -1,15 +1,24 @@
-from setuptools import setup, Extension, find_packages
-from Cython.Build import cythonize
-import numpy
+"""
+Minimal setup.py retained solely for:
+  1. The config.env bootstrap (pyproject.toml has no hook for arbitrary file copies).
+  2. The Cython/numpy extension — numpy.get_include() must be resolved at build time
+     and cannot be expressed as a static path in pyproject.toml.
+
+All project metadata (name, version, author, dependencies) lives in pyproject.toml.
+"""
+
 import os
 import shutil
+
+import numpy
+from Cython.Build import cythonize
+from setuptools import Extension, setup
 
 env = "fishproviz/config.env"
 env_default = "fishproviz/default_config.env"
 
 if not os.path.exists(env):
     shutil.copyfile(env_default, env)
-
 
 extensions = [
     Extension(
@@ -18,13 +27,5 @@ extensions = [
         include_dirs=[numpy.get_include()],
     )
 ]
-setup(
-    name="fishproviz",
-    version="0.2",
-    author="Luka Stärk",
-    author_email="luka.staerk@mailbox.org",
-    description="A package to analyze trajectories",
-    ext_modules=cythonize(extensions),
-    packages=find_packages(),
-    include_package_data=True,
-)
+
+setup(ext_modules=cythonize(extensions))
