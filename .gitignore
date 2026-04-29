@@ -170,3 +170,4 @@ dmypy.json
 
 # .env-files
 **.env
+!**/default_config.env
