@@ -1,6 +1,7 @@
 import warnings
 from datetime import datetime
 from time import gmtime, strftime
+from typing import Optional
 import pandas as pd
 import numpy as np
 import re
@@ -50,13 +51,13 @@ def get_camera_names(is_back=False):
     return sorted([name for name in os.listdir(dir_) if len(name) == 8 and name.isnumeric()])
 
 
-def get_fish2camera_map():
+def get_fish2camera_map() -> np.ndarray:
     l_front = list(product(get_camera_names(is_back=False), [config.FRONT]))
     l_back = list(product(get_camera_names(is_back=True), [config.BACK]))
     return np.array(l_back + l_front)
 
 
-def get_camera_pos_keys():
+def get_camera_pos_keys() -> list[str]:
     m = get_fish2camera_map()
     return ["%s_%s" % (c, p) for (c, p) in m]
 
@@ -183,13 +184,13 @@ def merge_files(filenames, drop_errors):
 
 
 def csv_of_the_day(
-    camera,
-    day,
-    is_back=False,
-    drop_out_of_scope=False,
-    batch_keys_remove=None,
-    print_logs=False,
-):
+    camera: str,
+    day: str,
+    is_back: bool = False,
+    drop_out_of_scope: bool = False,
+    batch_keys_remove: Optional[dict] = None,
+    print_logs: bool = False,
+) -> tuple[list[str], list[pd.DataFrame]]:
     """
     @params: camera, day, is_back, drop_out_of_scope
     returns csv of the day for camera: front or back
@@ -284,7 +285,12 @@ def create_directory(directory_name: str):
     return dir_path
 
 
-def get_start_end_index(start_end_times, day_key, batch_number, tank_id=None):
+def get_start_end_index(
+    start_end_times: Optional[dict],
+    day_key: str,
+    batch_number: str,
+    tank_id: Optional[str] = None,
+) -> tuple[int, int]:
     if start_end_times is None:
         return 0, config.BATCH_SIZE
     day, track_start = day_key.split("_")[:2]
@@ -316,7 +322,7 @@ def get_start_end_index(start_end_times, day_key, batch_number, tank_id=None):
     return start_idx, end_idx
 
 
-def feeding_times_start_end_dict(is_feeding: bool, is_novel_object: bool, is_sociability: bool):
+def feeding_times_start_end_dict(is_feeding: bool, is_novel_object: bool, is_sociability: bool) -> Optional[dict]:
     if not os.path.exists(config.SERVER_FEEDING_TIMES_FILE):
         warnings.warn(f"File {config.SERVER_FEEDING_TIMES_FILE} not found, thus feeding times will be calculated over all provided batches, if this is not intended please check the path in scripts/env.sh")
         return None

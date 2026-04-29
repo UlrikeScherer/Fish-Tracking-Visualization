@@ -1,10 +1,15 @@
+from typing import Optional
+
 import numpy as np
 import fishproviz.config as config
 from fishproviz.methods import distance_to_wall_chunk, calc_steps
 from fishproviz.utils.transformation import px2cm
 
+# area_tuple is (fish_key: str, area: np.ndarray) or None
+AreaTuple = Optional[tuple[str, np.ndarray]]
 
-def all_error_filters(data, area_tuple, **kwargs):
+
+def all_error_filters(data: np.ndarray, area_tuple: AreaTuple, **kwargs) -> np.ndarray:
     """
     Summery of all error filters
     @params: dataframe
@@ -36,9 +41,7 @@ def error_dirt_points(data, threshold=config.DIRT_THRESHOLD, fish_key="", day=""
     indexer = np.argwhere(np.diff(bool_array)).squeeze()
     start = 0
     for end in [*(indexer + 2), data.shape[0]]:
-        if (
-            bool_array[start] and (end - start) > threshold
-        ):  # if the first element is true (hence it is a beginning of an equal sequence) and the difference is greater than the threshold
+        if bool_array[start] and (end - start) > threshold:  # if the first element is true (hence it is a beginning of an equal sequence) and the difference is greater than the threshold
             flt[start:end] = True
             x, y = data[start]
             if ~(((x == -1) & (y == -1)) | ((x == 0) & (y == 0))):
@@ -98,12 +101,7 @@ def error_points_out_of_range(data, area_tuple):
     th = config.THRESHOLD_AREA_PX
     xmin, xmax = min(area[:, 0]) - th, max(area[:, 0]) + th
     ymin, ymax = min(area[:, 1]) - th, max(area[:, 1]) + th
-    error_out_of_range = (
-        (data[:, 0] < xmin)
-        | (data[:, 0] > xmax)
-        | (data[:, 1] < ymin)
-        | (data[:, 1] > ymax)
-    )
+    error_out_of_range = (data[:, 0] < xmin) | (data[:, 0] > xmax) | (data[:, 1] < ymin) | (data[:, 1] > ymax)
     return error_out_of_range
 
 
@@ -116,24 +114,15 @@ def error_points_out_of_area(data, area_tuple, day=""):
     AB = area[2] - area[1]
     AP = data - area[1]
     if is_back:
-        error_filter = (
-            AP[:, 1] * AB[0] - AP[:, 0] * AB[1] <= 0
-        )  # cross product (a1b2−a2b1)
+        error_filter = AP[:, 1] * AB[0] - AP[:, 0] * AB[1] <= 0  # cross product (a1b2−a2b1)
     else:
-        error_filter = (
-            AP[:, 1] * AB[0] - AP[:, 0] * AB[1] >= 0
-        )  # cross product (a1b2−a2b1)
+        error_filter = AP[:, 1] * AB[0] - AP[:, 0] * AB[1] >= 0  # cross product (a1b2−a2b1)
     error_filter = error_filter
 
     err_default = error_default_points(data)
     error_non_default = error_filter & ~err_default
-    error_non_default[error_non_default] = (
-        distance_to_wall_chunk(data[error_non_default], area) > config.THRESHOLD_AREA_PX
-    )  # in pixels
+    error_non_default[error_non_default] = distance_to_wall_chunk(data[error_non_default], area) > config.THRESHOLD_AREA_PX  # in pixels
     error_non_default = error_non_default | (error_out_of_range & ~err_default)
     if np.any(error_non_default):  # ef and not ed
-        print(
-            "AREA: %s, %s %d dataframes out of %d where on the other side of the tank. They are beeing filtered out."
-            % (key, day, error_non_default.sum(), data.shape[0])
-        )
+        print("AREA: %s, %s %d dataframes out of %d where on the other side of the tank. They are beeing filtered out." % (key, day, error_non_default.sum(), data.shape[0]))
     return error_non_default

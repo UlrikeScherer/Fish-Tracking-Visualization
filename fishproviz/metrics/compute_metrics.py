@@ -7,8 +7,7 @@ import matplotlib.pyplot as plt
 import fishproviz.config as config
 
 
-def compute_step_lengths(points):
-    # Calculate the Euclidean distance between consecutive points
+def compute_step_lengths(points: np.ndarray) -> np.ndarray:
     vectors = np.diff(points, axis=0)
     distances = np.linalg.norm(vectors, axis=1)
     return distances
@@ -21,11 +20,13 @@ def calc_step_per_frame(batchxy, frames):
     return c
 
 
-def compute_turning_angles(points,
-                           skip: int = config.TANGLE_N_SKIP,
-                           remove_zero_vectors: bool = config.REMOVE_0_VECS,
-                           distance_from_wall_to_ignore: float = config.DIST_FROM_WALL_TANGLE_IGNORED,
-                           distance_to_wall: NDArray[float] = None):
+def compute_turning_angles(
+    points: np.ndarray,
+    skip: int = config.TANGLE_N_SKIP,
+    remove_zero_vectors: bool = config.REMOVE_0_VECS,
+    distance_from_wall_to_ignore: float = config.DIST_FROM_WALL_TANGLE_IGNORED,
+    distance_to_wall: NDArray[float] = None,
+) -> np.ndarray:
     # Compute the differences between adjacent points
     if distance_from_wall_to_ignore > 0:
         points[distance_to_wall < distance_from_wall_to_ignore] = np.array([np.nan, np.nan])
@@ -173,21 +174,14 @@ def entropy_for_chunk(chunk, area_tuple):
     sum_hist = np.sum(hist)
     if sum_hist == 0:  #
         # print(chunk[:10])
-        print(
-            "Warning for %s all %d data points were not in der range of histogram and removed"
-            % (fish_key, chunk.shape[0])
-        )
+        print("Warning for %s all %d data points were not in der range of histogram and removed" % (fish_key, chunk.shape[0]))
         return np.nan
     if chunk.shape[0] > sum_hist:
         # print(chunk[:10])
-        print(
-            "Warning for %s %d out of %d data points were not in der range of histogram and removed"
-            % (fish_key, chunk.shape[0] - sum_hist, chunk.shape[0])
-        )
+        print("Warning for %s %d out of %d data points were not in der range of histogram and removed" % (fish_key, chunk.shape[0] - sum_hist, chunk.shape[0]))
     if sum_hist > np.sum(hist[tri]):
         print(
-            "Warning for %s the selected area for entropy has lost some points: "
-            % fish_key,
+            "Warning for %s the selected area for entropy has lost some points: " % fish_key,
             "sum hist: ",
             np.sum(hist),
             "sum selection: ",
