@@ -17,27 +17,14 @@ def flatten_list(list_of_lists):
 
 def is_valid_dir(directory):
     if not os.path.isdir(directory):
-        print(
-            "TERMINATED: Please connect to external hard drive with path %s or edit path in scripts/env.sh"
-            % directory
-        )
+        print("TERMINATED: Please connect to external hard drive with path %s or edit path in scripts/env.sh" % directory)
         return False
     else:
         return True
 
 
 def get_start_time_directory(is_feeding, is_novel_object, is_sociability):
-    return (
-        config.P_FEEDING
-        if is_feeding
-        else (
-            (config.P_NOVEL_OBJECT)
-            if is_novel_object
-            else (config.P_SOCIABILITY)
-            if is_sociability
-            else (config.P_TRAJECTORY)
-        )
-    )
+    return config.P_FEEDING if is_feeding else ((config.P_NOVEL_OBJECT) if is_novel_object else (config.P_SOCIABILITY) if is_sociability else (config.P_TRAJECTORY))
 
 
 def get_interval_name_from_seconds(seconds):
@@ -60,18 +47,12 @@ def get_directory(is_back=None):
 
 def get_camera_names(is_back=False):
     dir_ = get_directory(is_back)
-    return sorted(
-        [name for name in os.listdir(dir_) if len(name) == 8 and name.isnumeric()]
-    )
+    return sorted([name for name in os.listdir(dir_) if len(name) == 8 and name.isnumeric()])
 
 
 def get_fish2camera_map():
-    l_front = list(
-        product(get_camera_names(is_back=config.BACK == config.FRONT), [config.FRONT])
-    )
-    l_back = list(
-        product(get_camera_names(is_back=config.BACK == config.BACK), [config.BACK])
-    )
+    l_front = list(product(get_camera_names(is_back=False), [config.FRONT]))
+    l_back = list(product(get_camera_names(is_back=True), [config.BACK]))
     return np.array(l_back + l_front)
 
 
@@ -84,10 +65,7 @@ def verify_day_directory(name, camera):
     if name[:8].isnumeric() and name[16:24] == camera:
         return True
     elif name[:8].isnumeric():
-        print(
-            "WARNING: for CAMERA %s day directory name %s does not follow name-convention of date_starttime.camera_* and will be ignored"
-            % (camera, name)
-        )
+        print("WARNING: for CAMERA %s day directory name %s does not follow name-convention of date_starttime.camera_* and will be ignored" % (camera, name))
         return False
     else:  # all other directories are ignored
         return False
@@ -102,17 +80,10 @@ def get_days_in_order(interval=None, is_back=None, camera=None):
     if camera is None or is_back is None:
         raise ValueError("provid kwargs is_back and camera")
     dir_ = get_directory(is_back)
-    days = [
-        name[:15]
-        for name in os.listdir(dir_ + "/" + camera)
-        if verify_day_directory(name, camera)
-    ]
+    days = [name[:15] for name in os.listdir(dir_ + "/" + camera) if verify_day_directory(name, camera)]
     days_unique = sorted(list(set(days)))
     if len(days_unique) < len(days):
-        print(
-            "WARNING DUPLICATE DAY: CAMERA %s_%s some days are duplicated, please check the directory"
-            % (camera, config.BACK if is_back else config.FRONT)
-        )
+        print("WARNING DUPLICATE DAY: CAMERA %s_%s some days are duplicated, please check the directory" % (camera, config.BACK if is_back else config.FRONT))
     if interval:
         return days_unique[interval[0] : interval[1]]
     return days_unique
@@ -124,13 +95,7 @@ def get_all_days_of_context():
         is_back = p == config.BACK
         cameras = get_camera_names(is_back=is_back)
         for c in cameras:
-            days.extend(
-                [
-                    d
-                    for d in get_days_in_order(is_back=is_back, camera=c)
-                    if d not in days
-                ]
-            )
+            days.extend([d for d in get_days_in_order(is_back=is_back, camera=c) if d not in days])
     return sorted(days)
 
 
@@ -148,9 +113,7 @@ def start_time_of_day_to_seconds(START_TIME):
     return seconds (int)
     """
     if len(START_TIME) == 6:
-        return (
-            int(START_TIME[:2]) * 3600 + int(START_TIME[2:4]) * 60 + int(START_TIME[4:])
-        )
+        return int(START_TIME[:2]) * 3600 + int(START_TIME[2:4]) * 60 + int(START_TIME[4:])
     else:
         raise ValueError("START_TIME must be of length 6")
 
@@ -173,9 +136,7 @@ def get_date_string(day):
 
 
 def get_full_date(day):
-    dateiso = "{}-{}-{}T{}:{}:{}+00:00".format(
-        day[:4], day[4:6], day[6:8], day[9:11], day[11:13], day[13:15]
-    )
+    dateiso = "{}-{}-{}T{}:{}:{}+00:00".format(day[:4], day[4:6], day[6:8], day[9:11], day[11:13], day[13:15])
     return datetime.fromisoformat(dateiso).strftime("%A, %B %d, %Y %H:%M")
 
 
@@ -209,9 +170,7 @@ def get_error_indices(dataframe):
     """
     x = dataframe.xpx
     y = dataframe.ypx
-    indexNames = ((x == -1) & (y == -1)) | (
-        (x == 0) & (y == 0)
-    )  # except the last index for time recording
+    indexNames = ((x == -1) & (y == -1)) | ((x == 0) & (y == 0))  # except the last index for time recording
     return indexNames
 
 
@@ -228,13 +187,15 @@ def csv_of_the_day(
     day,
     is_back=False,
     drop_out_of_scope=False,
-    batch_keys_remove=[],
+    batch_keys_remove=None,
     print_logs=False,
 ):
     """
     @params: camera, day, is_back, drop_out_of_scope
     returns csv of the day for camera: front or back
     """
+    if batch_keys_remove is None:
+        batch_keys_remove = {}
 
     dir_ = get_directory(is_back=is_back)
 
@@ -282,11 +243,7 @@ def filter_files(c, d, files, n_files=15, min_idx=0, Logger=None):
     correct_f = dict()
     for i in range(min_idx, n_files):
         key_i = "{:06d}".format(i)
-        pattern = re.compile(
-            ".*{}_{}.{}(_back|_front)*_{}_\d*-\d*-\d*T\d*_\d*_\d*_\d*.csv".format(
-                c, d[:15], c, key_i
-            )
-        )
+        pattern = re.compile(".*{}_{}.{}(_back|_front)*_{}_\d*-\d*-\d*T\d*_\d*_\d*_\d*.csv".format(c, d[:15], c, key_i))
         i_f = [f for f in files if pattern.match(f) is not None]
 
         if len(i_f) > 1:
@@ -298,32 +255,18 @@ def filter_files(c, d, files, n_files=15, min_idx=0, Logger=None):
         else:
             correct_f[key_i] = i_f[-1]  # takes the last one
 
-    pattern_general = re.compile(
-        ".*{}_{}.{}_\d*_\d*-\d*-\d*T\d*_\d*_\d*_\d*.csv".format(c, d[:15], c)
-    )
+    pattern_general = re.compile(".*{}_{}.{}_\d*_\d*-\d*-\d*T\d*_\d*_\d*_\d*.csv".format(c, d[:15], c))
     corrupted_f = [f for f in files if pattern_general.match(f) is None]
 
     if Logger and len(missing_numbers) > 0:
         msg_counter += 1
-        Logger.debug(
-            "The following files are missing: \n \t\t\t\t{}".format(
-                " ".join(missing_numbers)
-            )
-        )
+        Logger.debug("The following files are missing: \n \t\t\t\t{}".format(" ".join(missing_numbers)))
     if Logger and len(duplicate_f) > 0:
         msg_counter += 1
-        Logger.debug(
-            "The following files are duplicates: \n\t\t\t\t{}".format(
-                "\n\t".join(duplicate_f)
-            )
-        )
+        Logger.debug("The following files are duplicates: \n\t\t\t\t{}".format("\n\t".join(duplicate_f)))
     if Logger and len(corrupted_f) > 0:
         msg_counter += 1
-        Logger.debug(
-            "The following file names are corrupted, maybe wrong folder: \n\t\t\t\t{}".format(
-                "\n\t".join(corrupted_f)
-            )
-        )
+        Logger.debug("The following file names are corrupted, maybe wrong folder: \n\t\t\t\t{}".format("\n\t".join(corrupted_f)))
     return msg_counter, duplicate_f, correct_f
 
 
@@ -347,9 +290,7 @@ def get_start_end_index(start_end_times, day_key, batch_number, tank_id=None):
     day, track_start = day_key.split("_")[:2]
     ts_sec = start_time_of_day_to_seconds(track_start)
     try:
-        f_start, f_end = start_end_times[
-            "_".join([day, tank_id]) if tank_id is not None else day
-        ]
+        f_start, f_end = start_end_times["_".join([day, tank_id]) if tank_id is not None else day]
     except KeyError:
         f_start, f_end = None, None
 
@@ -375,13 +316,9 @@ def get_start_end_index(start_end_times, day_key, batch_number, tank_id=None):
     return start_idx, end_idx
 
 
-def feeding_times_start_end_dict(
-    is_feeding: bool, is_novel_object: bool, is_sociability: bool
-):
+def feeding_times_start_end_dict(is_feeding: bool, is_novel_object: bool, is_sociability: bool):
     if not os.path.exists(config.SERVER_FEEDING_TIMES_FILE):
-        warnings.warn(
-            f"File {config.SERVER_FEEDING_TIMES_FILE} not found, thus feeding times will be calculated over all provided batches, if this is not intended please check the path in scripts/env.sh"
-        )
+        warnings.warn(f"File {config.SERVER_FEEDING_TIMES_FILE} not found, thus feeding times will be calculated over all provided batches, if this is not intended please check the path in scripts/env.sh")
         return None
     else:
         if is_feeding:
@@ -406,13 +343,13 @@ def feeding_times_start_end_dict(
                 ]
             )
             return start_end
-        else:
+        elif is_novel_object or is_sociability:
             FT_DATE, FT_ID, FT_START, FT_END = (
                 "date",
                 "tank_ID",
                 "trial_start",
                 "trial_end",
-            )  # time_in_stop, time_out_start
+            )
 
             ft_df = pd.read_csv(
                 config.SERVER_FEEDING_TIMES_FILE,
@@ -426,9 +363,9 @@ def feeding_times_start_end_dict(
                         "_".join(["".join(d.split("-")), i]),
                         (get_seconds_from_time(s), get_seconds_from_time(e)),
                     )
-                    for (d, i, s, e) in zip(
-                        ft_df[FT_DATE], ft_df[FT_ID], ft_df[FT_START], ft_df[FT_END]
-                    )
+                    for (d, i, s, e) in zip(ft_df[FT_DATE], ft_df[FT_ID], ft_df[FT_START], ft_df[FT_END])
                 ]
             )
             return start_end
+        else:
+            return None
