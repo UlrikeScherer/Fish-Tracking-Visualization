@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.4.0
+    rev: v6.0.0
     hooks:
       - id: check-docstring-first
       - id: check-merge-conflict
@@ -27,5 +27,5 @@ repos:
         entry: bash scripts/run_tests.sh
         language: system
         pass_filenames: false
-        stages: [commit]
+        stages: [pre-commit]
         always_run: true
