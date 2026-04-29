@@ -4,7 +4,7 @@ import numpy
 import os, shutil
 
 env = "fishproviz/config.env"
-env_default = "scripts/env.default.sh"
+env_default = "fishproviz/default_config.env"
 
 if not os.path.exists(env):
     shutil.copyfile(env_default, env)

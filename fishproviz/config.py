@@ -1,10 +1,8 @@
-#from envbash import load_envbash
 from dotenv import load_dotenv
 import os
 import fishproviz
 
 module_path = os.path.dirname(fishproviz.__file__)
-#load_envbash(os.path.join(module_path, "config.env"))
 load_dotenv(os.path.join(module_path, "config.env"))
 # THRESHOLDS for the data set filtered for erroneous frames
 SPIKE_THRESHOLD = int(os.environ["SPIKE_THRESHOLD"])
