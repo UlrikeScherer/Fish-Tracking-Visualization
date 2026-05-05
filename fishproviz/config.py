@@ -22,7 +22,7 @@ FRONT, BACK = "front", "back"
 #projectPath = "/Volumes/Extreme_SSD/content/Fish_moves_final"
 CONFIG_DATA = os.path.join(DIR_CSV_LOCAL, os.environ["CONFIG_DATA"])
 VIS_DIR = os.path.join(DIR_CSV_LOCAL, os.environ["VIS_DIR"])
-PLOTS_DIR = os.path.join(DIR_CSV_LOCAL, VIS_DIR, "plots")
+PLOTS_DIR = os.path.join(DIR_CSV_LOCAL, os.environ["VIS_DIR"], "plots")
 RESULTS_PATH = os.path.join(DIR_CSV_LOCAL, os.environ["RESULTS"])
 P_TRAJECTORY = os.environ["P_TRAJECTORY"]
 P_FEEDING = os.environ["P_FEEDING"]
@@ -84,7 +84,7 @@ def set_config_paths(root):
     DIR_CSV_LOCAL = f"{root}"
     CONFIG_DATA = os.path.join(root, os.environ["CONFIG_DATA"])
     VIS_DIR = os.path.join(root, os.environ["VIS_DIR"])
-    PLOTS_DIR = os.path.join(root, VIS_DIR, "plots")
+    PLOTS_DIR = os.path.join(root, os.environ["VIS_DIR"], "plots")
     RESULTS_PATH = os.path.join(root, os.environ["RESULTS"])
     err_file = os.path.join(RESULTS_PATH, "log_error.csv")
     TEX_DIR = os.path.join(PLOTS_DIR, os.environ["TEX_DIR"])
