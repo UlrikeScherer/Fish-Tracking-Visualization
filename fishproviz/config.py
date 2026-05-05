@@ -84,7 +84,7 @@ def set_config_paths(root):
     DIR_CSV_LOCAL = f"{root}"
     CONFIG_DATA = os.path.join(root, os.environ["CONFIG_DATA"])
     VIS_DIR = os.path.join(root, os.environ["VIS_DIR"])
-    PLOTS_DIR = os.path.join(root, os.environ["PLOTS_DIR"])
+    PLOTS_DIR = os.path.join(root, VIS_DIR, "plots")
     RESULTS_PATH = os.path.join(root, os.environ["RESULTS"])
     err_file = os.path.join(RESULTS_PATH, "log_error.csv")
     TEX_DIR = os.path.join(PLOTS_DIR, os.environ["TEX_DIR"])

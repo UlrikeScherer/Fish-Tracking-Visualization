@@ -69,7 +69,6 @@ REMOVE_0_VECS=0 #Whether to remove (REMOVE_0_VECS=1) or not (REMOVE_0_VECS=0) 0 
 # shared variables that are used in the scripts
 # NO Changes needed
 VIS_DIR="visualisations" # path to store the visualisations
-PLOTS_DIR="$VIS_DIR/plots" # path to the plots
 P_FEEDING="feeding"
 P_NOVEL_OBJECT="novel_object"
 P_TRAJECTORY="trajectory"
