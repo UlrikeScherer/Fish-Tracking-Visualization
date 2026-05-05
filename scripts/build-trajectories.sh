@@ -1,6 +1,17 @@
 #!/bin/bash
+
+fixpath() {
+    case "$OSTYPE" in
+        *linux|darwin|bsd|darwin24*) echo "${1//\\/\/}" ;;
+        *win*) echo "${1//\//\\}" ;;
+    esac
+}
+
 source fishproviz/config.env # get the following variables
-PLOTS_TRAJECTORY=$path_csv_local/$PLOTS_DIR
+case "$OSTYPE" in
+        *linux|darwin|bsd|darwin24*) PLOTS_TRAJECTORY=$path_csv_local/$PLOTS_DIR ;;
+        *win*) PLOTS_TRAJECTORY=$path_csv_local\\$PLOTS_DIR ;;
+esac
 if [ ! -d "$PLOTS_TRAJECTORY" ]; then
     echo "ERROR $PLOTS_TRAJECTORY does not exists, first generate the plots with the python script"
     exit 1
@@ -14,7 +25,10 @@ PREFIX="file://" #run:
 PROGRAMNAME=$P_TRAJECTORY
 CSV_DIR=$path_csv
 LEGEND="\trajectorylegend"
-FILES="$PLOTS_TRAJECTORY/$TEX_DIR"
+case "$OSTYPE" in
+        *linux|darwin|bsd|darwin24*) FILES=$PLOTS_TRAJECTORY/$TEX_DIR ;;
+        *win*) FILES=$PLOTS_TRAJECTORY\\$TEX_DIR ;;
+esac
 mkdir $FILES
 
 while [[ "$#" -gt 0 ]]; do
@@ -82,8 +96,10 @@ $MAX_BATCH_IDX,
 $SQRT_N,
 $FIG_WIDTH
 -------------------------"
-
-directory_of_run=$path_csv_local/$VIS_DIR/$PROGRAMNAME/$BLOCK
+case "$OSTYPE" in
+        *linux|darwin|bsd|darwin24*) directory_of_run=$path_csv_local/$VIS_DIR/$PROGRAMNAME/$BLOCK ;;
+        *win*) directory_of_run=$path_csv_local\\$VIS_DIR\\$PROGRAMNAME\\$BLOCK ;;
+esac
 mkdir -p $directory_of_run
 
 for b in ${!position[@]}; do
@@ -92,13 +108,20 @@ for b in ${!position[@]}; do
     if [[ $test || "$set_cam" == "2" ]]; then
         echo "TEST"
     else
-        cameras="$(ls -d $CSV_DIR/$POSITION_STR/[0-9]*[0-9]/ | sort -V )"
+        case "$OSTYPE" in
+            *linux|darwin|bsd|darwin24*) cameras="$(ls -d $CSV_DIR/$POSITION_STR/[0-9]*[0-9]/) | sort -V )" ;;
+            *win*) cameras="$(ls -d $CSV_DIR\\$POSITION_STR\\[0-9]*[0-9]\\) | sort -V )" ;;
+        esac
     fi
 
     for cam in $cameras; do
         camera=$(basename ${cam})
         echo $camera
-        secff="$(ls -d $CSV_DIR/$POSITION_STR/${camera}/*.${camera}*/ | sort -V | head -1 | sed 's/.*1550\([^.]*\).*/\1/')"
+        case "$OSTYPE" in
+            *linux|darwin|bsd|darwin24*) secff="$(ls -d $CSV_DIR/$POSITION_STR/${camera}/*.${camera}*/ | sort -V | head -1 | sed 's/.*1550\([^.]*\).*/\1/')" ;;
+            *win*) secff="$(ls -d $CSV_DIR\\$POSITION_STR\\${camera}\\*.${camera}*\\ | sort -V | head -1 | sed 's/.*1550\([^.]*\).*/\1/')" ;;
+        esac
+
 
         texheader="%\usepackage{etoolbox}
                     %% root folders: ---------------------
@@ -148,7 +171,10 @@ for b in ${!position[@]}; do
                         "
 
         daysarray="$LEGEND"
-        days="$(ls -d $CSV_DIR/$POSITION_STR/${camera}/*${STARTTIME}.${camera}*/ | sort -V )"
+        case "$OSTYPE" in
+                *linux|darwin|bsd|darwin24*) days="$(ls -d $CSV_DIR/$POSITION_STR/${camera}/*${STARTTIME}.${camera}*/ | sort -V )" ;;
+                *win*) days="$(ls -d $CSV_DIR\\$POSITION_STR\\${camera}\\*${STARTTIME}.${camera}*\\ | sort -V )" ;;
+        esac
 
         for d in $days; do
             d=$(basename $d)
@@ -159,7 +185,10 @@ for b in ${!position[@]}; do
             # -----------
             # CSV Files
             # -----------
-            filescsv="$(ls $CSV_DIR/$POSITION_STR/${camera}/*${STARTTIME}.${camera}*/${camera}_$day*.csv | sort -V)"
+            case "$OSTYPE" in
+                *linux|darwin|bsd|darwin24*) filescsv="$(ls $CSV_DIR/$POSITION_STR/${camera}/*${STARTTIME}.${camera}*/${camera}_$day*.csv | sort -V)" ;;
+                *win*) filescsv="$(ls $CSV_DIR\\$POSITION_STR\\${camera}\\*${STARTTIME}.${camera}*\\${camera}_$day*.csv | sort -V)" ;;
+            esac
             C_is=()
             for f in $filescsv; do
               parsed_C_i="$(basename ${f} | cut -d '_' -f 4)"
@@ -184,7 +213,11 @@ for b in ${!position[@]}; do
               skip=1
               #echo "--local is not reading mp4 file paths \n"
             else
-              foldermp4="$(ls -d $path_recordings/${camera}/${day}*/ | head )"
+              case "$OSTYPE" in
+                  *linux|darwin|bsd|darwin24*) foldermp4="$(ls -d $path_recordings/${camera}/${day}*/ | head )" ;;
+                  *win*) foldermp4="$(ls -d $path_recordings\\${camera}\\${day}*\\ | head )" ;;
+              esac
+
               texheader="$texheader \addtext{$PREFIX$foldermp4}
               "
               filesmp4="$(ls $foldermp4/*.mp4 | sort -V)"
@@ -197,17 +230,17 @@ for b in ${!position[@]}; do
             fi
         done
         # daysarray=${daysarray%?}
-        echo "${daysarray}" > $FILES/days_array.tex
-        echo "$texheader" > $FILES/arrayoflinks.tex
+        echo "${daysarray}" > "$(fixpath "$FILES/days_array.tex")"
+        echo "$texheader" > "$(fixpath "$FILES/arrayoflinks.tex")"
         if [ $feeding ]; then
-            echo "\input{$FILES/${BLOCK}feedingtime.tex}" >> $FILES/arrayoflinks.tex
+            echo "\input{$FILES/${BLOCK}feedingtime.tex}" >> "$(fixpath "$FILES/arrayoflinks.tex")"
         fi
         if [ $novelobject ]; then
-            echo "\input{$FILES/${BLOCK}novelobject.tex}" >> $FILES/arrayoflinks.tex
+            echo "\input{$FILES/${BLOCK}novelobject.tex}" >> "$(fixpath "$FILES/arrayoflinks.tex")"
         fi
         if [ $sociability ]; then
-            echo "\input{$FILES/${BLOCK}sociability_inflow.tex}" >> $FILES/arrayoflinks.tex
-            echo "\input{$FILES/${BLOCK}sociability_outflow.tex}" >> $FILES/arrayoflinks.tex
+            echo "\input{$FILES/${BLOCK}sociability_inflow.tex}" >> "$(fixpath "$FILES/arrayoflinks.tex")"
+            echo "\input{$FILES/${BLOCK}sociability_outflow.tex}" >> "$(fixpath "$FILES/arrayoflinks.tex")"
         fi
         # run pdflatex two times
         END=1
@@ -216,7 +249,10 @@ for b in ${!position[@]}; do
             pdflatex --interaction=nonstopmode "\newcommand\arrayoflinks{${FILES}/arrayoflinks}\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}" > log_tex.txt
             #pdflatex "\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}"
         done
-        mv main.pdf ${directory_of_run}/${PROGRAMNAME}_${BLOCK}_${camera}_${position[$b]}.pdf
+        case "$OSTYPE" in
+            *linux|darwin|bsd|darwin24*) mv main.pdf ${directory_of_run}/${PROGRAMNAME}_${BLOCK}_${camera}_${position[$b]}.pdf ;;
+            *win*) mv main.pdf ${directory_of_run}\\${PROGRAMNAME}_${BLOCK}_${camera}_${position[$b]}.pdf ;;
+        esac
     done
 done
 
