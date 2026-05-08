@@ -109,8 +109,8 @@ for b in ${!position[@]}; do
         echo "TEST"
     else
         case "$OSTYPE" in
-            *linux|darwin|bsd|darwin24*) cameras="$(ls -d $CSV_DIR/$POSITION_STR/[0-9]*[0-9]/) | sort -V )" ;;
-            *win|msys*) cameras="$(ls -d $CSV_DIR\\$POSITION_STR\\[0-9]*[0-9]\\) | sort -V )" ;;
+            *linux|darwin|bsd|darwin24*) cameras="$(ls -d $CSV_DIR/$POSITION_STR/[0-9]*[0-9]/ | sort -V )" ;;
+            *win|msys*) cameras="$(ls -d $CSV_DIR\\$POSITION_STR\\[0-9]*[0-9]\\ | sort -V )" ;;
         esac
     fi
 
