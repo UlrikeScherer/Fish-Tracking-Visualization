@@ -55,7 +55,7 @@ def get_gaps_in_dataframes(frames):
     return np.where(gaps_select)[0], gaps_select
 
 
-def calculate_result_for_interval(data, split_index, avg_metric_f, error_index, NDIM=3, checkfornans=False):
+def calculate_result_for_interval(data, split_index, avg_metric_f, error_index, NDIM=3, checkfornans=False, averaging=True):
     if split_index is None:
         split_index = [len(data) - 1]
     len_out = len(split_index) + 1
@@ -73,10 +73,12 @@ def calculate_result_for_interval(data, split_index, avg_metric_f, error_index, 
             chunk_pro = chunk[~np.isnan(chunk)]
         else:
             chunk_pro = chunk
-        if avg_metric_f is not None:
+        if avg_metric_f is not None and averaging:
             mu_sd[i, :-1] = avg_metric_f(chunk_pro)
             mu_sd[i, -1] = len(chunk_pro)
         else:
+            if avg_metric_f is not None:
+                chunk_pro = avg_metric_f(chunk_pro)
             mu_sd += chunk_pro.tolist()
     if avg_metric_f is not None:
         return mu_sd
@@ -95,15 +97,15 @@ def entropy(data, frame_interval, error_index, area):
 
 
 def distance_to_wall(data, frame_interval, error_index, area):
-    avg_func = lambda chunk: mean_std(
-            px2cm(distance_to_wall_chunk(chunk, area[1]), fish_key=fish_key)
-        )
     fish_key = area[0]
+    dtw = lambda chunk: px2cm(distance_to_wall_chunk(chunk, area[1]), fish_key=fish_key)
+    avg_func = lambda chunk: mean_std(dtw(chunk))
     return calculate_result_for_interval(
         data.astype('double'),
         frame_interval,
-        avg_func if not config.UNAVERAGED else None,
+        avg_func if not config.UNAVERAGED else dtw,
         error_index,
+        averaging=not config.UNAVERAGED,
     )
 
 
@@ -159,10 +161,15 @@ def step_length(data, frame_interval, filter_index):
     return calculate_result_for_interval(steps.astype('double'), frame_interval,  mean_std if not config.UNAVERAGED else None, filter_index)
 
 
-def turning_angle(data, frame_interval, filter_index):
+def turning_angle(data, frame_interval, filter_index, area=None, data_px=None):
+    dtw = lambda chunk: px2cm(distance_to_wall_chunk(chunk, area[1]), fish_key=area[0])
     error_index = update_filter_three_points(compute_step_lengths(data), filter_index)
     return calculate_result_for_interval(
-        compute_turning_angles(data).astype('double'), frame_interval, mean_std if not config.UNAVERAGED else None, error_index, checkfornans=True
+        compute_turning_angles(data, distance_to_wall=None if area is None else dtw(data_px).astype('double')).astype('double'),
+        frame_interval,
+        mean_std if not config.UNAVERAGED else None,
+        error_index,
+        checkfornans=True
     )
 
 
@@ -289,9 +296,14 @@ def metric_per_interval(
                                     **metric_kwargs)
                 else:
                     data_cm = pixel_to_cm(data, fish_key=fish_key)
-                    result = metric(
-                        data_cm, split_by_interval_idx, err_filter, **metric_kwargs
-                    )
+                    if metric.__name__ in [turning_angle.__name__] and config.DIST_FROM_WALL_TANGLE_IGNORED > 0:
+                        result = metric(
+                            data_cm, split_by_interval_idx, err_filter, area_tuple, data, **metric_kwargs
+                        )
+                    else:
+                        result = metric(
+                            data_cm, split_by_interval_idx, err_filter, **metric_kwargs
+                        )
                 # concat the results array with the index of df for every time_interval step
                 if every_point:
                     result = pd.DataFrame({ metric.__name__: np.add.reduceat(result, np.arange(0, len(result), config.AGGREGATE_EVERY_N)).reshape((-1,))})

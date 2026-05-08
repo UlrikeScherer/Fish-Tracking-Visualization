@@ -1,6 +1,7 @@
 import math
 
 import numpy as np
+from numpy._typing import NDArray
 import pandas as pd
 import scipy.stats as scipy_stats
 import matplotlib.pyplot as plt
@@ -21,40 +22,87 @@ def calc_step_per_frame(batchxy, frames):
     return c
 
 
-def compute_turning_angles(points, skip: int = config.tangle_n_skip, remove_zero_vectors: bool = config.REMOVE_0_VECS):
-    if skip > math.ceil((len(points) - 3)/3):
-        raise ValueError("Not enough data for this resolution of turning angle")
+def compute_turning_angles(points,
+                           skip: int = config.tangle_n_skip,
+                           remove_zero_vectors: bool = config.REMOVE_0_VECS,
+                           distance_from_wall_to_ignore: float = config.DIST_FROM_WALL_TANGLE_IGNORED,
+                           distance_to_wall: NDArray[float] = None):
     # Compute the differences between adjacent points
-    vectors = np.diff(points[::skip+1], axis=0)
+    if distance_from_wall_to_ignore > 0:
+        points[distance_to_wall < distance_from_wall_to_ignore] = np.array([np.nan, np.nan])
+        point_chunks = []
+        current_valid_chunk = []
+        current_nan_chunk = []
+        in_nan_chunk = False
+        for point in points:
+            if np.any(np.isnan(point)):
+                in_nan_chunk = True
+                if len(current_valid_chunk) > 2:
+                    point_chunks.append(np.array(current_valid_chunk))
+                elif 3 > len(current_valid_chunk) > 0:
+                    current_nan_chunk += current_valid_chunk
+                current_valid_chunk = []
 
-    # Find the indices where the difference vector is non-zero and finite
-    wanted_indices = np.any(vectors != 0, axis=1) & np.all(np.isfinite(vectors), axis=1)
-    vectors = vectors[wanted_indices]
-    # Compute the dot products and determinants between pairs of vectors
-    dot_products = np.einsum("ij,ij->i", vectors[:-1], vectors[1:])
-    determinants = np.cross(vectors[:-1], vectors[1:])
+                current_nan_chunk.append(point)
+            else:
+                in_nan_chunk = False
+                if len(current_nan_chunk) > 2:
+                    point_chunks.append(np.array(current_nan_chunk))
+                elif 3 > len(current_nan_chunk) > 0:
+                    current_valid_chunk += current_nan_chunk
+                current_nan_chunk = []
+                current_valid_chunk.append(point)
+        if in_nan_chunk:
+            if len(current_nan_chunk) > 2:
+                point_chunks.append(np.array(current_nan_chunk))
+            elif 2 >= len(current_nan_chunk) > 0:
+                point_chunks[-1] = np.concatenate([point_chunks[-1], np.array(current_nan_chunk)])
+        else:
+            if len(current_valid_chunk) > 2:
+                point_chunks.append(np.array(current_valid_chunk))
+            elif 2 >= len(current_valid_chunk) > 0:
+                point_chunks[-1] = np.concatenate([point_chunks[-1], np.array(current_valid_chunk)])
 
-    # Compute the turning angles
-    turning_angles = np.arctan2(determinants, dot_products)
-    if skip == 0:
-        turning_angles_result = np.full(points.shape[0] - 2, np.nan if remove_zero_vectors else 0)
-        # the last one is buried in the angle if not False anyways
-        wanted_angles = np.where(wanted_indices)[0][1:] - 1
-        # Set the turning angles to 0 for equal consecutive points
-        turning_angles_result[wanted_angles] = turning_angles
-    else: # in case of skip > 0, make sure to modify array to maintain same length as skip = 0 but with nan values placed accordingly (for compatibility with further processing)
-        # Creating a new array 'new_nums' of length len(nums) + (len(nums) - 1) * p filled with zeros
-        zero_arr = np.full(len(np.diff(points[::skip + 1], axis=0)) - 1, np.nan if remove_zero_vectors else 0)
-        zero_arr[np.where(wanted_indices)[0][1:] - 1] = turning_angles
-        turning_angles = zero_arr # take into consideration zero vectors that were discarded by wanted_indeces and put these 0 instead of NaN
-        turning_angles_result = np.full(len(turning_angles) + (len(turning_angles) - 1) * (skip), np.nan)
+    else:
+        point_chunks = [points]
+    turning_angles_final = np.array([])
+    for i, point_chunk in enumerate(point_chunks):
+        if skip < math.ceil((len(point_chunk) - 3) / 3):
 
-        # Filling the 'new_nums' array with elements from 'nums' at intervals of (p + 1)
-        turning_angles_result[::skip + 1] = turning_angles
-        turning_angles_result = np.concatenate([np.full(skip, np.nan), turning_angles_result, np.full(skip, np.nan)])
-        turning_angles_result = np.concatenate([turning_angles_result, np.full(points.shape[0] - 2 - len(turning_angles_result), np.nan)])
+            vectors = np.diff(point_chunk[::skip+1], axis=0)
 
-    return turning_angles_result
+            # Find the indices where the difference vector is non-zero and finite
+            wanted_indices = np.any(vectors != 0, axis=1) & np.all(np.isfinite(vectors), axis=1)
+            vectors = vectors[wanted_indices]
+            # Compute the dot products and determinants between pairs of vectors
+            dot_products = np.einsum("ij,ij->i", vectors[:-1], vectors[1:])
+            determinants = np.cross(vectors[:-1], vectors[1:])
+
+            # Compute the turning angles
+            turning_angles = np.arctan2(determinants, dot_products)
+            if skip == 0:
+                turning_angles_result = np.full(point_chunk.shape[0] - 2, np.nan if remove_zero_vectors else 0)
+                # the last one is buried in the angle if not False anyways
+                wanted_angles = np.where(wanted_indices)[0][1:] - 1
+                # Set the turning angles to 0 for equal consecutive points
+                turning_angles_result[wanted_angles] = turning_angles
+            else: # in case of skip > 0, make sure to modify array to maintain same length as skip = 0 but with nan values placed accordingly (for compatibility with further processing)
+                # Creating a new array 'new_nums' of length len(nums) + (len(nums) - 1) * p filled with zeros
+                zero_arr = np.full(len(np.diff(point_chunk[::skip + 1], axis=0)) - 1, np.nan if remove_zero_vectors else 0)
+                zero_arr[np.where(wanted_indices)[0][1:] - 1] = turning_angles
+                turning_angles = zero_arr # take into consideration zero vectors that were discarded by wanted_indeces and put these 0 instead of NaN
+                turning_angles_result = np.full(len(turning_angles) + (len(turning_angles) - 1) * (skip), np.nan)
+
+                # Filling the 'new_nums' array with elements from 'nums' at intervals of (p + 1)
+                turning_angles_result[::skip + 1] = turning_angles
+                turning_angles_result = np.concatenate([np.full(skip, np.nan), turning_angles_result, np.full(skip, np.nan)])
+                turning_angles_result = np.concatenate([turning_angles_result, np.full(point_chunk.shape[0] - 2 - len(turning_angles_result), np.nan)])
+
+        else:
+            turning_angles_result = np.full(len(point_chunk) - 2, np.nan)
+        turning_angles_final = np.concatenate([turning_angles_final, np.concatenate([np.array([np.nan, np.nan]), turning_angles_result])])
+
+    return turning_angles_final[2:]
 
 
 def entropy_heatmap(chunk, area, bins=(18, 18)):

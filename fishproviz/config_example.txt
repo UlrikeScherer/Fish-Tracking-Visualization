@@ -65,6 +65,7 @@ TANGLE_N_SKIP=0 # Number of data points to skip when computing turning angle. Se
 UNAVERAGED=0 #1 for True, 0 for False: If metrics should be saved as averaged or raw
 AGGREGATE_EVERY_N=1 #(if UNAVERAGED=1) for AGGREGATE_EVERY_N=1 save every observation, for AGGREGATE_EVERY_N=N>1 aggregate with a non-overlapping window of size N
 REMOVE_0_VECS=0 #Whether to remove (REMOVE_0_VECS=1) or not (REMOVE_0_VECS=0) 0 vectors from turning angle calculation
+DIST_FROM_WALL_TANGLE_IGNORED=0 # In CM, the distance from the wall after which the turning angle will be ignored
 
 # shared variables that are used in the scripts
 # NO Changes needed
