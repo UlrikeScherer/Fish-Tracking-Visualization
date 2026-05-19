@@ -65,7 +65,7 @@ def main_metrics(program, time_interval=100, include_median=None, **kwargs_metri
     else:
         time_interval = int(time_interval)
 
-    if time_interval < 30:
+    if 0 < time_interval < 30:
         raise ValueError("time_interval must be at least 30 seconds otherwise the csv files will be too large")
 
     if include_median and program != ACTIVITY:
@@ -121,7 +121,7 @@ def get_fish_ids_to_run(program, fish_id):
 
 def main(
     program=None,
-    time_interval=100,
+    time_interval=-1,
     fish_id=None,
     include_median=None,
     parallel=False,
@@ -145,7 +145,7 @@ def main(
         is_feeding=program == FEEDING,
         is_novel_object=program == NOVEL_OBJECT_DISTANCE,
         is_sociability=program == SOCIABILITY,
-        all_points=True,
+        all_points=True if time_interval==-1 else False,
         every_point=UNAVERAGED
     )
     # PROGRAM METRICS or TRAJECTORY or CLEAR
@@ -204,7 +204,7 @@ def set_args():
         "--time_interval",
         help="Choose a time interval in second to compute averages of metrics, also possible [day, hour]",
         type=str,
-        default=100,
+        default=-1,
     )
     parser.add_argument(
         "-fid",
