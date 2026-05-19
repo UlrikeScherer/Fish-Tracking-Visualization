@@ -139,7 +139,7 @@ def mean_std_median(chunk):
 def absolute_angles(data, frame_interval, filter_index):
     error_index = update_filter_three_points(compute_step_lengths(data), filter_index)
     return calculate_result_for_interval(
-        np.abs(compute_turning_angles(data)).astype('double'), frame_interval, mean_std, error_index
+        np.abs(compute_turning_angles(data)).astype('double'), frame_interval, mean_std, error_index, checkfornans=True
     )
 
 
