@@ -19,6 +19,7 @@ from fishproviz.trajectory import ExperimentalTrajectory, FeedingTrajectory, Nov
 from fishproviz.metrics import (
     activity_per_interval,
     turning_angle_per_interval,
+    turning_angle_streak_length_per_interval,
     tortuosity_per_interval,
     entropy_per_interval,
     distance_to_wall_per_interval,
@@ -34,6 +35,7 @@ SOCIABILITY = "sociability"
 TRIAL_TIMES = "trial_times"
 ACTIVITY = "activity"
 TURNING_ANGLE = "turning_angle"
+TURNING_ANGLE_STREAK_LENGTH = "turning_angle_streak_length"
 ABS_ANGLE = "abs_angle"
 TORTUOSITY = "tortuosity"
 ENTROPY = "entropy"
@@ -42,7 +44,7 @@ NOVEL_OBJECT_DISTANCE = "novel_object_distance"
 STEP_LENGTH = "step_length"
 ALL_METRICS = "all"
 CLEAR = "clear"
-metric_names = [ACTIVITY, TURNING_ANGLE, ABS_ANGLE, TORTUOSITY, ENTROPY, WALL_DISTANCE, STEP_LENGTH]
+metric_names = [ACTIVITY, TURNING_ANGLE, TURNING_ANGLE_STREAK_LENGTH, ABS_ANGLE, TORTUOSITY, ENTROPY, WALL_DISTANCE, STEP_LENGTH]
 programs = [TRAJECTORY, FEEDING, TRIAL_TIMES, *metric_names, NOVEL_OBJECT_DISTANCE, ALL_METRICS, CLEAR, NOVEL_OBJECT, SOCIABILITY]
 
 
@@ -77,6 +79,7 @@ def main_metrics(program, time_interval=100, include_median=None, **kwargs_metri
         ACTIVITY: activity_per_interval,
         TORTUOSITY: tortuosity_per_interval,
         TURNING_ANGLE: turning_angle_per_interval,
+        TURNING_ANGLE_STREAK_LENGTH: turning_angle_streak_length_per_interval,
         ABS_ANGLE: absolute_angle_per_interval,
         ENTROPY: entropy_per_interval,
         WALL_DISTANCE: distance_to_wall_per_interval,

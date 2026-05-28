@@ -105,6 +105,41 @@ def compute_turning_angles(points,
     return turning_angles_final[2:]
 
 
+def compute_turning_angle_streak_lengths(turning_angles):
+    pos_streak = 0
+    neg_streak = 0
+    neg_streaks = []
+    pos_streaks = []
+    for tr in turning_angles:
+        if np.isnan(tr):
+            if pos_streak > 0:
+                pos_streaks.append(pos_streak)
+                pos_streak = 0
+
+            if neg_streak > 0:
+                neg_streaks.append(neg_streak)
+                neg_streak = 0
+        else:
+            if tr > 0:
+                pos_streak += 1
+                if neg_streak > 0:
+                    neg_streaks.append(neg_streak)
+                    neg_streak = 0
+            else:
+                neg_streak += 1
+                if pos_streak > 0:
+                    pos_streaks.append(pos_streak)
+                    pos_streak = 0
+
+    if pos_streak > 0:
+        pos_streaks.append(pos_streak)
+
+    if neg_streak > 0:
+        neg_streaks.append(neg_streak)
+
+    return np.concatenate([neg_streaks, pos_streaks])
+
+
 def entropy_heatmap(chunk, area, bins=(18, 18)):
     """Calculate the 2D histogram of the chunk"""
     th = config.THRESHOLD_AREA_PX

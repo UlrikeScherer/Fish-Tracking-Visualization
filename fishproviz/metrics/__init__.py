@@ -18,6 +18,8 @@ from .metrics import (
     step_length_per_interval,
     tortuosity,
     turning_angle,
+    turning_angle_streak_length,
+    turning_angle_streak_length_per_interval,
     absolute_angles,
 )
 
@@ -38,6 +40,7 @@ metric_names = [
         activity,
         tortuosity,
         turning_angle,
+        turning_angle_streak_length,
         absolute_angles,
         distance_to_wall,
         distance_to_object,
@@ -69,6 +72,8 @@ __all__ = [
     "activity",
     "tortuosity",
     "turning_angle",
+    "turning_angle_streak_length",
+    "turning_angle_streak_length_per_interval",
     "absolute_angles",
     "entropy_heatmap",
     "compute_turning_angles",
