@@ -11,9 +11,13 @@ core.*
 log*.csv
 logs/
 # test_data
-test_data/results
+test_data/results*/
 test_data/visualisations
 test_data/config_data
+
+# local-only integration tests and sample data (not committed)
+tests/test_sample_data.py
+sample-data/
 
 
 # MacOS
