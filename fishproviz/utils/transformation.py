@@ -1,12 +1,12 @@
+import functools
+from typing import Optional
+
 import numpy as np
 from .tank_area_config import get_area_functions, get_calibration_functions
 import fishproviz.config as config
 
-FUNCS_PX2CM = None
-AREA_FUNCS = None
 
-
-def normalize_origin_of_compartment(data, area, is_back):
+def normalize_origin_of_compartment(data: np.ndarray, area: np.ndarray, is_back: bool) -> tuple[np.ndarray, np.ndarray]:
     if is_back:
         origin1 = area[0, 0], area[1, 1]
         new_area = area - origin1
@@ -20,38 +20,47 @@ def normalize_origin_of_compartment(data, area, is_back):
     return data, new_area
 
 
-def rotation(t):
+def rotation(t: float) -> np.ndarray:
     return np.array([[np.cos(t), -np.sin(t)], [np.sin(t), np.cos(t)]])
 
 
-def px2cm(a, fish_key=None):
-    global FUNCS_PX2CM
-    if not FUNCS_PX2CM:
-        FUNCS_PX2CM = get_calibration_functions()
+@functools.lru_cache(maxsize=1)
+def _calibration_functions():
+    return get_calibration_functions()
+
+
+@functools.lru_cache(maxsize=1)
+def _area_functions():
+    return get_area_functions()
+
+
+def clear_transformation_cache() -> None:
+    _calibration_functions.cache_clear()
+    _area_functions.cache_clear()
+
+
+def px2cm(a: float, fish_key: Optional[str] = None) -> float:
+    funcs = _calibration_functions()
     if fish_key:
-        return a * FUNCS_PX2CM(fish_key)
+        return a * funcs(fish_key)
     return a * config.DEFAULT_CALIBRATION
 
 
-def pixel_to_cm(pixels, fish_key=None):
+def pixel_to_cm(pixels: np.ndarray, fish_key: Optional[str] = None) -> np.ndarray:
     """
     @params: pixels (Nx2)
     returns: cm (Nx2)
     """
-    global FUNCS_PX2CM
-    global AREA_FUNCS
-    if not AREA_FUNCS:
-        AREA_FUNCS = get_area_functions()
-    if AREA_FUNCS(fish_key) is None:
+    area_funcs = _area_functions()
+    if area_funcs(fish_key) is None:
         origin = np.array([450, 450])  # default origin
     else:
-        origin = AREA_FUNCS(fish_key)[1]  # origin of the area is the second point
+        origin = area_funcs(fish_key)[1]  # origin of the area is the second point
     pixels = pixels - origin
-    if not FUNCS_PX2CM:
-        FUNCS_PX2CM = get_calibration_functions()
+    funcs = _calibration_functions()
     R = rotation(np.pi / 4)
     if fish_key:
-        t = [FUNCS_PX2CM(fish_key), FUNCS_PX2CM(fish_key)]
+        t = [funcs(fish_key), funcs(fish_key)]
     else:
         t = [config.DEFAULT_CALIBRATION, config.DEFAULT_CALIBRATION]
     T = np.diag(t)

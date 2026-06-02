@@ -30,7 +30,6 @@ def exploration_trials(path_trials=config.TRIAL_TIMES_CSV):
     else:
         tdf = pd.read_csv(res_mean, sep=config.sep)
         tdf_ndf = pd.read_csv(res_ndf, sep=config.sep)
-    subcols = ["mean", "std", "n_df"]
     # pd.DataFrame(None, tdf.index, pd.MultiIndex.from_product([get_camera_pos_keys(), ["mean", "std", "n_df"]]))
     tdf_b = tdf[int(BLOCK[-1]) == tdf["block"]]
     for fk in get_camera_pos_keys():

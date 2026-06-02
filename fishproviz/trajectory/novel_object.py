@@ -55,7 +55,11 @@ class NovelObjectTrajectory(ExperimentalTrajectory):
     ):
         F = self.fig_back if is_back else self.fig_front
 
-        start_idx, end_idx = self.get_start_end_index(date, batch_number, '_'.join([directory.split('/')[-2], 'back' if is_back else 'front']))
+        start_idx, end_idx = self.get_start_end_index(
+            date,
+            batch_number,
+            "_".join([directory.split("/")[-2], "back" if is_back else "front"]),
+        )
         F.ax.set_title(time_span, fontsize=10)
         last_frame = batch.FRAME.array[-1]
         if batch.x.array[-1] <= -1:
@@ -64,7 +68,9 @@ class NovelObjectTrajectory(ExperimentalTrajectory):
         feeding_filter = batch.FRAME.between(start_idx, end_idx)
         fish_key = "%s_%s" % tuple(self.fish2camera[fish_id])
 
-        batchxy = pixel_to_cm(batch[feeding_filter][["xpx", "ypx"]].to_numpy(), fish_key=fish_key)
+        batchxy = pixel_to_cm(
+            batch[feeding_filter][["xpx", "ypx"]].to_numpy(), fish_key=fish_key
+        )
         F.line.set_data(*batchxy.T)
 
         feeding_b, box = self.ObjectShape.contains(
@@ -161,9 +167,7 @@ class NovelObjectTrajectory(ExperimentalTrajectory):
         os.makedirs(self.dir_data_object, exist_ok=True)
         df_feeding.to_csv("%s/%s.csv" % (self.dir_data_object, "feeding_times"))
         df_visits.to_csv("%s/%s.csv" % (self.dir_data_object, "visits"))
-        df_num_df_feeding.to_csv(
-            "%s/%s.csv" % (self.dir_data_object, "num_df_feeding")
-        )
+        df_num_df_feeding.to_csv("%s/%s.csv" % (self.dir_data_object, "num_df_feeding"))
 
     def object_data_to_tex(self):
         text = """\newcommand\ftlist{}\newcommand\setft[2]{\csdef{ft#1}{#2}}\newcommand\getft[1]{\csuse{ft#1}}""".replace(

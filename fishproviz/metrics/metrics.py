@@ -1,3 +1,5 @@
+from typing import Callable, Optional
+
 import fishproviz.config as config
 from fishproviz.utils import (
     csv_of_the_day,
@@ -7,7 +9,12 @@ from fishproviz.utils import (
 )
 from fishproviz.utils.tank_area_config import get_area_functions
 from fishproviz.utils.transformation import pixel_to_cm, px2cm
-from fishproviz.methods import tortuosity_of_chunk, distance_to_wall_chunk, mean_std, distance_to_object_chunk
+from fishproviz.methods import (
+    tortuosity_of_chunk,
+    distance_to_wall_chunk,
+    mean_std,
+    distance_to_object_chunk,
+)
 from .results_to_csv import metric_result_to_csv
 from .compute_metrics import (
     compute_step_lengths,
@@ -19,7 +26,6 @@ import pandas as pd
 import numpy as np
 import bisect
 
-from fishproviz.utils.utile import start_time_of_day_to_seconds
 from fishproviz.utils.object_config import read_object_data_from_json
 from fishproviz.utils.utile import feeding_times_start_end_dict, get_start_end_index
 
@@ -56,7 +62,9 @@ def get_gaps_in_dataframes(frames):
     return np.where(gaps_select)[0], gaps_select
 
 
-def calculate_result_for_interval(data, split_index, avg_metric_f, error_index, NDIM=3, checkfornans=False, averaging=True):
+def calculate_result_for_interval(
+    data, split_index, avg_metric_f, error_index, NDIM=3, checkfornans=False, averaging=True
+):
     if split_index is None:
         split_index = [len(data) - 1]
     len_out = len(split_index) + 1
@@ -64,10 +72,7 @@ def calculate_result_for_interval(data, split_index, avg_metric_f, error_index, 
         mu_sd = np.zeros([len_out, NDIM], dtype=float)
     else:
         mu_sd = []
-    for i, (chunk, err_flt) in enumerate(
-        zip(np.split(data, split_index), np.split(error_index, split_index))
-    ):
-
+    for i, (chunk, err_flt) in enumerate(zip(np.split(data, split_index), np.split(error_index, split_index))):
         chunk = chunk[~err_flt]
 
         if checkfornans:
@@ -102,7 +107,7 @@ def distance_to_wall(data, frame_interval, error_index, area):
     dtw = lambda chunk: px2cm(distance_to_wall_chunk(chunk, area[1]), fish_key=fish_key)
     avg_func = lambda chunk: mean_std(dtw(chunk))
     return calculate_result_for_interval(
-        data.astype('double'),
+        data.astype("double"),
         frame_interval,
         avg_func if not config.UNAVERAGED else dtw,
         error_index,
@@ -113,10 +118,13 @@ def distance_to_wall(data, frame_interval, error_index, area):
 def distance_to_object(data, frame_interval, error_index, area):
     fish_key = area[0]
     return calculate_result_for_interval(
-        data.astype('double'),
+        data.astype("double"),
         frame_interval,
         lambda chunk: mean_std(
-            px2cm(distance_to_object_chunk(chunk, area[1], area[2], area[3]), fish_key=fish_key)
+            px2cm(
+                distance_to_object_chunk(chunk, area[1], area[2], area[3]),
+                fish_key=fish_key,
+            )
         ),
         error_index,
     )
@@ -124,7 +132,7 @@ def distance_to_object(data, frame_interval, error_index, area):
 
 def tortuosity(data, frame_interval, error_index):
     return calculate_result_for_interval(
-        data.astype('double'),
+        data.astype("double"),
         frame_interval,
         lambda chunk: mean_std(tortuosity_of_chunk(chunk)),
         error_index,
@@ -134,13 +142,17 @@ def tortuosity(data, frame_interval, error_index):
 def mean_std_median(chunk):
     if len(chunk) == 0:
         return (np.nan, np.nan, np.nan)
-    return (*mean_std(chunk.astype('double')), np.percentile(chunk, 50))
+    return (*mean_std(chunk.astype("double")), np.percentile(chunk, 50))
 
 
 def absolute_angles(data, frame_interval, filter_index):
     error_index = update_filter_three_points(compute_step_lengths(data), filter_index)
     return calculate_result_for_interval(
-        np.abs(compute_turning_angles(data)).astype('double'), frame_interval, mean_std, error_index, checkfornans=True
+        np.abs(compute_turning_angles(data)).astype("double"),
+        frame_interval,
+        mean_std,
+        error_index,
+        checkfornans=True,
     )
 
 
@@ -148,7 +160,7 @@ def activity(data, frame_interval, filter_index, include_median=False):
     steps = compute_step_lengths(data)
     filter_index = update_filter_two_points(steps, filter_index)
     return calculate_result_for_interval(
-        steps.astype('double'),
+        steps.astype("double"),
         frame_interval,
         mean_std_median if include_median else mean_std,
         filter_index,
@@ -159,7 +171,12 @@ def activity(data, frame_interval, filter_index, include_median=False):
 def step_length(data, frame_interval, filter_index):
     steps = compute_step_lengths(data)
     filter_index = update_filter_two_points(steps, filter_index)
-    return calculate_result_for_interval(steps.astype('double'), frame_interval, mean_std if not config.UNAVERAGED else None, filter_index)
+    return calculate_result_for_interval(
+        steps.astype("double"),
+        frame_interval,
+        mean_std if not config.UNAVERAGED else None,
+        filter_index,
+    )
 
 
 def turning_angle_streak_length(data, frame_interval, filter_index, area=None, data_px=None):
@@ -172,30 +189,30 @@ def turning_angle(data, frame_interval, filter_index, area=None, data_px=None, u
     dtw = lambda chunk: px2cm(distance_to_wall_chunk(chunk, area[1]), fish_key=area[0])
     error_index = update_filter_three_points(compute_step_lengths(data), filter_index)
     return calculate_result_for_interval(
-        compute_turning_angles(data, distance_to_wall=None if area is None else dtw(data_px).astype('double')).astype('double'),
+        compute_turning_angles(data, distance_to_wall=None if area is None else dtw(data_px).astype("double")).astype("double"),
         frame_interval,
         mean_std if not unaveraged else None,
         error_index,
-        checkfornans=True
+        checkfornans=True,
     )
 
 
 def metric_per_interval(
-    fish_ids=None,
-    time_interval=100,
-    day_interval=None,
-    metric=activity,
-    write_to_csv=False,
-    drop_out_of_scope=False,
-    out_dim=3,
-    include_median=False,
-    print_logs=False,
-    is_feeding:bool=False,
-    is_novel_object:bool=False,
-    is_sociability:bool=False,
+    fish_ids: Optional[list[int]] = None,
+    time_interval: int = 100,
+    day_interval: Optional[tuple[int, int]] = None,
+    metric: Callable = activity,
+    write_to_csv: bool = False,
+    drop_out_of_scope: bool = False,
+    out_dim: int = 3,
+    include_median: bool = False,
+    print_logs: bool = False,
+    is_feeding: bool = False,
+    is_novel_object: bool = False,
+    is_sociability: bool = False,
     all_points: bool = False,
     every_point: bool = False,
-):
+) -> dict:
     """
     Applies a given function to all fishes in fish_ids with the time_interval, for all days in the day_interval interval
     Args:
@@ -224,10 +241,10 @@ def metric_per_interval(
         out_dim = out_dim + 1
         metric_kwargs.update(include_median=include_median)
 
-    if metric.__name__ in [ distance_to_object.__name__]:
+    if metric.__name__ in [distance_to_object.__name__]:
         dict_ellipses = read_object_data_from_json()
 
-    for i, fish in enumerate(fish_ids):
+    for _, fish in enumerate(fish_ids):
         camera_id, is_back = fish2camera[fish, 0], fish2camera[fish, 1] == config.BACK
         fish_key = "%s_%s" % (camera_id, fish2camera[fish, 1])
         day_dict = dict()
@@ -238,7 +255,7 @@ def metric_per_interval(
         )
         start_end_times = feeding_times_start_end_dict(is_feeding, is_novel_object, is_sociability)
 
-        for j, day in enumerate(days):
+        for _, day in enumerate(days):
             keys, data_in_batches = csv_of_the_day(
                 camera_id,
                 day,
@@ -247,10 +264,6 @@ def metric_per_interval(
                 print_logs=print_logs,
             )  # True or False testing needed
             if len(data_in_batches) > 0:
-                daytime_DF = (
-                    start_time_of_day_to_seconds(day.split("_")[1])
-                    * config.FRAMES_PER_SECOND
-                )
                 # use index frames to get the precis time of the data when averaging
                 dfis = []
                 for k, dfi in zip(keys, data_in_batches):
@@ -262,45 +275,30 @@ def metric_per_interval(
 
                 data_in_batches = dfis
 
-
                 df = pd.concat(data_in_batches)
                 step = time_interval * config.FRAMES_PER_SECOND
                 if all_points:
                     step = int(df.index[-1])
                 time_points = np.arange(0, int(df.index[-1]), step)
-                split_by_interval_idx = [
-                    bisect.bisect_left(df.index, h) for h in time_points[1:]
-                ]
+                split_by_interval_idx = [bisect.bisect_left(df.index, h) for h in time_points[1:]]
                 data = df[["xpx", "ypx"]].to_numpy()
                 area_tuple = (fish_key, area_func(fish_key))
-                err_filter = all_error_filters(
-                    data, area_tuple, fish_key=fish_key, day=day
-                )
+                err_filter = all_error_filters(data, area_tuple, fish_key=fish_key, day=day)
 
                 if metric.__name__ in [  # metrics in pixels using the area config
                     entropy.__name__,
                     distance_to_wall.__name__,
                 ]:
                     # DISTANCE TO WALL METRIC
-                    result = metric(
-                        data,
-                        split_by_interval_idx,
-                        err_filter,
-                        area_tuple,
-                        **metric_kwargs
-                    )
-                elif metric.__name__ in [ distance_to_object.__name__]:
+                    result = metric(data, split_by_interval_idx, err_filter, area_tuple, **metric_kwargs)
+                elif metric.__name__ in [distance_to_object.__name__]:
                     # DISTANCE TO ELLIPSE
                     ellipse = dict_ellipses[fish_key][day]
                     ori_x = (ellipse["end_x"] + ellipse["origin_x"]) / 2
                     ori_y = (ellipse["end_y"] + ellipse["origin_y"]) / 2
                     r_x = (ellipse["end_x"] - ellipse["origin_x"]) / 2
                     r_y = (ellipse["end_y"] - ellipse["origin_y"]) / 2
-                    result = metric(data,
-                                    split_by_interval_idx,
-                                    err_filter,
-                                    (fish_key, np.array([ori_x, ori_y]), r_x, r_y),
-                                    **metric_kwargs)
+                    result = metric(data, split_by_interval_idx, err_filter, (fish_key, np.array([ori_x, ori_y]), r_x, r_y), **metric_kwargs)
                 else:
                     data_cm = pixel_to_cm(data, fish_key=fish_key)
                     if (metric.__name__ in [turning_angle.__name__] or metric.__name__ in [turning_angle_streak_length.__name__]) and config.DIST_FROM_WALL_TANGLE_IGNORED > 0:
@@ -361,6 +359,7 @@ def entropy_per_interval(*args, **kwargs):
 
 def distance_to_wall_per_interval(*args, **kwargs):
     return metric_per_interval(*args, **kwargs, metric=distance_to_wall)
+
 
 def distance_to_object_per_interval(*args, **kwargs):
     return metric_per_interval(*args, **kwargs, metric=distance_to_object)
