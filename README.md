@@ -25,6 +25,7 @@ For setting up the project first and creating a local environment file `fishprov
 ```bash
 python3 setup.py build_ext --inplace
 ```
+This compiles the Cython extension and bootstraps `fishproviz/config.env` from `fishproviz/default_config.env`. Edit `config.env` to set your data paths before running.
 
 ## Getting Started
 ### Configuration
@@ -38,16 +39,18 @@ Entry-Points for the Dataset for running the program locally are given with the 
 ### General Usage
 ```
 usage: python3 main.py [-h] [-ti TIME_INTERVAL] [-fid FISH_ID] [--include_median]
-                       {trajectory,feeding,trial_times,activity,turning_angle,
-                       abs_angle,tortuosity,entropy,wall_distance,all,clear}
+                       {trajectory,feeding,novel_object,sociability,trial_times,
+                       activity,turning_angle,turning_angle_streak_length,
+                       abs_angle,tortuosity,entropy,wall_distance,step_length,all,clear}
 
 This program computes metrics and visualizations for fish trajectories,
 the results are saved in the directory:
 'DIR_CSV_LOCAL'
 
 positional arguments:
-  {trajectory,feeding,trial_times,activity,turning_angle,abs_angle,
-  tortuosity,entropy,wall_distance,all,clear}
+  {trajectory,feeding,novel_object,sociability,trial_times,activity,
+  turning_angle,turning_angle_streak_length,abs_angle,tortuosity,
+  entropy,wall_distance,step_length,all,clear}
                         Select the program you want to execute
 
 options:
@@ -68,9 +71,8 @@ Example of use: python3 main.py trajectory -fid 0
 Prerequisite: please make sure that the input _csv_-files are pre-filtered regarding possible nan values due to incorrect tracking/not available fishes
 
 Necessary Variables:
-- `N_BATCHES`: number of used batches
 - `path_csv_local`: root folder of the data directory
-- `POSITION_STR_FRONT`: specified sub-directory for the front compartment 
+- `POSITION_STR_FRONT`: specified sub-directory for the front compartment
 - `POSITION_STR_BACK`: specified sub-directory for the back compartment
 
 #### Plot Generation for Activity Analyses
@@ -219,7 +221,7 @@ options:
 
 -   For **metric** use one keyword out of:
 
-    -   `activity, turning_angle, tortuosity, entropy, abs_angle, wall_distance`.
+    -   `activity, turning_angle, turning_angle_streak_length, abs_angle, tortuosity, entropy, wall_distance, step_length`.
 
 -   run `python3 main.py <<metric>> --time_interval <<hour/day>>` to record
     mean and standard derivation per fish per hour/day in one csv-file.
@@ -292,7 +294,7 @@ Installing the `fishproviz`-module inside other projects requires specifying the
 For that, please refer to [1. Trajectory Visualization > Configuration](#configuration)
 Afterwards, build the fishproviz-package using the following command:
 ```bash
-python3 setup.py install
+pip install -e .
 ```
 This installs the fishproviz-package inside the current python-environment, which needs to match the target project's environment.
 
@@ -302,9 +304,9 @@ Use Pandoc to generate a README.pdf:
 pandoc README.md -o README.pdf
 ```
 
-## Caution with `config` module (for developers) 
-1. The `config` module load the `config.env` file and makes the variables available as global variables. When importing with variables with `from config import var` the `var` will not whiteness and updates to `config`, therefore its recommended to `import config` and access the variables with `config.var`.
-2. In `utils.transformations` we have two dictionaries `global FUNCS_PX2CM, global AREA_FUNCS` with function to return the area and calibration data, respectively, give a `camera_position` string. When the area_config is updated these global variables need to be set to `None` such that the new data is loaded.
+## Caution with `config` module (for developers)
+1. The `config` module loads `config.env` and exposes variables as module-level globals. Always use `import fishproviz.config as config` and access values as `config.VAR` — importing with `from config import var` captures a snapshot and will not see later updates (e.g. from `set_config_paths()`).
+2. Calibration and area functions in `utils.transformation` are cached with `@lru_cache`. When switching datasets call `clear_transformation_cache()` (or `set_config_paths()`, which calls it automatically) to force a reload.
 
 ## Possible Future Work
 * latex scripts are slow on the PC of the lab, suspicion that the `ls` search is slow.
