@@ -1,6 +1,4 @@
-
 import glob, json, os
-import matplotlib.pyplot as plt
 import numpy as np
 import fishproviz.config as config
 from .utile import get_camera_pos_keys
@@ -122,9 +120,11 @@ def compute_calibrations():
                 if c not in calibration:
                     cal = np.array(
                         [
-                            list(map(lambda x: int(x), coord.split(",")))
-                            if "," in coord
-                            else None
+                            (
+                                list(map(lambda x: int(x), coord.split(",")))
+                                if "," in coord
+                                else None
+                            )
                             for coord in get_line_starting_with(file)
                             .split("#")[1]
                             .split(";")

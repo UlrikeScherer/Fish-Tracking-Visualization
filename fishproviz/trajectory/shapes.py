@@ -8,4 +8,3 @@ class Shape(ABC):
     def contains(self, data_points, fish_key, day=None):
         """Checks which points are inside the shape"""
         pass
-

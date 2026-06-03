@@ -16,7 +16,7 @@ class ObjectEllipse(Shape):
             self.dict_ellipses = read_object_data_from_json()
 
     # overrideing the contains method
-    def contains(self, data_points, fish_key, day=None, sociability_zone: str=None):
+    def contains(self, data_points, fish_key, day=None, sociability_zone: str = None):
         """Checks which points are inside the ellipse, returns these points and a linspace of the ellipse"""
         try:
             ellipse = self.dict_ellipses[fish_key][day]
@@ -27,7 +27,10 @@ class ObjectEllipse(Shape):
             try:
                 ellipse = ellipse[sociability_zone]
             except KeyError as e:
-                print(e, f"Sociability zone {sociability_zone} for fish {fish_key} on day {day} does not match existing zones {list(ellipse.keys())}.")
+                print(
+                    e,
+                    f"Sociability zone {sociability_zone} for fish {fish_key} on day {day} does not match existing zones {list(ellipse.keys())}.",
+                )
 
         ori_x = (ellipse["end_x"] + ellipse["origin_x"]) / 2
         ori_y = (ellipse["end_y"] + ellipse["origin_y"]) / 2
