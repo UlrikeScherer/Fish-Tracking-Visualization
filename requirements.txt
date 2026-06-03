@@ -5,8 +5,7 @@ matplotlib~=3.9.0
 numpy==1.24.2
 pandas~=2.2.2
 plotly==5.0.0
-scikit_learn==1.2.2
 scipy==1.10.1
 seaborn==0.11.1
-tqdm==4.65.0
+tqdm>=4.66.3
 python-dotenv~=1.2.1
