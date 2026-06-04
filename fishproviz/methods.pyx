@@ -74,40 +74,32 @@ cpdef (double, double) mean_std(np.ndarray[double, ndim=1] data):
 #### DINSTANCE TO THE WALL --------------
 
 cpdef np.ndarray[double, ndim=1] distance_to_wall_chunk(np.ndarray[double, ndim=2] data, np.ndarray[double, ndim=2] area):
-    cdef int size
-    size = data.shape[0]
-    cdef np.ndarray[double, ndim=1] dists
-    cdef np.ndarray[double, ndim=2] abcn = calc_wall_lines(area)
-    #for i in range(size):
-    dists = min_distance(data, abcn)
-    return dists
+    return min_distance_to_segment(data, area)
 
-cdef np.ndarray[double, ndim=2] calc_wall_lines(np.ndarray[double, ndim=2] area):
-    cdef np.ndarray[double, ndim=2] abcn = np.zeros((area.shape[0], 4))
-    cdef int i
-    cdef int size = area.shape[0]
-    cdef double v1, v2, x, y
-    for i in range(size):
-        v1,v2 = area[(i+1) % size]-area[i]
-        abcn[i,0] = v2 # a
-        abcn[i,1] = -v1 # b
-        x,y = area[i]
-        abcn[i,2] = y*v1-v2*x # c
-        abcn[i,3]=norm(v2,v1) # norm(a,b)
-    return abcn
-
-cdef np.ndarray[double, ndim=1] min_distance(np.ndarray[double, ndim=2] data, np.ndarray[double, ndim=2] abcn):
-    cdef np.ndarray[double, ndim=2] min_dists
-    min_dists = distance_to_line(data[:,0], data[:,1], abcn[:,0], abcn[:,1], abcn[:,2], abcn[:,3])
-    return np.min(min_dists, axis=0)
-
-cdef np.ndarray[double, ndim=2] distance_to_line(
-    np.ndarray[double, ndim=1] x,
-    np.ndarray[double, ndim=1] y,
-    np.ndarray[double, ndim=1] a,
-    np.ndarray[double, ndim=1] b, np.ndarray[double, ndim=1] c,
-    np.ndarray[double, ndim=1] n):
-    return np.abs(a[:,np.newaxis]*x+b[:,np.newaxis]*y+c[:,np.newaxis])/n[:,np.newaxis]
+cdef np.ndarray[double, ndim=1] min_distance_to_segment(np.ndarray[double, ndim=2] data, np.ndarray[double, ndim=2] area):
+    cdef int n = data.shape[0]
+    cdef int e = area.shape[0]
+    cdef np.ndarray[double, ndim=2] dists = np.zeros((e, n), dtype=np.float64)
+    cdef double ax, ay, abx, aby, ab_sq, px, py, t, fx, fy
+    cdef int i, j
+    for i in range(e):
+        ax = area[i, 0]
+        ay = area[i, 1]
+        abx = area[(i + 1) % e, 0] - ax
+        aby = area[(i + 1) % e, 1] - ay
+        ab_sq = abx * abx + aby * aby
+        for j in range(n):
+            px = data[j, 0]
+            py = data[j, 1]
+            t = ((px - ax) * abx + (py - ay) * aby) / ab_sq
+            if t < 0.0:
+                t = 0.0
+            elif t > 1.0:
+                t = 1.0
+            fx = ax + t * abx
+            fy = ay + t * aby
+            dists[i, j] = norm(px - fx, py - fy)
+    return np.min(dists, axis=0)
 
 cpdef np.ndarray[double, ndim=1] distance_to_object_chunk(np.ndarray[double, ndim=2] data,
                                                           np.ndarray[double, ndim=1] ellipse_center,

@@ -28,7 +28,7 @@ def compute_turning_angles(
     distance_to_wall: NDArray[float] = None,
 ) -> np.ndarray:
     # Compute the differences between adjacent points
-    if distance_from_wall_to_ignore > 0:
+    if distance_from_wall_to_ignore > 0 and distance_to_wall is not None:
         points[distance_to_wall < distance_from_wall_to_ignore] = np.array([np.nan, np.nan])
         point_chunks = []
         current_valid_chunk = []
