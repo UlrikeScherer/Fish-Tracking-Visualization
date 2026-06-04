@@ -19,6 +19,9 @@ dependencies = [
     "python-dotenv~=1.2.1",
 ]
 
+[tool.setuptools.packages.find]
+include = ["fishproviz*"]
+
 [tool.black]
 line-length = 227
 target-version = ["py310"]
