@@ -105,6 +105,18 @@ case "$OSTYPE" in
 esac
 mkdir -p $directory_of_run
 
+case "$OSTYPE" in
+    *linux|darwin|bsd|darwin24*) csvdirpath ="$(echo "$CSV_DIR")" ;;
+    *win|msys*) csvdirpath="$(echo "$CSV_DIR"  | sed 's/\\/\/\//g')" ;;
+esac
+case "$OSTYPE" in
+    *win|msys*) PLOTS_TRAJECTORY="$(echo "$PLOTS_TRAJECTORY"  | sed 's/\\/\//g')" ;;
+esac
+case "$OSTYPE" in
+    *linux|darwin|bsd|darwin24*) filespath="$(echo "$FILES")" ;;
+    *win|msys*) filespath="$(echo "$FILES" | sed 's/\\/\//g')" ;;
+esac
+
 for b in ${!position[@]}; do
     echo -e "pdf for ${position[$b]} \n"
     POSITION_STR=${POS_STRINGS[$b]}
@@ -130,7 +142,7 @@ for b in ${!position[@]}; do
                     %% root folders: ---------------------
                     \extrafloats{1000}
                     \newcommand\rootserver{$rootserver}
-                    \newcommand\rootcsv{$CSV_DIR}
+                    \newcommand\rootcsv{$csvdirpath}
                     \newcommand\rootrecord{$path_recordings}
                     \newcommand\plots{$PLOTS_TRAJECTORY}
                     \newcommand\block{$BLOCK}
@@ -140,7 +152,7 @@ for b in ${!position[@]}; do
                     \newcommand\maxindex{$MAX_BATCH_IDX}
                     \newcommand\subfigwidth{$SUBFIGURE_WIDTH}
                     \newcommand\subfigheight{$SUBFIGURE_HEIGHT}
-                    \newcommand\files{$FILES}
+                    \newcommand\files{$filespath}
                     % ---------------------------------------
                     \newcounter{cnt}
                     \newcommand\textlist{}
@@ -237,11 +249,11 @@ for b in ${!position[@]}; do
         done
         # daysarray=${daysarray%?}
         case "$OSTYPE" in
-            *linux|darwin|bsd|darwin24*) echo "${daysarray}" > "$FILES/days_array.tex" ;;
+            *linux|darwin|bsd|darwin24|darwin25*) echo "${daysarray}" > "$FILES/days_array.tex" ;;
             *win|msys*) echo "${daysarray}" > "$FILES\\days_array.tex" ;;
         esac
 	      case "$OSTYPE" in
-            *linux|darwin|bsd|darwin24*)  echo "$texheader" > "$FILES/arrayoflinks.tex" ;;
+            *linux|darwin|bsd|darwin24|darwin25*)  echo "$texheader" > "$FILES/arrayoflinks.tex" ;;
             *win|msys*) echo "$texheader" > "$FILES\\arrayoflinks.tex" ;;
         esac
         if [ $feeding ]; then
@@ -267,7 +279,7 @@ for b in ${!position[@]}; do
                 *win|msys*) daysarraypath="$(echo "${FILES}/days_array" | sed 's/\\/\//g' | sed 's/^/"/;s/$/"/')" ;;
             esac
             case "$OSTYPE" in
-                *linux|darwin|bsd|darwin24*) pdflatex --interaction=nonstopmode "\newcommand\arrayoflinks{${FILES}/arrayoflinks}\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}" > log_tex.txt ;;
+                *linux|darwin|bsd|darwin24|darwin25*) pdflatex --interaction=nonstopmode "\newcommand\arrayoflinks{${FILES}/arrayoflinks}\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}" > log_tex.txt ;;
                 *win|msys*) pdflatex --interaction=nonstopmode "\newcommand\daysarray{${daysarraypath}}\newcommand\arrayoflinks{${arrayoflinkspath}}\newcommand\secfirstplot{${secfirstplotpath}}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}" > log_tex.txt ;;
             esac
 
