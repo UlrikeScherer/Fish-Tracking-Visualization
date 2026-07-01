@@ -8,6 +8,8 @@ fixpath() {
 }
 
 source fishproviz/config.env # get the following variables
+eval $(python -c "import fishproviz.config as config; print(f'SQRT_N={config.SQRT_N}\nFIG_WIDTH={config.FIG_WIDTH}')")
+
 case "$OSTYPE" in
     *linux|darwin|bsd|darwin24|darwin25*) PLOTS_TRAJECTORY=$path_csv_local/$PLOTS_DIR ;;
     *win|msys*) PLOTS_TRAJECTORY=$path_csv_local\\$PLOTS_DIR ;;
@@ -20,7 +22,10 @@ fi
 cd tex
 position=("front" "back")
 POS_STRINGS=($POSITION_STR_FRONT $POSITION_STR_BACK)
-PREFIX="file://" #run:
+case "$OSTYPE" in
+    *linux|darwin|bsd|darwin24*) PREFIX="file://"  ;;
+    *win|msys*) PREFIX="file:///"  ;;
+esac
 
 PROGRAMNAME=$P_TRAJECTORY
 CSV_DIR=$path_csv
@@ -78,8 +83,6 @@ if [ $local ]; then
     CSV_DIR=$path_csv_local
 fi
 
-SQRT_N=$(echo "sqrt("$MAX_BATCH_IDX+2-$MIN_BATCH_IDX")" | bc -l)
-FIG_WIDTH=$(perl -w -e "use POSIX; print 0.95/ceil($SQRT_N/1.0), qq{\n}")
 SUBFIGURE_WIDTH="${FIG_WIDTH}\textwidth"
 SUBFIGURE_HEIGHT="${FIG_WIDTH}\textheight"
 echo "
@@ -110,7 +113,7 @@ for b in ${!position[@]}; do
     else
         case "$OSTYPE" in
             *linux|darwin|bsd|darwin24|darwin25*) cameras="$(ls -d $CSV_DIR/$POSITION_STR/[0-9]*[0-9]/ | sort -V )" ;;
-            *win|msys*) cameras="$(ls -d $CSV_DIR\\$POSITION_STR\\[0-9]*[0-9]\\ | sort -V )" ;;
+            *win|msys*) cameras="$(find $CSV_DIR\\\\$POSITION_STR\\\\ -maxdepth 1 -name "[0-9]*[0-9]" | sort -V )" ;;
         esac
     fi
 
@@ -119,7 +122,7 @@ for b in ${!position[@]}; do
         echo $camera
         case "$OSTYPE" in
             *linux|darwin|bsd|darwin24|darwin25*) secff="$(ls -d $CSV_DIR/$POSITION_STR/${camera}/*.${camera}*/ | sort -V | head -1 | sed 's/.*1550\([^.]*\).*/\1/')" ;;
-            *win|msys*) secff="$(ls -d $CSV_DIR\\$POSITION_STR\\${camera}\\*.${camera}*\\ | sort -V | head -1 | sed 's/.*1550\([^.]*\).*/\1/')" ;;
+            *win|msys*) secff="$(fixpath "$(find $CSV_DIR\\$POSITION_STR\\${camera} -maxdepth 1 -name "*.${camera}*" | sort -V | head -1 | sed 's/.*1550\([^.]*\).*/\1/')")" ;;
         esac
 
 
@@ -173,7 +176,7 @@ for b in ${!position[@]}; do
         daysarray="$LEGEND"
         case "$OSTYPE" in
             *linux|darwin|bsd|darwin24|darwin25*) days="$(ls -d $CSV_DIR/$POSITION_STR/${camera}/*${STARTTIME}.${camera}*/ | sort -V )" ;;
-            *win|msys*) days="$(ls -d $CSV_DIR\\$POSITION_STR\\${camera}\\*${STARTTIME}.${camera}*\\ | sort -V )" ;;
+            *win|msys*) days="$(find $CSV_DIR\\$POSITION_STR\\${camera}\\ -maxdepth 1 -name "*${STARTTIME}.${camera}*" | sort -V )" ;;
         esac
 
         for d in $days; do
@@ -187,7 +190,7 @@ for b in ${!position[@]}; do
             # -----------
             case "$OSTYPE" in
                 *linux|darwin|bsd|darwin24|darwin25*) filescsv="$(ls $CSV_DIR/$POSITION_STR/${camera}/*${STARTTIME}.${camera}*/${camera}_$day*.csv | sort -V)" ;;
-                *win|msys*) filescsv="$(ls $CSV_DIR\\$POSITION_STR\\${camera}\\*${STARTTIME}.${camera}*\\${camera}_$day*.csv | sort -V)" ;;
+                *win|msys*) filescsv="$(find $CSV_DIR\\$POSITION_STR\\${camera} -maxdepth 2 -name "${camera}_$day*.csv" | sort -V)" ;;
             esac
             C_is=()
             for f in $filescsv; do
@@ -203,6 +206,9 @@ for b in ${!position[@]}; do
             done
             k=0
             for f in $filescsv; do
+                case "$OSTYPE" in
+                    *win|msys*) f="$(echo "$f" | sed 's/\\/\//g')" ;;
+            	  esac
                 texheader="$texheader \setcsv{${day_id}${C_is[k]}}{\href{${PREFIX}${f}}{csv}}"
                 let k++
             done
@@ -215,7 +221,7 @@ for b in ${!position[@]}; do
             else
               case "$OSTYPE" in
                   *linux|darwin|bsd|darwin24|darwin25*) foldermp4="$(ls -d $path_recordings/${camera}/${day}*/ | head )" ;;
-                  *win|msys*) foldermp4="$(ls -d $path_recordings\\${camera}\\${day}*\\ | head )" ;;
+                  *win|msys*) foldermp4="$(find $path_recordings\\ -maxdepth 1 -name "${camera}\\\\${day}*" | head )" ;;
               esac
 
               texheader="$texheader \addtext{$PREFIX$foldermp4}
@@ -230,8 +236,14 @@ for b in ${!position[@]}; do
             fi
         done
         # daysarray=${daysarray%?}
-        echo "${daysarray}" > "$(fixpath "$FILES/days_array.tex")"
-        echo "$texheader" > "$(fixpath "$FILES/arrayoflinks.tex")"
+        case "$OSTYPE" in
+            *linux|darwin|bsd|darwin24*) echo "${daysarray}" > "$FILES/days_array.tex" ;;
+            *win|msys*) echo "${daysarray}" > "$FILES\\days_array.tex" ;;
+        esac
+	      case "$OSTYPE" in
+            *linux|darwin|bsd|darwin24*)  echo "$texheader" > "$FILES/arrayoflinks.tex" ;;
+            *win|msys*) echo "$texheader" > "$FILES\\arrayoflinks.tex" ;;
+        esac
         if [ $feeding ]; then
             echo "\input{$FILES/${BLOCK}feedingtime.tex}" >> "$(fixpath "$FILES/arrayoflinks.tex")"
         fi
@@ -245,8 +257,21 @@ for b in ${!position[@]}; do
         # run pdflatex two times
         END=1
         for k in $(seq 1 $END); do
+            case "$OSTYPE" in
+                *win|msys*) arrayoflinkspath="$(echo "${FILES}/arrayoflinks" | sed 's/\\/\//g' | sed 's/^/"/;s/$/"/')" ;;
+            esac
+	          case "$OSTYPE" in
+                *win|msys*) secfirstplotpath="$(echo "$secff" | sed 's/\\/\//g' | sed 's/^/"/;s/$/"/')" ;;
+            esac
+	          case "$OSTYPE" in
+                *win|msys*) daysarraypath="$(echo "${FILES}/days_array" | sed 's/\\/\//g' | sed 's/^/"/;s/$/"/')" ;;
+            esac
+            case "$OSTYPE" in
+                *linux|darwin|bsd|darwin24*) pdflatex --interaction=nonstopmode "\newcommand\arrayoflinks{${FILES}/arrayoflinks}\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}" > log_tex.txt ;;
+                *win|msys*) pdflatex --interaction=nonstopmode "\newcommand\daysarray{${daysarraypath}}\newcommand\arrayoflinks{${arrayoflinkspath}}\newcommand\secfirstplot{${secfirstplotpath}}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}" > log_tex.txt ;;
+            esac
+
             #pdflatex "\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}"
-            pdflatex --interaction=nonstopmode "\newcommand\arrayoflinks{${FILES}/arrayoflinks}\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}" > log_tex.txt
             #pdflatex "\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}"
         done
         case "$OSTYPE" in

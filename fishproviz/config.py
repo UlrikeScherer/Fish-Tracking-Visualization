@@ -31,6 +31,8 @@ DIRT_FILTER = int(_env("DIRT_FILTER"))  # 1 to filter by dirt, 0 to not filter
 # --- Dataset parameters ---
 MIN_BATCH_IDX = int(_env("MIN_BATCH_IDX"))
 MAX_BATCH_IDX = int(_env("MAX_BATCH_IDX"))
+SQRT_N = (MAX_BATCH_IDX+2-MIN_BATCH_IDX)**0.5
+FIG_WIDTH = 0.95/(-(-SQRT_N//1.0))
 HOURS_PER_DAY = float(_env("HOURS_PER_DAY"))
 BATCH_SIZE = int(_env("BATCH_SIZE"))
 FRAMES_PER_SECOND = int(_env("FRAMES_PER_SECOND"))
