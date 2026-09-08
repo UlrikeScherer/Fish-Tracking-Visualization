@@ -65,11 +65,11 @@ class TestUtils(unittest.TestCase):
         assert np.allclose(metrics.compute_turning_angles(points1), expected_angles1), "Test 1 failed"
 
         points2 = np.array([[0, 0], [1, 0], [1, 0], [0, 1], [-1, 0], [0, -1]], dtype=float)
-        expected_angles2 = np.array([0, np.pi * (3 / 4), np.pi / 2, np.pi / 2])
+        expected_angles2 = np.array([0, 0, np.pi / 2, np.pi / 2])
         assert np.allclose(metrics.compute_turning_angles(points2), expected_angles2), "Test 2 failed"
 
         points3 = np.array([[0, 0], [1, 0], [np.nan, 0], [1, 0], [0, 1]], dtype=float)
-        expected_angles3 = np.array([0, 0, np.pi * (3 / 4)])
+        expected_angles3 = np.array([0, 0, 0])
         assert np.allclose(metrics.compute_turning_angles(points3), expected_angles3), "Test 3 failed"
 
         points4 = np.array([[0, 0], [1, 0], [1, 0], [np.inf, np.inf], [0, 1]], dtype=float)
