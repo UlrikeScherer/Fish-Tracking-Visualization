@@ -20,11 +20,12 @@ def compute_turning_angles(
     Returns:
         Array of shape (M-2,). Entry j covers triplet (points[j], points[j+1], points[j+2]).
     """
-    orientations = np.vstack([[np.nan, np.nan], np.diff(points, axis=0)])
-    is_valid_vec = np.isfinite(orientations).all(axis=1) & (orientations != 0).any(axis=1)
-    computable = is_valid_vec[1:-1] & is_valid_vec[2:]
-    in_vecs = orientations[1:-1][computable]
-    out_vecs = orientations[2:][computable]
+    diffs = np.diff(points, axis=0)
+    norms = np.sqrt(np.einsum("ij,ij->i", diffs, diffs))
+    valid = np.isfinite(norms) & (norms > 0)
+    computable = valid[:-1] & valid[1:]
+    in_vecs = diffs[:-1][computable]
+    out_vecs = diffs[1:][computable]
     dot_products = np.einsum("ij,ij->i", in_vecs, out_vecs)
     angles = np.arctan2(np.cross(in_vecs, out_vecs), dot_products)
     result = np.full(len(points) - 2, fill_value, dtype=float)
@@ -39,31 +40,12 @@ def compute_turning_angle_streak_lengths(
 
     NaN values break streaks. Returns negative and positive run lengths concatenated.
     """
-    pos_streak = 0
-    neg_streak = 0
-    neg_streaks: list[int] = []
-    pos_streaks: list[int] = []
-    for tr in turning_angles:
-        if np.isnan(tr):
-            if pos_streak > 0:
-                pos_streaks.append(pos_streak)
-                pos_streak = 0
-            if neg_streak > 0:
-                neg_streaks.append(neg_streak)
-                neg_streak = 0
-        else:
-            if tr > 0:
-                pos_streak += 1
-                if neg_streak > 0:
-                    neg_streaks.append(neg_streak)
-                    neg_streak = 0
-            else:
-                neg_streak += 1
-                if pos_streak > 0:
-                    pos_streaks.append(pos_streak)
-                    pos_streak = 0
-    if pos_streak > 0:
-        pos_streaks.append(pos_streak)
-    if neg_streak > 0:
-        neg_streaks.append(neg_streak)
-    return np.concatenate([neg_streaks, pos_streaks])
+    n = len(turning_angles)
+    if n == 0:
+        return np.array([], dtype=np.float64)
+    # NaN → 0 (separator), >0 → 1, <=0 → -1; matches original loop's else-branch treatment of 0.0
+    signs = np.where(np.isnan(turning_angles), 0, np.where(turning_angles > 0, 1, -1)).astype(np.int8)
+    changes = np.flatnonzero(np.diff(signs, prepend=signs[0] - 1))
+    run_lengths = np.diff(np.append(changes, n))
+    run_values = signs[changes]
+    return np.concatenate([run_lengths[run_values == -1], run_lengths[run_values == 1]]).astype(np.float64)

@@ -1,3 +1,4 @@
+import inspect
 from typing import Callable, Optional
 
 import fishproviz.config as config
@@ -16,7 +17,7 @@ from fishproviz.methods import (
     distance_to_object_chunk,
 )
 from .results_to_csv import metric_result_to_csv
-from .compute_metrics import (
+from .compute_primitives import (
     compute_step_lengths,
     entropy_for_chunk,
 )
@@ -100,8 +101,13 @@ def entropy(data, frame_interval, error_index, area):
 
 def distance_to_wall(data, frame_interval, error_index, area):
     fish_key = area[0]
-    dtw = lambda chunk: px2cm(distance_to_wall_chunk(chunk, area[1]), fish_key=fish_key)
-    avg_func = lambda chunk: mean_std(dtw(chunk))
+
+    def dtw(chunk):
+        return px2cm(distance_to_wall_chunk(chunk, area[1]), fish_key=fish_key)
+
+    def avg_func(chunk):
+        return mean_std(dtw(chunk))
+
     return calculate_result_for_interval(
         data.astype("double"),
         frame_interval,
@@ -179,6 +185,7 @@ def metric_per_interval(
     is_sociability: bool = False,
     all_points: bool = False,
     every_point: bool = False,
+    is_summary: bool = False,
 ) -> dict:
     """
     Applies a given function to all fishes in fish_ids with the time_interval, for all days in the day_interval interval
@@ -268,12 +275,12 @@ def metric_per_interval(
                     result = metric(data, split_by_interval_idx, err_filter, (fish_key, np.array([ori_x, ori_y]), r_x, r_y), **metric_kwargs)
                 else:
                     data_cm = pixel_to_cm(data, fish_key=fish_key)
-                    if metric.__name__ in {"turning_angle", "turning_angle_streak_length", "absolute_angles"} and config.DIST_FROM_WALL_TANGLE_IGNORED > 0:
-                        result = metric(data_cm, split_by_interval_idx, err_filter, area_tuple, data, **metric_kwargs)
+                    if "area" in inspect.signature(metric).parameters:
+                        result = metric(data_cm, split_by_interval_idx, err_filter, area=area_tuple, data_px=data, **metric_kwargs)
                     else:
                         result = metric(data_cm, split_by_interval_idx, err_filter, **metric_kwargs)
                 # concat the results array with the index of df for every time_interval step
-                if metric.__name__ == "turning_angle_streak_length":
+                if is_summary:
                     if every_point:
                         day_dict[day] = pd.DataFrame(result.reshape((-1, 1)))
                     else:

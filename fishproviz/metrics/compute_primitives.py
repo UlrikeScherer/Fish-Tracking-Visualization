@@ -6,8 +6,7 @@ import fishproviz.config as config
 
 def compute_step_lengths(points: np.ndarray) -> np.ndarray:
     vectors = np.diff(points, axis=0)
-    distances = np.linalg.norm(vectors, axis=1)
-    return distances
+    return np.sqrt(np.einsum("ij,ij->i", vectors, vectors))
 
 
 def calc_step_per_frame(batchxy, frames):

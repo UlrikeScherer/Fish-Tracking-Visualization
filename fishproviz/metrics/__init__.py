@@ -32,7 +32,7 @@ from .results_to_csv import (
     metric_result_to_csv,
 )
 
-from .compute_metrics import (
+from .compute_primitives import (
     compute_step_lengths,
     entropy_heatmap,
     entropy_for_chunk,
