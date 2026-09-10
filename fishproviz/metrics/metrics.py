@@ -62,9 +62,7 @@ def get_gaps_in_dataframes(frames):
     return np.where(gaps_select)[0], gaps_select
 
 
-def calculate_result_for_interval(
-    data, split_index, avg_metric_f, error_index, NDIM=3, checkfornans=False, averaging=True
-):
+def calculate_result_for_interval(data, split_index, avg_metric_f, error_index, NDIM=3, checkfornans=False, averaging=True):
     if split_index is None:
         split_index = [len(data) - 1]
     len_out = len(split_index) + 1
@@ -146,7 +144,14 @@ def mean_std_median(chunk):
 
 
 def absolute_angles(data, frame_interval, filter_index):
-    error_index = update_filter_three_points(compute_step_lengths(data), filter_index)
+    skip = config.TANGLE_N_SKIP
+    if skip > 0:
+        data_eff = data[:: skip + 1]
+        filter_eff = filter_index[:: skip + 1]
+        frame_interval = [i // (skip + 1) for i in frame_interval]
+    else:
+        data_eff, filter_eff = data, filter_index
+    error_index = update_filter_three_points(compute_step_lengths(data_eff), filter_eff)
     return calculate_result_for_interval(
         np.abs(compute_turning_angles(data)).astype("double"),
         frame_interval,
@@ -181,13 +186,20 @@ def step_length(data, frame_interval, filter_index):
 
 def turning_angle_streak_length(data, frame_interval, filter_index, area=None, data_px=None):
     trs = turning_angle(data, frame_interval, filter_index, area, data_px, unaveraged=True)
-    streak_lengths = compute_turning_angle_streak_lengths(trs).astype('double')
+    streak_lengths = compute_turning_angle_streak_lengths(trs).astype("double")
     return streak_lengths if config.UNAVERAGED else np.concatenate([np.array(mean_std(streak_lengths)), [len(streak_lengths)]])
 
 
 def turning_angle(data, frame_interval, filter_index, area=None, data_px=None, unaveraged=config.UNAVERAGED):
     dtw = lambda chunk: px2cm(distance_to_wall_chunk(chunk, area[1]), fish_key=area[0])
-    error_index = update_filter_three_points(compute_step_lengths(data), filter_index)
+    skip = config.TANGLE_N_SKIP
+    if skip > 0:
+        data_eff = data[:: skip + 1]
+        filter_eff = filter_index[:: skip + 1]
+        frame_interval = [i // (skip + 1) for i in frame_interval]
+    else:
+        data_eff, filter_eff = data, filter_index
+    error_index = update_filter_three_points(compute_step_lengths(data_eff), filter_eff)
     return calculate_result_for_interval(
         compute_turning_angles(data, distance_to_wall=None if area is None else dtw(data_px).astype("double")).astype("double"),
         frame_interval,
@@ -302,13 +314,9 @@ def metric_per_interval(
                 else:
                     data_cm = pixel_to_cm(data, fish_key=fish_key)
                     if (metric.__name__ in [turning_angle.__name__] or metric.__name__ in [turning_angle_streak_length.__name__]) and config.DIST_FROM_WALL_TANGLE_IGNORED > 0:
-                        result = metric(
-                            data_cm, split_by_interval_idx, err_filter, area_tuple, data, **metric_kwargs
-                        )
+                        result = metric(data_cm, split_by_interval_idx, err_filter, area_tuple, data, **metric_kwargs)
                     else:
-                        result = metric(
-                            data_cm, split_by_interval_idx, err_filter, **metric_kwargs
-                        )
+                        result = metric(data_cm, split_by_interval_idx, err_filter, **metric_kwargs)
                 # concat the results array with the index of df for every time_interval step
                 if metric.__name__ in [turning_angle_streak_length.__name__]:
                     if every_point:
@@ -340,6 +348,7 @@ def step_length_per_interval(*args, **kwargs):
 
 def turning_angle_per_interval(*args, **kwargs):
     return metric_per_interval(*args, **kwargs, metric=turning_angle)
+
 
 def turning_angle_streak_length_per_interval(*args, **kwargs):
     return metric_per_interval(*args, **kwargs, metric=turning_angle_streak_length)
