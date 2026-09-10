@@ -59,23 +59,6 @@ class TestUtils(unittest.TestCase):
         _cmp("turning_angle", f"100_sec_turning_angle_skip{config.TANGLE_N_SKIP}.csv")
         _cmp("turning_angle", f"hour_turning_angle_skip{config.TANGLE_N_SKIP}.csv")
 
-    def test_compute_turning_angles(self):
-        points1 = np.array([[0, 0], [1, 0], [0, 1], [-1, 0], [0, -1]], dtype=float)
-        expected_angles1 = np.array([np.pi * (3 / 4), np.pi / 2, np.pi / 2])
-        assert np.allclose(metrics.compute_turning_angles(points1), expected_angles1), "Test 1 failed"
-
-        points2 = np.array([[0, 0], [1, 0], [1, 0], [0, 1], [-1, 0], [0, -1]], dtype=float)
-        expected_angles2 = np.array([0, 0, np.pi / 2, np.pi / 2])
-        assert np.allclose(metrics.compute_turning_angles(points2), expected_angles2), "Test 2 failed"
-
-        points3 = np.array([[0, 0], [1, 0], [np.nan, 0], [1, 0], [0, 1]], dtype=float)
-        expected_angles3 = np.array([0, 0, 0])
-        assert np.allclose(metrics.compute_turning_angles(points3), expected_angles3), "Test 3 failed"
-
-        points4 = np.array([[0, 0], [1, 0], [1, 0], [np.inf, np.inf], [0, 1]], dtype=float)
-        expected_angles4 = np.array([0, 0, 0])
-        assert np.allclose(metrics.compute_turning_angles(points4), expected_angles4), "Test 4 failed"
-
 
 if __name__ == "__main__":
     unittest.main()

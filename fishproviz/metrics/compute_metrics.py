@@ -1,5 +1,4 @@
 import numpy as np
-from numpy._typing import NDArray
 import scipy.stats as scipy_stats
 import matplotlib.pyplot as plt
 import fishproviz.config as config
@@ -16,69 +15,6 @@ def calc_step_per_frame(batchxy, frames):
     frame_dist = frames[1:] - frames[:-1]
     c = compute_step_lengths(batchxy) / frame_dist
     return c
-
-
-def compute_turning_angles(
-    points: np.ndarray,
-    skip: int = config.TANGLE_N_SKIP,
-    remove_zero_vectors: bool = config.REMOVE_0_VECS,
-    distance_from_wall_to_ignore: float = config.DIST_FROM_WALL_TANGLE_IGNORED,
-    distance_to_wall: NDArray[float] = None,
-) -> np.ndarray:
-    if distance_from_wall_to_ignore > 0 and distance_to_wall is not None:
-        points[distance_to_wall < distance_from_wall_to_ignore] = np.array([np.nan, np.nan])
-
-    subsampled = points[:: skip + 1]
-    orientations = np.vstack([[np.nan, np.nan], np.diff(subsampled, axis=0)])
-    is_valid_vec = np.isfinite(orientations).all(axis=1) & (orientations != 0).any(axis=1)
-
-    # result[j] = angle at triplet (sub[j], sub[j+1], sub[j+2]),
-    # requiring orientations[j+1] and orientations[j+2] both valid
-    computable = is_valid_vec[1:-1] & is_valid_vec[2:]
-
-    in_vecs = orientations[1:-1][computable]
-    out_vecs = orientations[2:][computable]
-    dot_products = np.einsum("ij,ij->i", in_vecs, out_vecs)
-    turning_angles = np.arctan2(np.cross(in_vecs, out_vecs), dot_products)
-
-    result = np.full(len(subsampled) - 2, np.nan if remove_zero_vectors else 0, dtype=float)
-    result[computable] = turning_angles
-    return result
-
-
-def compute_turning_angle_streak_lengths(turning_angles):
-    pos_streak = 0
-    neg_streak = 0
-    neg_streaks = []
-    pos_streaks = []
-    for tr in turning_angles:
-        if np.isnan(tr):
-            if pos_streak > 0:
-                pos_streaks.append(pos_streak)
-                pos_streak = 0
-
-            if neg_streak > 0:
-                neg_streaks.append(neg_streak)
-                neg_streak = 0
-        else:
-            if tr > 0:
-                pos_streak += 1
-                if neg_streak > 0:
-                    neg_streaks.append(neg_streak)
-                    neg_streak = 0
-            else:
-                neg_streak += 1
-                if pos_streak > 0:
-                    pos_streaks.append(pos_streak)
-                    pos_streak = 0
-
-    if pos_streak > 0:
-        pos_streaks.append(pos_streak)
-
-    if neg_streak > 0:
-        neg_streaks.append(neg_streak)
-
-    return np.concatenate([neg_streaks, pos_streaks])
 
 
 def entropy_heatmap(chunk, area, bins=(18, 18)):
