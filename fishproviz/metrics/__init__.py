@@ -2,8 +2,6 @@ from .metrics import (
     metric_per_interval,
     activity_per_interval,
     tortuosity_per_interval,
-    turning_angle_per_interval,
-    absolute_angle_per_interval,
     entropy_per_interval,
     entropy,
     distance_to_wall_per_interval,
@@ -17,19 +15,25 @@ from .metrics import (
     step_length,
     step_length_per_interval,
     tortuosity,
-    turning_angle,
-    turning_angle_streak_length,
-    turning_angle_streak_length_per_interval,
-    absolute_angles,
 )
+
+from .turning_angle import (
+    turning_angle_per_interval,
+    absolute_angle_per_interval,
+    turning_angle_streak_length_per_interval,
+    turning_angle,
+    absolute_angles,
+    turning_angle_streak_length,
+)
+
+from .turning_angle.compute import compute_turning_angles
 
 from .results_to_csv import (
     metric_result_to_csv,
 )
 
-from .compute_metrics import (
+from .compute_primitives import (
     compute_step_lengths,
-    compute_turning_angles,
     entropy_heatmap,
     entropy_for_chunk,
 )

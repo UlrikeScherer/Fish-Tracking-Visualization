@@ -1,3 +1,4 @@
+import inspect
 from typing import Callable, Optional
 
 import fishproviz.config as config
@@ -16,10 +17,8 @@ from fishproviz.methods import (
     distance_to_object_chunk,
 )
 from .results_to_csv import metric_result_to_csv
-from .compute_metrics import (
+from .compute_primitives import (
     compute_step_lengths,
-    compute_turning_angles,
-    compute_turning_angle_streak_lengths,
     entropy_for_chunk,
 )
 import pandas as pd
@@ -62,9 +61,7 @@ def get_gaps_in_dataframes(frames):
     return np.where(gaps_select)[0], gaps_select
 
 
-def calculate_result_for_interval(
-    data, split_index, avg_metric_f, error_index, NDIM=3, checkfornans=False, averaging=True
-):
+def calculate_result_for_interval(data, split_index, avg_metric_f, error_index, NDIM=3, checkfornans=False, averaging=True):
     if split_index is None:
         split_index = [len(data) - 1]
     len_out = len(split_index) + 1
@@ -104,8 +101,13 @@ def entropy(data, frame_interval, error_index, area):
 
 def distance_to_wall(data, frame_interval, error_index, area):
     fish_key = area[0]
-    dtw = lambda chunk: px2cm(distance_to_wall_chunk(chunk, area[1]), fish_key=fish_key)
-    avg_func = lambda chunk: mean_std(dtw(chunk))
+
+    def dtw(chunk):
+        return px2cm(distance_to_wall_chunk(chunk, area[1]), fish_key=fish_key)
+
+    def avg_func(chunk):
+        return mean_std(dtw(chunk))
+
     return calculate_result_for_interval(
         data.astype("double"),
         frame_interval,
@@ -145,17 +147,6 @@ def mean_std_median(chunk):
     return (*mean_std(chunk.astype("double")), np.percentile(chunk, 50))
 
 
-def absolute_angles(data, frame_interval, filter_index):
-    error_index = update_filter_three_points(compute_step_lengths(data), filter_index)
-    return calculate_result_for_interval(
-        np.abs(compute_turning_angles(data)).astype("double"),
-        frame_interval,
-        mean_std,
-        error_index,
-        checkfornans=True,
-    )
-
-
 def activity(data, frame_interval, filter_index, include_median=False):
     steps = compute_step_lengths(data)
     filter_index = update_filter_two_points(steps, filter_index)
@@ -179,24 +170,6 @@ def step_length(data, frame_interval, filter_index):
     )
 
 
-def turning_angle_streak_length(data, frame_interval, filter_index, area=None, data_px=None):
-    trs = turning_angle(data, frame_interval, filter_index, area, data_px, unaveraged=True)
-    streak_lengths = compute_turning_angle_streak_lengths(trs).astype('double')
-    return streak_lengths if config.UNAVERAGED else np.concatenate([np.array(mean_std(streak_lengths)), [len(streak_lengths)]])
-
-
-def turning_angle(data, frame_interval, filter_index, area=None, data_px=None, unaveraged=config.UNAVERAGED):
-    dtw = lambda chunk: px2cm(distance_to_wall_chunk(chunk, area[1]), fish_key=area[0])
-    error_index = update_filter_three_points(compute_step_lengths(data), filter_index)
-    return calculate_result_for_interval(
-        compute_turning_angles(data, distance_to_wall=None if area is None else dtw(data_px).astype("double")).astype("double"),
-        frame_interval,
-        mean_std if not unaveraged else None,
-        error_index,
-        checkfornans=True,
-    )
-
-
 def metric_per_interval(
     fish_ids: Optional[list[int]] = None,
     time_interval: int = 100,
@@ -212,6 +185,7 @@ def metric_per_interval(
     is_sociability: bool = False,
     all_points: bool = False,
     every_point: bool = False,
+    is_summary: bool = False,
 ) -> dict:
     """
     Applies a given function to all fishes in fish_ids with the time_interval, for all days in the day_interval interval
@@ -301,16 +275,12 @@ def metric_per_interval(
                     result = metric(data, split_by_interval_idx, err_filter, (fish_key, np.array([ori_x, ori_y]), r_x, r_y), **metric_kwargs)
                 else:
                     data_cm = pixel_to_cm(data, fish_key=fish_key)
-                    if (metric.__name__ in [turning_angle.__name__] or metric.__name__ in [turning_angle_streak_length.__name__]) and config.DIST_FROM_WALL_TANGLE_IGNORED > 0:
-                        result = metric(
-                            data_cm, split_by_interval_idx, err_filter, area_tuple, data, **metric_kwargs
-                        )
+                    if "area" in inspect.signature(metric).parameters:
+                        result = metric(data_cm, split_by_interval_idx, err_filter, area=area_tuple, data_px=data, **metric_kwargs)
                     else:
-                        result = metric(
-                            data_cm, split_by_interval_idx, err_filter, **metric_kwargs
-                        )
+                        result = metric(data_cm, split_by_interval_idx, err_filter, **metric_kwargs)
                 # concat the results array with the index of df for every time_interval step
-                if metric.__name__ in [turning_angle_streak_length.__name__]:
+                if is_summary:
                     if every_point:
                         day_dict[day] = pd.DataFrame(result.reshape((-1, 1)))
                     else:
@@ -336,17 +306,6 @@ def activity_per_interval(*args, **kwargs):
 
 def step_length_per_interval(*args, **kwargs):
     return metric_per_interval(*args, **kwargs, metric=step_length)
-
-
-def turning_angle_per_interval(*args, **kwargs):
-    return metric_per_interval(*args, **kwargs, metric=turning_angle)
-
-def turning_angle_streak_length_per_interval(*args, **kwargs):
-    return metric_per_interval(*args, **kwargs, metric=turning_angle_streak_length)
-
-
-def absolute_angle_per_interval(*args, **kwargs):
-    return metric_per_interval(*args, **kwargs, metric=absolute_angles)
 
 
 def tortuosity_per_interval(*args, **kwargs):

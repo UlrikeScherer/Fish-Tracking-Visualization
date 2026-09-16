@@ -6,7 +6,7 @@ import os
 import sys
 from tqdm import tqdm
 import fishproviz.config as config
-from fishproviz.metrics.metrics import compute_turning_angles
+from fishproviz.metrics.turning_angle.compute import compute_turning_angles
 from fishproviz.utils import (
     csv_of_the_day,
     get_position_string,
@@ -72,9 +72,7 @@ class Figure:
             os.makedirs(directory, exist_ok=True)
         self.fig.savefig("{}/{}.pdf".format(directory, name), bbox_inches="tight")
 
-    def meta_text_for_trajectory(
-        self, mean, sd, avg_alpha, sum_alpha, spikes, misses, N
-    ):
+    def meta_text_for_trajectory(self, mean, sd, avg_alpha, sum_alpha, spikes, misses, N):
         return self.meta_text_for_plot(
             text_l=self.meta_text_lhs(avg_alpha, sum_alpha, mean, sd),
             text_r=self.meta_text_rhs(N, misses, spikes),
@@ -157,9 +155,7 @@ class Trajectory:
         F = self.fig_back if is_back else self.fig_front
         F.ax.set_title(time_span, fontsize=10)
         last_frame = batch.FRAME.array[-1]
-        if (batch.xpx.array[-1] == -1 and batch.ypx.array[-1] == -1) or (
-            batch.xpx.array[-1] == 0 and batch.ypx.array[-1] == 0
-        ):  # remove error point, only need to carry it to this point to record the last frame number
+        if (batch.xpx.array[-1] == -1 and batch.ypx.array[-1] == -1) or (batch.xpx.array[-1] == 0 and batch.ypx.array[-1] == 0):  # remove error point, only need to carry it to this point to record the last frame number
             batch.drop(batch.tail(1).index)
 
         fish_key = "%s_%s" % tuple(self.fish2camera[fish_id])
@@ -171,33 +167,25 @@ class Trajectory:
         F.remove_extra_lines(index=1)
         gaps_idx, gaps_select = get_gaps_in_dataframes(batch.FRAME.array)
         for i in gaps_idx:
-            F.ax.plot(
-                *batchxy.T[:, i : i + 2], "r-", alpha=0.7, solid_capstyle="projecting"
-            )
+            F.ax.plot(*batchxy.T[:, i : i + 2], "r-", alpha=0.7, solid_capstyle="projecting")
 
         # metric calculations
         steps = compute_step_lengths(batchxy)
         spikes, spike_places = num_of_spikes(steps)
-        ignore_flags = (
-            spike_places | gaps_select
-        )  # spike or gap ignore them for the next calculation
+        ignore_flags = spike_places | gaps_select  # spike or gap ignore them for the next calculation
         mean, sd = activity_mean_sd(steps, ignore_flags)
         # prevention of negative dimension when computing alphas: check for erroneous data
         # mean should be numeric and not nan, which indicates erroneous data without any tracking (consistent -1 values)
         if np.isnan(mean):
             with open(self.log_filepath, "a") as file:
-                file.write(
-                    f"\terroneous data filtered out for key: <{fish_key}>, date: {date} in timespan {time_span}\n"
-                )
+                file.write(f"\terroneous data filtered out for key: <{fish_key}>, date: {date} in timespan {time_span}\n")
             # print(f'\terroneous data filtered out for key: <{fish_key}>, date: {date} in timespan {time_span}')
             return -1
         alphas = compute_turning_angles(batchxy)
         avg_alpha, sum_alpha = alphas.mean(), alphas.sum()
         N = len(steps)
         misses = last_frame - N
-        remove_text = F.meta_text_for_trajectory(
-            mean, sd, avg_alpha, sum_alpha, spikes, misses, N
-        )
+        remove_text = F.meta_text_for_trajectory(mean, sd, avg_alpha, sum_alpha, spikes, misses, N)
 
         if self.write_fig:
             F.write_figure(directory, name)
@@ -234,17 +222,11 @@ class Trajectory:
                     sys.stdout.write("\r")
                     # write the progress to stdout
                     progress = i / N + j / (N * N_days)
-                    sys.stdout.write(
-                        "[%-20s] %d%%" % ("=" * int(20 * progress), 100 * progress)
-                    )
+                    sys.stdout.write("[%-20s] %d%%" % ("=" * int(20 * progress), 100 * progress))
                     sys.stdout.flush()
 
-                    keys, day_df = csv_of_the_day(
-                        camera_id, day, is_back=is_back, drop_out_of_scope=True
-                    )
-                    self.plot_day_camera_fast(
-                        day_df, keys, camera_id, day, fish_idx, is_back=is_back
-                    )
+                    keys, day_df = csv_of_the_day(camera_id, day, is_back=is_back, drop_out_of_scope=True)
+                    self.plot_day_camera_fast(day_df, keys, camera_id, day, fish_idx, is_back=is_back)
 
     def plot_for_individual_parallel(
         self,
@@ -261,21 +243,13 @@ class Trajectory:
                 position=current._identity[0] + 1,
             )
         ):
-            keys, day_df = csv_of_the_day(
-                camera_id, day, is_back=is_back, drop_out_of_scope=True
-            )
-            self.plot_day_camera_fast(
-                day_df, keys, camera_id, day, fish_idx, is_back=is_back
-            )
+            keys, day_df = csv_of_the_day(camera_id, day, is_back=is_back, drop_out_of_scope=True)
+            self.plot_day_camera_fast(day_df, keys, camera_id, day, fish_idx, is_back=is_back)
 
     def plot_day_camera_fast(self, data, keys, camera_id, date, fish_id, is_back):
         position = get_position_string(is_back)
-        prog_name = get_start_time_directory(
-            self.is_feeding, self.is_novel_object, self.is_sociability
-        )
-        plots_dir = "{}/{}/{}/{}/{}".format(
-            config.PLOTS_DIR, prog_name, position, camera_id, date
-        )
+        prog_name = get_start_time_directory(self.is_feeding, self.is_novel_object, self.is_sociability)
+        plots_dir = "{}/{}/{}/{}/{}".format(config.PLOTS_DIR, prog_name, position, camera_id, date)
 
         if len(data) == 0:
             return None
@@ -308,9 +282,7 @@ class Trajectory:
 class ExperimentalTrajectory(Trajectory):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.start_end_times = feeding_times_start_end_dict(
-            self.is_feeding, self.is_novel_object, self.is_sociability
-        )
+        self.start_end_times = feeding_times_start_end_dict(self.is_feeding, self.is_novel_object, self.is_sociability)
 
     def get_start_end_index(self, day_key, batch_number, tank_id=None):
         return get_start_end_index(self.start_end_times, day_key, batch_number, tank_id)
@@ -340,9 +312,7 @@ class ExperimentalTrajectory(Trajectory):
         feeding_filter = batch.FRAME.between(start_idx, end_idx)
         fish_key = "%s_%s" % tuple(self.fish2camera[fish_id])
 
-        batchxy = pixel_to_cm(
-            batch[feeding_filter][["xpx", "ypx"]].to_numpy(), fish_key=fish_key
-        )
+        batchxy = pixel_to_cm(batch[feeding_filter][["xpx", "ypx"]].to_numpy(), fish_key=fish_key)
         F.line.set_data(*batchxy.T)
 
         steps = compute_step_lengths(batchxy)
