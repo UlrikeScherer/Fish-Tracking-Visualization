@@ -8,7 +8,7 @@ fixpath() {
 }
 
 source fishproviz/config.env # get the following variables
-eval $(python -c "import fishproviz.config as config; print(f'SQRT_N={config.SQRT_N}\nFIG_WIDTH={config.FIG_WIDTH}')")
+eval $(python3 -c "import fishproviz.config as config; print(f'SQRT_N={config.SQRT_N}\nFIG_WIDTH={config.FIG_WIDTH}')")
 
 case "$OSTYPE" in
     *linux|darwin|bsd|darwin24|darwin25*) PLOTS_TRAJECTORY=$path_csv_local/$PLOTS_DIR ;;
@@ -34,7 +34,7 @@ case "$OSTYPE" in
     *linux|darwin|bsd|darwin24|darwin25*) FILES=$PLOTS_TRAJECTORY/$TEX_DIR ;;
     *win|msys*) FILES=$PLOTS_TRAJECTORY\\$TEX_DIR ;;
 esac
-mkdir $FILES
+mkdir -p $FILES
 
 while [[ "$#" -gt 0 ]]; do
     if [[ "$set_cam" == "1" ]]; then
@@ -106,7 +106,7 @@ esac
 mkdir -p $directory_of_run
 
 case "$OSTYPE" in
-    *linux|darwin|bsd|darwin24*) csvdirpath ="$(echo "$CSV_DIR")" ;;
+    *linux|darwin|bsd|darwin24*) csvdirpath="$(echo "$CSV_DIR")" ;;
     *win|msys*) csvdirpath="$(echo "$CSV_DIR"  | sed 's/\\/\/\//g')" ;;
 esac
 case "$OSTYPE" in
@@ -279,8 +279,8 @@ for b in ${!position[@]}; do
                 *win|msys*) daysarraypath="$(echo "${FILES}/days_array" | sed 's/\\/\//g' | sed 's/^/"/;s/$/"/')" ;;
             esac
             case "$OSTYPE" in
-                *linux|darwin|bsd|darwin24|darwin25*) pdflatex --interaction=nonstopmode "\newcommand\arrayoflinks{${FILES}/arrayoflinks}\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}" > log_tex.txt ;;
-                *win|msys*) pdflatex --interaction=nonstopmode "\newcommand\daysarray{${daysarraypath}}\newcommand\arrayoflinks{${arrayoflinkspath}}\newcommand\secfirstplot{${secfirstplotpath}}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}" > log_tex.txt ;;
+                *linux|darwin|bsd|darwin24|darwin25*) pdflatex -jobname main --interaction=nonstopmode "\newcommand\arrayoflinks{${FILES}/arrayoflinks}\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}" > log_tex.txt ;;
+                *win|msys*) pdflatex -jobname main --interaction=nonstopmode "\newcommand\daysarray{${daysarraypath}}\newcommand\arrayoflinks{${arrayoflinkspath}}\newcommand\secfirstplot{${secfirstplotpath}}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}" > log_tex.txt ;;
             esac
 
             #pdflatex "\newcommand\secfirstplot{$secff}\newcommand\position{${position[$b]}}\newcommand\camera{${camera}}\input{main}"
