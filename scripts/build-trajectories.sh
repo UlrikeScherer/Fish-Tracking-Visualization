@@ -23,7 +23,7 @@ cd tex
 position=("front" "back")
 POS_STRINGS=($POSITION_STR_FRONT $POSITION_STR_BACK)
 case "$OSTYPE" in
-    *linux|darwin|bsd|darwin24*) PREFIX="file://"  ;;
+    *linux|darwin|bsd|darwin24*|darwin25*) PREFIX="file://"  ;;
     *win|msys*) PREFIX="file:///"  ;;
 esac
 
@@ -106,14 +106,14 @@ esac
 mkdir -p $directory_of_run
 
 case "$OSTYPE" in
-    *linux|darwin|bsd|darwin24*) csvdirpath="$(echo "$CSV_DIR")" ;;
+    *linux|darwin|bsd|darwin24*|darwin25*) csvdirpath="$(echo "$CSV_DIR")" ;;
     *win|msys*) csvdirpath="$(echo "$CSV_DIR"  | sed 's/\\/\/\//g')" ;;
 esac
 case "$OSTYPE" in
     *win|msys*) PLOTS_TRAJECTORY="$(echo "$PLOTS_TRAJECTORY"  | sed 's/\\/\//g')" ;;
 esac
 case "$OSTYPE" in
-    *linux|darwin|bsd|darwin24*) filespath="$(echo "$FILES")" ;;
+    *linux|darwin|bsd|darwin24*|darwin25*) filespath="$(echo "$FILES")" ;;
     *win|msys*) filespath="$(echo "$FILES" | sed 's/\\/\//g')" ;;
 esac
 
@@ -266,7 +266,7 @@ for b in ${!position[@]}; do
             echo "\input{$FILES/${BLOCK}sociability_inflow.tex}" >> "$(fixpath "$FILES/arrayoflinks.tex")"
             echo "\input{$FILES/${BLOCK}sociability_outflow.tex}" >> "$(fixpath "$FILES/arrayoflinks.tex")"
         fi
-        # run pdflatex two times
+        # run pdflatex
         END=1
         for k in $(seq 1 $END); do
             case "$OSTYPE" in
@@ -293,5 +293,5 @@ for b in ${!position[@]}; do
     done
 done
 
-rm main.out main.log main.aux
+rm -f main.out main.log main.aux
 echo "Execution time: $SECONDS seconds"
