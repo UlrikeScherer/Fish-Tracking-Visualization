@@ -22,11 +22,12 @@ def _prepare_angle_inputs(
     fill_value: float,
     wall_threshold_cm: float,
 ) -> tuple[NDArray[np.float64], NDArray[np.bool_], list[int]]:
-    """Subsample, apply wall exclusion, and build the error index.
+    """Subsample and build the error index, flagging wall-adjacent points as errors.
 
     When skip > 0, data, filter_index, and frame_interval are rescaled to M-space
     so that error_index[j] covers exactly the subsampled triplet producing angle[j].
-    Wall NaN masking is applied after error_index construction.
+    Points closer to the wall than wall_threshold_cm are added to the per-point filter, so
+    every angle whose triplet touches one is dropped from the statistics regardless of fill_value.
     """
     if skip > 0:
         data_eff = data[:: skip + 1]
@@ -37,16 +38,13 @@ def _prepare_angle_inputs(
         data_eff, filter_eff = data, filter_index
         data_px_eff = data_px
 
-    error_index = update_filter_three_points(compute_step_lengths(data_eff), filter_eff)
-
     if wall_threshold_cm > 0 and area is not None and data_px_eff is not None:
         dtw = px2cm(distance_to_wall_chunk(data_px_eff, area[1]), fish_key=area[0]).astype("double")
-        subsampled = data_eff.copy()
-        subsampled[dtw < wall_threshold_cm] = np.array([np.nan, np.nan])
-    else:
-        subsampled = data_eff
+        filter_eff = filter_eff | (dtw < wall_threshold_cm)
 
-    return subsampled, error_index, frame_interval
+    error_index = update_filter_three_points(compute_step_lengths(data_eff), filter_eff)
+
+    return data_eff, error_index, frame_interval
 
 
 def _angle_metric(

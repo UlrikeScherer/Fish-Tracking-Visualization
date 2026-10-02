@@ -1,4 +1,5 @@
 import unittest
+import unittest.mock
 
 import numpy as np
 from numpy.typing import NDArray
@@ -87,6 +88,64 @@ class TestAbsoluteAngles(unittest.TestCase):
         ta = turning_angle(points, [], _no_errors(n), skip=0, remove_zero_vecs=False, wall_threshold_cm=0.0)
         aa = absolute_angles(points, [], _no_errors(n), skip=0, remove_zero_vecs=False, wall_threshold_cm=0.0)
         self.assertAlmostEqual(ta[0, 0], aa[0, 0])
+
+
+class TestWallExclusion(unittest.TestCase):
+    """Wall-adjacent angles must be dropped, never counted as 0.0, whatever remove_zero_vecs is."""
+
+    # Pixel tank 100 x 100; px2cm is patched to identity so thresholds are in pixel units.
+    AREA = ("test_cam", np.array([[0, 0], [100, 0], [100, 100], [50, 100], [0, 100]], dtype=float))
+    THRESHOLD = 15.0
+
+    def setUp(self) -> None:
+        # Circle of radius 40 around the tank centre: constant 10 degree turns, 10 px from the wall at its extremes.
+        angles = np.deg2rad(np.arange(0, 360, 10))
+        self.points = np.column_stack([50 + 40 * np.cos(angles), 50 + 40 * np.sin(angles)])
+        self.no_errors = _no_errors(len(self.points))
+        patcher = unittest.mock.patch.dict(turning_angle.__globals__, {"px2cm": lambda a, fish_key=None: a})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def _run(self, metric, *, wall: float, remove_zero_vecs: bool) -> NDArray[np.float64]:
+        return metric(
+            self.points,
+            [],
+            self.no_errors,
+            area=self.AREA,
+            data_px=self.points,
+            skip=0,
+            remove_zero_vecs=remove_zero_vecs,
+            wall_threshold_cm=wall,
+        )
+
+    def test_wall_exclusion_removes_angles(self):
+        free = self._run(turning_angle, wall=0.0, remove_zero_vecs=False)
+        walled = self._run(turning_angle, wall=self.THRESHOLD, remove_zero_vecs=False)
+        self.assertLess(walled[0, 2], free[0, 2])
+
+    def test_wall_excluded_angles_not_counted_as_zero(self):
+        # Every real angle is 10 degrees, so any 0.0 fill leaking into the mean pulls it below 10.
+        for remove_zero_vecs in (False, True):
+            with self.subTest(remove_zero_vecs=remove_zero_vecs):
+                walled = self._run(turning_angle, wall=self.THRESHOLD, remove_zero_vecs=remove_zero_vecs)
+                self.assertAlmostEqual(walled[0, 0], np.deg2rad(10))
+                self.assertAlmostEqual(walled[0, 1], 0.0)
+
+    def test_wall_result_independent_of_remove_zero_vecs(self):
+        # No stationary steps in this path, so the flag must not change anything.
+        for metric in (turning_angle, absolute_angles):
+            with self.subTest(metric=metric.__name__):
+                keep = self._run(metric, wall=self.THRESHOLD, remove_zero_vecs=False)
+                remove = self._run(metric, wall=self.THRESHOLD, remove_zero_vecs=True)
+                np.testing.assert_array_equal(keep, remove)
+
+    def test_streak_length_excludes_wall_angles(self):
+        kwargs = dict(area=self.AREA, data_px=self.points, skip=0, wall_threshold_cm=self.THRESHOLD, unaveraged=True)
+        keep = turning_angle_streak_length(self.points, [], self.no_errors, remove_zero_vecs=False, **kwargs)
+        remove = turning_angle_streak_length(self.points, [], self.no_errors, remove_zero_vecs=True, **kwargs)
+        np.testing.assert_array_equal(keep, remove)
+        free = turning_angle_streak_length(self.points, [], self.no_errors, skip=0, remove_zero_vecs=False, wall_threshold_cm=0.0, unaveraged=True)
+        self.assertLess(keep.sum(), free.sum())
 
 
 class TestTurningAngleStreakLength(unittest.TestCase):
