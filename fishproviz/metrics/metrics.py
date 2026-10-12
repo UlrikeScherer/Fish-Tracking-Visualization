@@ -16,7 +16,7 @@ from fishproviz.methods import (
     mean_std,
     distance_to_object_chunk,
 )
-from .results_to_csv import metric_result_to_csv
+from .results_to_csv import metric_result_to_csv, RAW_ANGLE_METRICS
 from .compute_primitives import (
     compute_step_lengths,
     entropy_for_chunk,
@@ -211,6 +211,10 @@ def metric_per_interval(
         results=results,
     )
     metric_kwargs = dict()
+    raw_angles = every_point and metric.__name__ in RAW_ANGLE_METRICS
+    if metric.__name__ in RAW_ANGLE_METRICS:
+        # explicit, so config.UNAVERAGED and every_point can never disagree for these metrics
+        metric_kwargs.update(unaveraged=every_point)
     if include_median:
         out_dim = out_dim + 1
         metric_kwargs.update(include_median=include_median)
@@ -285,6 +289,18 @@ def metric_per_interval(
                         day_dict[day] = pd.DataFrame(result.reshape((-1, 1)))
                     else:
                         day_dict[day] = pd.DataFrame(result.reshape((1, -1)))
+                elif raw_angles:
+                    # result columns: [row, angle, excluded]; attach frame numbers and tracker coordinates
+                    rows = result[:, 0].astype(int)
+                    day_dict[day] = pd.DataFrame(
+                        {
+                            "frame": df.index[rows],
+                            "xpx": data[rows, 0],
+                            "ypx": data[rows, 1],
+                            metric.__name__: result[:, 1],
+                            "excluded": result[:, 2].astype(bool),
+                        }
+                    )
                 else:
                     if every_point:
                         result = pd.DataFrame({metric.__name__: np.add.reduceat(result, np.arange(0, len(result), config.AGGREGATE_EVERY_N)).reshape((-1,))})

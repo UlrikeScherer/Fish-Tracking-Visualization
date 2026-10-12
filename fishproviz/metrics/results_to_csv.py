@@ -8,6 +8,7 @@ from fishproviz.utils.utile import get_interval_name_from_seconds
 csv_columns_time = ["day", "time"]
 csv_columns_results = ["mean", "std", "median"]
 num_datapoints = "num_valid_points"
+RAW_ANGLE_METRICS = ("turning_angle", "absolute_angles")
 
 
 def get_csv_columns_from_results_dim(dimension, metric_name):
@@ -52,18 +53,16 @@ def metric_result_to_csv(
         df_sum[num_datapoints] = df_sum[num_datapoints].astype(int)
 
         if "hour" == interval_name:
-            df_sum["hour"] = df_sum["df_index"] // (
-                time_interval * config.FRAMES_PER_SECOND
-            )
+            df_sum["hour"] = df_sum["df_index"] // (time_interval * config.FRAMES_PER_SECOND)
         df_sum.to_csv(
-            get_filename_for_metric_csv(
-                metric_name, interval_name, all_points=all_points
-            ),
+            get_filename_for_metric_csv(metric_name, interval_name, all_points=all_points),
             float_format="%.10f",
             sep=config.sep,
         )
     else:
         directory = get_results_directory(metric_name)
+        raw_angles = metric_name in RAW_ANGLE_METRICS
+        suffix = f"_skip{config.TANGLE_N_SKIP}" if raw_angles else ""
         for key in results.keys():
             for subkey in results[key].keys():
                 subdir = f"{directory}/raw"
@@ -71,7 +70,9 @@ def metric_result_to_csv(
                     os.makedirs(subdir)
                 if len(results[key][subkey]) > 0:
                     results[key][subkey].to_csv(
-                        f"{subdir}/{key}_{subkey}.csv", index_label="i"
+                        f"{subdir}/{key}_{subkey}{suffix}.csv",
+                        index=not raw_angles,
+                        index_label="i",
                     )
 
 

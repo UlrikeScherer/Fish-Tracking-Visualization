@@ -58,14 +58,20 @@ def _angle_metric(
     fill_value: float,
     wall_threshold_cm: float,
     absolute: bool,
+    unaveraged: bool = False,
 ) -> NDArray[np.float64]:
     """Shared implementation for turning_angle and absolute_angles.
 
     Args:
         absolute: if True, takes np.abs() of the angle array before averaging.
+        unaveraged: if True, skips interval averaging and returns every angle.
 
     Returns:
-        (n_intervals, 3) array of [mean, std, n] per interval.
+        (n_intervals, 3) array of [mean, std, n] per interval, or when unaveraged
+        an (M-2, 3) array of [row, angle, excluded] where row is the index into the
+        input data of the middle point of the triplet the angle belongs to, and
+        excluded is 1.0 where the averaged metric would drop the angle (error,
+        spike or wall filter touching one of its three points).
     """
     subsampled, error_index, frame_interval = _prepare_angle_inputs(
         data,
@@ -80,6 +86,9 @@ def _angle_metric(
     angles = compute_turning_angles(subsampled, fill_value)
     if absolute:
         angles = np.abs(angles)
+    if unaveraged:
+        rows = (np.arange(len(angles)) + 1) * (skip + 1)
+        return np.column_stack([rows, angles, error_index]).astype(np.float64)
     return calculate_result_for_interval(angles, frame_interval, mean_std, error_index, checkfornans=True)
 
 
@@ -93,8 +102,12 @@ def turning_angle(
     skip: Optional[int] = None,
     remove_zero_vecs: Optional[bool] = None,
     wall_threshold_cm: Optional[float] = None,
+    unaveraged: Optional[bool] = None,
 ) -> NDArray[np.float64]:
     """Mean signed turning angle per time interval.
+
+    Sign convention: for tracker pixel coordinates (origin top-left, y down) and an
+    unmirrored top-down camera, positive = clockwise on the video image = right turn.
 
     Args:
         skip: frames skipped between sampled points; None reads config.TANGLE_N_SKIP.
@@ -102,9 +115,12 @@ def turning_angle(
             None reads config.REMOVE_0_VECS.
         wall_threshold_cm: wall-proximity exclusion threshold in cm;
             None reads config.DIST_FROM_WALL_TANGLE_IGNORED.
+        unaveraged: if True, return every angle instead of interval averages;
+            None reads config.UNAVERAGED.
 
     Returns:
-        (n_intervals, 3) array of [mean, std, n].
+        (n_intervals, 3) array of [mean, std, n], or when unaveraged an (M-2, 3)
+        array of [row, angle, excluded] (see _angle_metric).
     """
     _skip = config.TANGLE_N_SKIP if skip is None else skip
     _rzv = bool(config.REMOVE_0_VECS) if remove_zero_vecs is None else remove_zero_vecs
@@ -119,6 +135,7 @@ def turning_angle(
         fill_value=np.nan if _rzv else 0.0,
         wall_threshold_cm=_wall,
         absolute=False,
+        unaveraged=bool(config.UNAVERAGED) if unaveraged is None else unaveraged,
     )
 
 
@@ -132,13 +149,15 @@ def absolute_angles(
     skip: Optional[int] = None,
     remove_zero_vecs: Optional[bool] = None,
     wall_threshold_cm: Optional[float] = None,
+    unaveraged: Optional[bool] = None,
 ) -> NDArray[np.float64]:
     """Mean absolute turning angle per time interval.
 
     Identical to turning_angle but takes np.abs() of angles before averaging.
 
     Returns:
-        (n_intervals, 3) array of [mean, std, n].
+        (n_intervals, 3) array of [mean, std, n], or when unaveraged an (M-2, 3)
+        array of [row, |angle|, excluded] (see _angle_metric).
     """
     _skip = config.TANGLE_N_SKIP if skip is None else skip
     _rzv = bool(config.REMOVE_0_VECS) if remove_zero_vecs is None else remove_zero_vecs
@@ -153,6 +172,7 @@ def absolute_angles(
         fill_value=np.nan if _rzv else 0.0,
         wall_threshold_cm=_wall,
         absolute=True,
+        unaveraged=bool(config.UNAVERAGED) if unaveraged is None else unaveraged,
     )
 
 

@@ -90,6 +90,57 @@ class TestAbsoluteAngles(unittest.TestCase):
         self.assertAlmostEqual(ta[0, 0], aa[0, 0])
 
 
+class TestUnaveraged(unittest.TestCase):
+    """unaveraged=True returns one [row, angle, excluded] line per angle instead of interval means."""
+
+    KW = dict(skip=0, remove_zero_vecs=False, wall_threshold_cm=0.0)
+
+    def test_shape_and_rows(self):
+        points = _ccw_square_loop(n_laps=2)  # 9 points -> 7 angles at middle points 1..7
+        result = turning_angle(points, [], _no_errors(len(points)), unaveraged=True, **self.KW)
+        self.assertEqual(result.shape, (7, 3))
+        np.testing.assert_array_equal(result[:, 0], np.arange(1, 8))
+        np.testing.assert_allclose(result[:, 1], np.pi / 2)
+        self.assertFalse(result[:, 2].any())
+
+    def test_rows_with_skip(self):
+        points = np.column_stack([np.arange(20, dtype=float), np.zeros(20)])
+        result = turning_angle(points, [], _no_errors(20), unaveraged=True, skip=1, remove_zero_vecs=False, wall_threshold_cm=0.0)
+        # subsampled points are original rows 0, 2, 4, ...; the angle at subsampled point j+1 sits on original row 2*(j+1)
+        np.testing.assert_array_equal(result[:, 0], 2 * (np.arange(len(result)) + 1))
+
+    def test_absolute_takes_abs(self):
+        points = _alternating_zigzag(n_steps=8)
+        signed = turning_angle(points, [], _no_errors(len(points)), unaveraged=True, **self.KW)
+        absolute = absolute_angles(points, [], _no_errors(len(points)), unaveraged=True, **self.KW)
+        np.testing.assert_allclose(absolute[:, 1], np.abs(signed[:, 1]))
+        self.assertTrue((signed[:, 1] < 0).any())
+
+    def test_error_points_flag_their_three_triplets(self):
+        points = _ccw_square_loop(n_laps=2)
+        errors = _no_errors(len(points))
+        errors[4] = True  # point 4 is touched by the triplets with middle points 3, 4 and 5
+        result = turning_angle(points, [], errors, unaveraged=True, **self.KW)
+        flagged = result[result[:, 2] == 1.0, 0]
+        np.testing.assert_array_equal(flagged, [3, 4, 5])
+
+    def test_mean_of_included_equals_averaged(self):
+        rng = np.random.default_rng(0)
+        points = np.cumsum(rng.normal(size=(500, 2)), axis=0)
+        errors = rng.random(500) < 0.05
+        raw = turning_angle(points, [], errors, unaveraged=True, **self.KW)
+        averaged = turning_angle(points, [], errors, unaveraged=False, **self.KW)
+        included = raw[raw[:, 2] == 0.0, 1]
+        self.assertAlmostEqual(included.mean(), averaged[0, 0])
+        self.assertEqual(len(included), averaged[0, 2])
+
+    def test_defaults_to_config(self):
+        points = _ccw_square_loop(n_laps=2)
+        with unittest.mock.patch.object(turning_angle.__globals__["config"], "UNAVERAGED", True):
+            result = turning_angle(points, [], _no_errors(len(points)), **self.KW)
+        self.assertEqual(result.shape, (7, 3))
+
+
 class TestWallExclusion(unittest.TestCase):
     """Wall-adjacent angles must be dropped, never counted as 0.0, whatever remove_zero_vecs is."""
 
