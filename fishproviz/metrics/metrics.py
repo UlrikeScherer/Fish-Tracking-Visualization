@@ -56,11 +56,6 @@ def activity_mean_sd(steps, error_index):
     return mean_std(steps)
 
 
-def get_gaps_in_dataframes(frames):
-    gaps_select = (frames[1:] - frames[:-1]) > 1
-    return np.where(gaps_select)[0], gaps_select
-
-
 def calculate_result_for_interval(data, split_index, avg_metric_f, error_index, NDIM=3, checkfornans=False, averaging=True):
     if split_index is None:
         split_index = [len(data) - 1]

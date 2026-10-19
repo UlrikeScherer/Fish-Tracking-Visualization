@@ -10,7 +10,7 @@ from fishproviz.utils import (
     get_all_days_of_context,
     get_camera_pos_keys,
 )
-from .trajectory import ExperimentalTrajectory
+from .trajectory import ExperimentalTrajectory, mask_error_default_points
 from fishproviz.utils.transformation import pixel_to_cm
 
 map_shape = {"patch": FeedingPatch, "ellipse": FeedingEllipse}
@@ -57,32 +57,22 @@ class FeedingTrajectory(ExperimentalTrajectory):
 
         start_idx, end_idx = self.get_start_end_index(date, batch_number)
         F.ax.set_title(time_span, fontsize=10)
-        last_frame = batch.FRAME.array[-1]
-        if batch.x.array[-1] <= -1:
-            batch.drop(batch.tail(1).index)
 
         feeding_filter = batch.FRAME.between(start_idx, end_idx)
         fish_key = "%s_%s" % tuple(self.fish2camera[fish_id])
+        window, masked = mask_error_default_points(batch[feeding_filter])  # masked points are never inside a box
 
-        batchxy = pixel_to_cm(
-            batch[feeding_filter][["xpx", "ypx"]].to_numpy(), fish_key=fish_key
-        )
+        batchxy = pixel_to_cm(window[["xpx", "ypx"]].to_numpy(), fish_key=fish_key)
         F.line.set_data(*batchxy.T)
 
-        feeding_b, box = self.FeedingShape.contains(
-            batch[feeding_filter], fish_key, date
-        )  # feeding_b: array of data frames that are inside the feeding box.
-        feeding_size = feeding_b.shape[
-            0
-        ]  # size of the feeding box gives us the time spent in the box in number of frames.
+        feeding_b, box = self.FeedingShape.contains(window, fish_key, date)  # feeding_b: array of data frames that are inside the feeding box.
+        feeding_size = feeding_b.shape[0]  # size of the feeding box gives us the time spent in the box in number of frames.
         # The next line identifies the indices of feeding_b array where the fish swims from in to out of the box in the next frame
         index_visits = []
         n_entries = 0
         # a case distinction has to be made: when the are no visits to the feeding box index_visits is empty.
         if feeding_size > 0:
-            index_swim_in = np.where(
-                feeding_b.FRAME[1:].array - feeding_b.FRAME[:-1].array != 1
-            )[0]
+            index_swim_in = np.where(feeding_b.FRAME[1:].array - feeding_b.FRAME[:-1].array != 1)[0]
             index_visits = [
                 0,
                 *(index_swim_in + 1),
@@ -121,24 +111,19 @@ class FeedingTrajectory(ExperimentalTrajectory):
         ]
         steps = compute_step_lengths(batchxy)
         spikes, spike_places = num_of_spikes(steps)
-        N = batchxy.shape[0]
-        text_r = F.meta_text_rhs(N, last_frame - N, spikes)
+        text_r = F.meta_text_rhs(np.count_nonzero(~masked), np.count_nonzero(masked), spikes)
         remove_text = F.meta_text_for_plot(text_l=text_l, text_r=text_r)
 
         # ax.draw_artist(ax.patch)
         # ax.draw_artist(line)
-        self.update_feeding_and_visits(
-            fish_id, date, feeding_size, n_entries, sum(feeding_filter)
-        )
+        self.update_feeding_and_visits(fish_id, date, feeding_size, n_entries, np.count_nonzero(~masked))
 
         if self.write_fig:
             F.write_figure(directory, batch_number)
         remove_text()
         return F.fig
 
-    def update_feeding_and_visits(
-        self, fish_id, date, feeding_size, visits, num_df_feeding
-    ):
+    def update_feeding_and_visits(self, fish_id, date, feeding_size, visits, num_df_feeding):
         if date not in self.feeding_times[fish_id]:
             self.feeding_times[fish_id][date] = 0
             self.visits[fish_id][date] = 0
@@ -163,16 +148,10 @@ class FeedingTrajectory(ExperimentalTrajectory):
         os.makedirs(self.dir_data_feeding, exist_ok=True)
         df_feeding.to_csv("%s/%s.csv" % (self.dir_data_feeding, "feeding_times"))
         df_visits.to_csv("%s/%s.csv" % (self.dir_data_feeding, "visits"))
-        df_num_df_feeding.to_csv(
-            "%s/%s.csv" % (self.dir_data_feeding, "num_df_feeding")
-        )
+        df_num_df_feeding.to_csv("%s/%s.csv" % (self.dir_data_feeding, "num_df_feeding"))
 
     def feeding_data_to_tex(self):
-        text = """\newcommand\ftlist{}\newcommand\setft[2]{\csdef{ft#1}{#2}}\newcommand\getft[1]{\csuse{ft#1}}""".replace(
-            "\n", "\\n"
-        ).replace(
-            "\f", "\\f"
-        )
+        text = """\newcommand\ftlist{}\newcommand\setft[2]{\csdef{ft#1}{#2}}\newcommand\getft[1]{\csuse{ft#1}}""".replace("\n", "\\n").replace("\f", "\\f")
 
         for i, (c, p) in enumerate(self.fish2camera):
             days = get_days_in_order(camera=c, is_back=p == config.BACK)

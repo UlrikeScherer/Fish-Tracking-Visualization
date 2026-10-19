@@ -3,6 +3,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import pandas as pd
 import sys
 from tqdm import tqdm
 import fishproviz.config as config
@@ -17,9 +18,9 @@ from fishproviz.utils import (
 from fishproviz.metrics import (
     num_of_spikes,
     compute_step_lengths,
-    get_gaps_in_dataframes,
     activity_mean_sd,
 )
+from fishproviz.utils.error_filter import error_default_points
 from fishproviz.utils.transformation import pixel_to_cm
 from fishproviz.utils.utile import (
     get_start_time_directory,
@@ -33,6 +34,21 @@ mpl.rcParams["lines.linewidth"] = 0.5
 mpl.rcParams["lines.linestyle"] = "-"
 mpl.rcParams["lines.markersize"] = 1.0
 mpl.rcParams["figure.figsize"] = (4, 2)
+
+
+def mask_error_default_points(batch: pd.DataFrame) -> tuple[pd.DataFrame, np.ndarray]:
+    """Return a copy of batch with xpx/ypx set to NaN where error_default_points flags them, and that mask."""
+    xy = batch[["xpx", "ypx"]].to_numpy(dtype=float, copy=True)
+    masked = error_default_points(xy)
+    xy[masked] = np.nan
+    return batch.assign(xpx=xy[:, 0], ypx=xy[:, 1]), masked
+
+
+def gap_bridges(masked: np.ndarray) -> list[tuple[int, int]]:
+    """Index pairs (last valid point before, first valid point after) for each run of masked points between valid ones."""
+    valid_idx = np.flatnonzero(~masked)
+    jumps = np.flatnonzero(np.diff(valid_idx) > 1)
+    return list(zip(valid_idx[jumps], valid_idx[jumps + 1]))
 
 
 class Figure:
@@ -154,23 +170,21 @@ class Trajectory:
     ):
         F = self.fig_back if is_back else self.fig_front
         F.ax.set_title(time_span, fontsize=10)
-        last_frame = batch.FRAME.array[-1]
-        if (batch.xpx.array[-1] == -1 and batch.ypx.array[-1] == -1) or (batch.xpx.array[-1] == 0 and batch.ypx.array[-1] == 0):  # remove error point, only need to carry it to this point to record the last frame number
-            batch.drop(batch.tail(1).index)
 
         fish_key = "%s_%s" % tuple(self.fish2camera[fish_id])
+        batch, masked = mask_error_default_points(batch)
         batchxy = pixel_to_cm(batch[["xpx", "ypx"]].to_numpy(), fish_key=fish_key)
         F.line.set_data(*batchxy.T)
         # draw spikes where datapoints were lost
         # ax.draw_artist(ax.patch)
         # ax.draw_artist(line)
         F.remove_extra_lines(index=1)
-        gaps_idx, gaps_select = get_gaps_in_dataframes(batch.FRAME.array)
-        for i in gaps_idx:
-            F.ax.plot(*batchxy.T[:, i : i + 2], "r-", alpha=0.7, solid_capstyle="projecting")
+        for s, e in gap_bridges(masked):
+            F.ax.plot(*batchxy[[s, e]].T, "r-", alpha=0.7, solid_capstyle="projecting")
 
         # metric calculations
         steps = compute_step_lengths(batchxy)
+        gaps_select = np.isnan(steps)  # steps touching a masked point
         spikes, spike_places = num_of_spikes(steps)
         ignore_flags = spike_places | gaps_select  # spike or gap ignore them for the next calculation
         mean, sd = activity_mean_sd(steps, ignore_flags)
@@ -182,9 +196,11 @@ class Trajectory:
             # print(f'\terroneous data filtered out for key: <{fish_key}>, date: {date} in timespan {time_span}')
             return -1
         alphas = compute_turning_angles(batchxy)
-        avg_alpha, sum_alpha = alphas.mean(), alphas.sum()
-        N = len(steps)
-        misses = last_frame - N
+        alphas = alphas[~np.isnan(alphas)]
+        avg_alpha = alphas.mean() if alphas.size > 0 else np.nan
+        sum_alpha = alphas.sum()
+        N = np.count_nonzero(~masked)
+        misses = np.count_nonzero(masked)
         remove_text = F.meta_text_for_trajectory(mean, sd, avg_alpha, sum_alpha, spikes, misses, N)
 
         if self.write_fig:
@@ -225,7 +241,7 @@ class Trajectory:
                     sys.stdout.write("[%-20s] %d%%" % ("=" * int(20 * progress), 100 * progress))
                     sys.stdout.flush()
 
-                    keys, day_df = csv_of_the_day(camera_id, day, is_back=is_back, drop_out_of_scope=True)
+                    keys, day_df = csv_of_the_day(camera_id, day, is_back=is_back)
                     self.plot_day_camera_fast(day_df, keys, camera_id, day, fish_idx, is_back=is_back)
 
     def plot_for_individual_parallel(
@@ -243,7 +259,7 @@ class Trajectory:
                 position=current._identity[0] + 1,
             )
         ):
-            keys, day_df = csv_of_the_day(camera_id, day, is_back=is_back, drop_out_of_scope=True)
+            keys, day_df = csv_of_the_day(camera_id, day, is_back=is_back)
             self.plot_day_camera_fast(day_df, keys, camera_id, day, fish_idx, is_back=is_back)
 
     def plot_day_camera_fast(self, data, keys, camera_id, date, fish_id, is_back):
@@ -257,11 +273,11 @@ class Trajectory:
         nr_of_frames = int(keys[0]) * config.BATCH_SIZE
         for idx in range(len(data)):
             batch = data[idx]
-            up = len(batch.x) - 1
+            last_frame = batch.FRAME.iloc[-1]  # batches are indexed by absolute day frame, so use position
             time_span = "batch: {},    {} - {}".format(
                 keys[idx],
                 get_time_for_day(date, nr_of_frames),
-                get_time_for_day(date, nr_of_frames + batch.FRAME[up]),
+                get_time_for_day(date, nr_of_frames + last_frame),
             )
 
             fig = self.subplot_function(
@@ -273,7 +289,7 @@ class Trajectory:
                 time_span=time_span,
                 is_back=is_back,
             )  # plot ij.pdf
-            nr_of_frames += batch.FRAME[up]
+            nr_of_frames += last_frame
         return fig
 
         # __set_figure = self.set_figure # copy set_figure
@@ -305,20 +321,17 @@ class ExperimentalTrajectory(Trajectory):
             "_".join([directory.split("/")[-2], "back" if is_back else "front"]),
         )
         F.ax.set_title(time_span, fontsize=10)
-        last_frame = batch.FRAME.array[-1]
-        if batch.x.array[-1] <= -1:
-            batch.drop(batch.tail(1).index)
 
         feeding_filter = batch.FRAME.between(start_idx, end_idx)
         fish_key = "%s_%s" % tuple(self.fish2camera[fish_id])
+        window, masked = mask_error_default_points(batch[feeding_filter])
 
-        batchxy = pixel_to_cm(batch[feeding_filter][["xpx", "ypx"]].to_numpy(), fish_key=fish_key)
+        batchxy = pixel_to_cm(window[["xpx", "ypx"]].to_numpy(), fish_key=fish_key)
         F.line.set_data(*batchxy.T)
 
         steps = compute_step_lengths(batchxy)
         spikes, spike_places = num_of_spikes(steps)
-        N = batchxy.shape[0]
-        text_r = F.meta_text_rhs(N, last_frame - N, spikes)
+        text_r = F.meta_text_rhs(np.count_nonzero(~masked), np.count_nonzero(masked), spikes)
         remove_text = F.meta_text_for_plot(text_r=text_r)
 
         if self.write_fig:
