@@ -11,26 +11,30 @@ def compute_turning_angles(
     For each interior position j, returns the signed angle in (-pi, pi] between
     the incoming and outgoing displacement vectors. Positive = counterclockwise in
     a y-up frame, which is clockwise (a right turn) on tracker pixel coordinates (y down).
-    Positions where either adjacent displacement is zero or non-finite receive
-    fill_value — no angle is computed across a gap or stationary step.
+    An angle with a non-finite adjacent displacement (a NaN or inf position, i.e. a gap) is always
+    NaN. An angle with finite displacements where either has zero length (the fish did not move)
+    receives fill_value.
 
     Args:
-        points: (M, 2) array; NaN entries mark wall-excluded or missing positions.
-        fill_value: written at non-computable positions; 0.0 or np.nan.
+        points: (M, 2) array; NaN entries mark missing positions.
+        fill_value: written where an adjacent displacement has zero length; 0.0 or np.nan.
 
     Returns:
         Array of shape (M-2,). Entry j covers triplet (points[j], points[j+1], points[j+2]).
     """
     diffs = np.diff(points, axis=0)
     norms = np.sqrt(np.einsum("ij,ij->i", diffs, diffs))
-    valid = np.isfinite(norms) & (norms > 0)
-    computable = valid[:-1] & valid[1:]
+    finite = np.isfinite(norms)
+    moving = finite & (norms > 0)
+    computable = moving[:-1] & moving[1:]
+    gap = ~(finite[:-1] & finite[1:])
     in_vecs = diffs[:-1][computable]
     out_vecs = diffs[1:][computable]
     dot_products = np.einsum("ij,ij->i", in_vecs, out_vecs)
     angles = np.arctan2(np.cross(in_vecs, out_vecs), dot_products)
     result = np.full(len(points) - 2, fill_value, dtype=float)
     result[computable] = angles
+    result[gap] = np.nan
     return result
 
 

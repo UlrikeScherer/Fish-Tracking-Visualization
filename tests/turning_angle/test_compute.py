@@ -16,20 +16,29 @@ class TestComputeTurningAngles(unittest.TestCase):
         expected = np.array([0, 0, np.pi / 2, np.pi / 2])
         assert np.allclose(compute_turning_angles(points), expected)
 
-    def test_nan_position_propagates(self):
+    def test_nan_position_gives_nan_regardless_of_fill(self):
         points = np.array([[0, 0], [1, 0], [np.nan, 0], [1, 0], [0, 1]], dtype=float)
-        expected = np.array([0, 0, 0])
-        assert np.allclose(compute_turning_angles(points), expected)
+        assert np.all(np.isnan(compute_turning_angles(points, fill_value=0.0)))
 
-    def test_inf_position_propagates(self):
+    def test_nan_position_only_touches_its_triplets(self):
+        points = np.array([[0, 0], [1, 0], [2, 0], [np.nan, 0], [2, 1], [2, 2], [3, 2]], dtype=float)
+        result = compute_turning_angles(points, fill_value=0.0)
+        assert np.isnan(result[1:4]).all()
+        assert np.allclose(result[[0, 4]], [0.0, -np.pi / 2])
+
+    def test_inf_position_gives_nan_regardless_of_fill(self):
         points = np.array([[0, 0], [1, 0], [1, 0], [np.inf, np.inf], [0, 1]], dtype=float)
-        expected = np.array([0, 0, 0])
-        assert np.allclose(compute_turning_angles(points), expected)
+        result = compute_turning_angles(points, fill_value=0.0)
+        assert np.isnan(result[1:]).all()
+        assert result[0] == 0.0
 
-    def test_fill_value_nan(self):
-        points = np.array([[0, 0], [1, 0], [np.nan, 0], [1, 0], [0, 1]], dtype=float)
-        result = compute_turning_angles(points, fill_value=np.nan)
-        assert np.all(np.isnan(result))
+    def test_zero_length_step_keeps_fill_value(self):
+        points = np.array([[0, 0], [1, 0], [1, 0], [1, 1]], dtype=float)
+        assert np.array_equal(compute_turning_angles(points, fill_value=0.0), [0.0, 0.0])
+
+    def test_fill_value_nan_applies_to_zero_length_and_gaps(self):
+        points = np.array([[0, 0], [1, 0], [1, 0], [1, 1], [np.nan, 0], [1, 0], [0, 1]], dtype=float)
+        assert np.all(np.isnan(compute_turning_angles(points, fill_value=np.nan)))
 
     def test_two_points_returns_empty(self):
         points = np.array([[0, 0], [1, 0]], dtype=float)

@@ -124,6 +124,18 @@ class TestUnaveraged(unittest.TestCase):
         flagged = result[result[:, 2] == 1.0, 0]
         np.testing.assert_array_equal(flagged, [3, 4, 5])
 
+    def test_nan_position_is_nan_and_excluded(self):
+        points = _ccw_square_loop(n_laps=2)
+        points[4] = np.nan
+        errors = _no_errors(len(points))
+        errors[4] = True
+        result = turning_angle(points, [], errors, unaveraged=True, **self.KW)
+        touched = np.isin(result[:, 0], [3, 4, 5])
+        self.assertTrue(np.isnan(result[touched, 1]).all())
+        self.assertTrue((result[touched, 2] == 1.0).all())
+        np.testing.assert_allclose(result[~touched, 1], np.pi / 2)
+        self.assertFalse(result[~touched, 2].any())
+
     def test_mean_of_included_equals_averaged(self):
         rng = np.random.default_rng(0)
         points = np.cumsum(rng.normal(size=(500, 2)), axis=0)
