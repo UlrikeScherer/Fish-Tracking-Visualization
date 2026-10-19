@@ -148,52 +148,54 @@ def get_position_string(is_back):
         return config.FRONT
 
 
-def read_batch_csv(filename, drop_errors):
+BATCH_DATA_COLUMNS: list[str] = ["x", "y", "xpx", "ypx", "time"]
+
+
+def read_batch_csv(filename: str) -> pd.DataFrame:
+    """Read one batch CSV onto the dense FRAME grid 0..BATCH_SIZE-1; absent and blank frames are NaN."""
     df = pd.read_csv(
         filename,
         skiprows=3,
         delimiter=";",
-        usecols=["x", "y", "FRAME", "time", "xpx", "ypx"],
+        usecols=["FRAME", *BATCH_DATA_COLUMNS],
         dtype={"xpx": np.float64, "ypx": np.float64, "time": np.float64},
     )
-    df.dropna(axis="rows", how="any", inplace=True)
-    if drop_errors:
-        err_filter = get_error_indices(df[:-1])
-        df = df.drop(index=df[:-1][err_filter].index)
-    df.reset_index(drop=True, inplace=True)
-    return df
+    if not df.FRAME.is_unique:
+        raise ValueError(f"Duplicate FRAME values in {filename}: {df.FRAME[df.FRAME.duplicated()].unique()[:10].tolist()}")
+    out_of_range = ~df.FRAME.between(0, config.BATCH_SIZE - 1)
+    if out_of_range.any():
+        raise ValueError(f"FRAME values outside [0, {config.BATCH_SIZE - 1}] (BATCH_SIZE={config.BATCH_SIZE}) in {filename}: {df.FRAME[out_of_range].unique()[:10].tolist()}")
+    grid = pd.RangeIndex(config.BATCH_SIZE, name="FRAME")
+    return df.set_index("FRAME")[BATCH_DATA_COLUMNS].reindex(grid).reset_index()
 
 
-def get_error_indices(dataframe):
-    """
-    @params: dataframe
-    returns a boolean pandas array with all indices to filter set to True
-    """
-    x = dataframe.xpx
-    y = dataframe.ypx
-    indexNames = ((x == -1) & (y == -1)) | ((x == 0) & (y == 0))  # except the last index for time recording
-    return indexNames
+def empty_batch() -> pd.DataFrame:
+    """All-NaN batch on the dense FRAME grid, standing in for a missing batch file."""
+    return pd.DataFrame({"FRAME": np.arange(config.BATCH_SIZE), **{c: np.full(config.BATCH_SIZE, np.nan) for c in BATCH_DATA_COLUMNS}})
 
 
-def merge_files(filenames, drop_errors):
-    batches = []
-    for f in filenames:
-        df = read_batch_csv(f, drop_errors)
-        batches.append(df)
-    return batches
+def load_batch(key: str, filename: Optional[str]) -> pd.DataFrame:
+    """Load a batch (or an all-NaN stand-in if filename is None) indexed by absolute day frame."""
+    df = read_batch_csv(filename) if filename is not None else empty_batch()
+    return df.set_axis(pd.Index(df.FRAME.to_numpy() + int(key) * config.BATCH_SIZE), axis="index")
+
+
+def merge_files(files_by_key: dict[str, str]) -> tuple[list[str], list[pd.DataFrame]]:
+    """Load every batch key in [MIN_BATCH_IDX, MAX_BATCH_IDX], filling keys without a file with NaN."""
+    keys = ["{:06d}".format(i) for i in range(config.MIN_BATCH_IDX, config.MAX_BATCH_IDX + 1)]
+    return keys, [load_batch(k, files_by_key.get(k)) for k in keys]
 
 
 def csv_of_the_day(
     camera: str,
     day: str,
     is_back: bool = False,
-    drop_out_of_scope: bool = False,
     batch_keys_remove: Optional[dict] = None,
     print_logs: bool = False,
 ) -> tuple[list[str], list[pd.DataFrame]]:
     """
-    @params: camera, day, is_back, drop_out_of_scope
-    returns csv of the day for camera: front or back
+    Load all batches of a camera-day as contiguous keys with dense, absolute-frame-indexed DataFrames.
+    Frame gaps (blank rows, absent rows, missing or removed batch files) are NaN; returns ([], []) if the day has no batch files.
     """
     if batch_keys_remove is None:
         batch_keys_remove = {}
@@ -216,13 +218,13 @@ def csv_of_the_day(
         n_files=config.MAX_BATCH_IDX + 1,
         min_idx=config.MIN_BATCH_IDX,
     )  # filters for duplicates in the batches for a day. It takes the LAST one!!!
+    if len(filtered_files) == 0:
+        return [], []
     for key in batch_keys_remove:
         filtered_files.pop(key, None)
-    file_keys = list(filtered_files.keys())
-    correct_files = list(filtered_files.values())
     if print_logs and len(LOG) > 0:
         print("\n {}/{}/{}*: \n".format(dir_, camera, day), "\n".join(LOG))
-    return file_keys, merge_files(correct_files, drop_out_of_scope)
+    return merge_files(filtered_files)
 
 
 def filter_files(c, d, files, n_files=15, min_idx=0, Logger=None):

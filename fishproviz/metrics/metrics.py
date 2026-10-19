@@ -176,7 +176,6 @@ def metric_per_interval(
     day_interval: Optional[tuple[int, int]] = None,
     metric: Callable = activity,
     write_to_csv: bool = False,
-    drop_out_of_scope: bool = False,
     out_dim: int = 3,
     include_median: bool = False,
     print_logs: bool = False,
@@ -238,14 +237,12 @@ def metric_per_interval(
                 camera_id,
                 day,
                 is_back=is_back,
-                drop_out_of_scope=drop_out_of_scope,
                 print_logs=print_logs,
-            )  # True or False testing needed
+            )
             if len(data_in_batches) > 0:
-                # use index frames to get the precis time of the data when averaging
+                # batches are indexed by absolute day frame, used for the precise time when averaging
                 dfis = []
                 for k, dfi in zip(keys, data_in_batches):
-                    dfi.index = dfi.FRAME + (int(k) * config.BATCH_SIZE)  # +daytime_DF
                     start_idx, end_idx = get_start_end_index(start_end_times, day, k, fish_key)
                     feeding_filter = dfi.FRAME.between(start_idx, end_idx)
                     dfi = dfi[feeding_filter]

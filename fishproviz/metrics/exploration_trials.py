@@ -35,21 +35,15 @@ def exploration_trials(path_trials=config.TRIAL_TIMES_CSV):
     for fk in get_camera_pos_keys():
         cam, pos = fk.split("_")
         for d in get_days_in_order(camera=cam, is_back=config.BACK == pos):
-            keys, df_days = csv_of_the_day(
-                camera=cam, day=d, is_back=config.BACK == pos
-            )
+            keys, df_days = csv_of_the_day(camera=cam, day=d, is_back=config.BACK == pos)
             daystr, daytime = d.split("_")
-            daytime_DF = (
-                start_time_of_day_to_seconds(daytime) * config.FRAMES_PER_SECOND
-            )
-            for k, df in zip(keys, df_days):
-                df.index = df.FRAME + (int(k) * config.BATCH_SIZE) + daytime_DF
+            daytime_DF = start_time_of_day_to_seconds(daytime) * config.FRAMES_PER_SECOND
+            for df in df_days:
+                df.index = df.index + daytime_DF
             if len(keys) > 0:
                 df_d = pd.concat(df_days)
                 date = ".".join([daystr[6:8], daystr[4:6], daystr[2:4]])
-                start, end = tdf_b[tdf_b["date"] == date][
-                    ["trial_start", "trial_end"]
-                ].to_numpy()[0]
+                start, end = tdf_b[tdf_b["date"] == date][["trial_start", "trial_end"]].to_numpy()[0]
                 s, e = (
                     get_seconds_from_time(start) * config.FRAMES_PER_SECOND,
                     get_seconds_from_time(end) * config.FRAMES_PER_SECOND,
@@ -57,9 +51,7 @@ def exploration_trials(path_trials=config.TRIAL_TIMES_CSV):
                 trial_df = df_d[(df_d.index >= s) & (df_d.index <= e)]
                 data = trial_df[["xpx", "ypx"]].to_numpy()
                 err_filter = error_default_points(data)
-                act = activity(
-                    pixel_to_cm(data, fish_key=fk), data.shape[0], err_filter
-                )
+                act = activity(pixel_to_cm(data, fish_key=fk), data.shape[0], err_filter)
                 tdf.loc[tdf["date"] == date, fk] = act[0][0]
                 tdf_ndf.loc[tdf["date"] == date, fk] = act[0][2]
 
