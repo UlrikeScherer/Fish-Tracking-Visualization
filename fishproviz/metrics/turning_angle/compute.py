@@ -9,7 +9,8 @@ def compute_turning_angles(
     """Compute signed turning angles for a sequence of 2D positions.
 
     For each interior position j, returns the signed angle in (-pi, pi] between
-    the incoming and outgoing displacement vectors. Positive = counterclockwise.
+    the incoming and outgoing displacement vectors. Positive = counterclockwise in
+    a y-up frame, which is clockwise (a right turn) on tracker pixel coordinates (y down).
     Positions where either adjacent displacement is zero or non-finite receive
     fill_value — no angle is computed across a gap or stationary step.
 

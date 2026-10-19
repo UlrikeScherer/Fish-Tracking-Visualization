@@ -109,6 +109,13 @@ def turning_angle(
     Sign convention: for tracker pixel coordinates (origin top-left, y down) and an
     unmirrored top-down camera, positive = clockwise on the video image = right turn.
 
+    Sign convention verified (Oct 2026): the sign was flipped in the git history on
+    2023-06-16, so results from before that date have the opposite sign. The project
+    scientist confirmed that BioTracker uses the top-left video corner as (0, 0) with x
+    to the right and y downwards, and checked raw turning angles against the observed
+    fish movement. Right turns are positive and left turns negative; the current
+    convention is correct. Do not flip it.
+
     Args:
         skip: frames skipped between sampled points; None reads config.TANGLE_N_SKIP.
         remove_zero_vecs: if True, undefined angles fill with NaN instead of 0.0;
