@@ -167,21 +167,21 @@ def absolute_angles(
     data_px: Optional[NDArray[np.float64]] = None,
     *,
     skip: Optional[int] = None,
-    remove_zero_vecs: Optional[bool] = None,
     wall_threshold_cm: Optional[float] = None,
     min_step_px: Optional[float] = None,
     unaveraged: Optional[bool] = None,
 ) -> NDArray[np.float64]:
     """Mean absolute turning angle per time interval.
 
-    Identical to turning_angle but takes np.abs() of angles before averaging.
+    Like turning_angle but averages np.abs() of angles. Stationary angles (a step of length 0
+    or under min_step_px) are always excluded, since a 0 rad fill would make |angle| partly
+    measure inactivity.
 
     Returns:
         (n_intervals, 3) array of [mean, std, n], or when unaveraged an (M-2, 3)
         array of [row, |angle|, excluded] (see _angle_metric).
     """
     _skip = config.TANGLE_N_SKIP if skip is None else skip
-    _rzv = bool(config.REMOVE_0_VECS) if remove_zero_vecs is None else remove_zero_vecs
     _wall = config.DIST_FROM_WALL_TANGLE_IGNORED if wall_threshold_cm is None else wall_threshold_cm
     _min_step = config.TANGLE_MIN_STEP_PX if min_step_px is None else min_step_px
     return _angle_metric(
@@ -191,7 +191,7 @@ def absolute_angles(
         area,
         data_px,
         skip=_skip,
-        fill_value=np.nan if _rzv else 0.0,
+        fill_value=np.nan,
         wall_threshold_cm=_wall,
         min_step_px=_min_step,
         absolute=True,

@@ -30,6 +30,11 @@ def _alternating_zigzag(n_steps: int = 6) -> NDArray[np.float64]:
     return np.array(pts, dtype=float)
 
 
+def _rzv(metric, remove_zero_vecs: bool) -> dict[str, bool]:
+    """remove_zero_vecs kwarg for metrics that accept it; absolute_angles always drops stationary angles."""
+    return {} if metric is absolute_angles else {"remove_zero_vecs": remove_zero_vecs}
+
+
 class TestTurningAngle(unittest.TestCase):
     def test_straight_line_mean_zero(self):
         points = np.column_stack([np.arange(10, dtype=float), np.zeros(10)])
@@ -64,21 +69,21 @@ class TestTurningAngle(unittest.TestCase):
 class TestAbsoluteAngles(unittest.TestCase):
     def test_result_non_negative(self):
         points = _alternating_zigzag(n_steps=8)
-        result = absolute_angles(points, [], _no_errors(len(points)), skip=0, remove_zero_vecs=False, wall_threshold_cm=0.0, min_step_px=0.0)
+        result = absolute_angles(points, [], _no_errors(len(points)), skip=0, wall_threshold_cm=0.0, min_step_px=0.0)
         self.assertGreaterEqual(result[0, 0], 0.0)
 
     def test_mean_geq_abs_signed_mean(self):
         # E(|X|) >= |E(X)| always.
         points = _alternating_zigzag(n_steps=8)
         ta = turning_angle(points, [], _no_errors(len(points)), skip=0, remove_zero_vecs=False, wall_threshold_cm=0.0, min_step_px=0.0)
-        aa = absolute_angles(points, [], _no_errors(len(points)), skip=0, remove_zero_vecs=False, wall_threshold_cm=0.0, min_step_px=0.0)
+        aa = absolute_angles(points, [], _no_errors(len(points)), skip=0, wall_threshold_cm=0.0, min_step_px=0.0)
         self.assertGreaterEqual(aa[0, 0], abs(ta[0, 0]))
 
     def test_point_count_matches_turning_angle(self):
         points = _ccw_square_loop(n_laps=2)
         n = len(points)
         ta = turning_angle(points, [], _no_errors(n), skip=0, remove_zero_vecs=True, wall_threshold_cm=0.0, min_step_px=0.0)
-        aa = absolute_angles(points, [], _no_errors(n), skip=0, remove_zero_vecs=True, wall_threshold_cm=0.0, min_step_px=0.0)
+        aa = absolute_angles(points, [], _no_errors(n), skip=0, wall_threshold_cm=0.0, min_step_px=0.0)
         self.assertEqual(ta[0, 2], aa[0, 2])
 
     def test_uniform_turns_mean_equals_abs_angle(self):
@@ -86,14 +91,39 @@ class TestAbsoluteAngles(unittest.TestCase):
         points = _ccw_square_loop(n_laps=2)
         n = len(points)
         ta = turning_angle(points, [], _no_errors(n), skip=0, remove_zero_vecs=False, wall_threshold_cm=0.0, min_step_px=0.0)
-        aa = absolute_angles(points, [], _no_errors(n), skip=0, remove_zero_vecs=False, wall_threshold_cm=0.0, min_step_px=0.0)
+        aa = absolute_angles(points, [], _no_errors(n), skip=0, wall_threshold_cm=0.0, min_step_px=0.0)
         self.assertAlmostEqual(ta[0, 0], aa[0, 0])
+
+    def test_stationary_angles_excluded_like_turning_angle(self):
+        # Zero-length step (duplicate point) plus 1 px jitter steps; only the two 90 degree turns between 5 px steps survive.
+        px = np.array([[10, 10], [11, 10], [11, 11], [10, 11], [15, 11], [15, 11], [15, 16], [10, 16], [10, 11]], dtype=float)
+        kw = dict(data_px=px, skip=0, wall_threshold_cm=0.0, min_step_px=3.0)
+        ta = turning_angle(px, [], _no_errors(len(px)), remove_zero_vecs=True, **kw)
+        aa = absolute_angles(px, [], _no_errors(len(px)), **kw)
+        self.assertEqual(aa[0, 2], ta[0, 2])
+        self.assertEqual(aa[0, 2], 2)
+        self.assertAlmostEqual(aa[0, 0], np.pi / 2)
+
+    def test_ignores_remove_zero_vecs_config(self):
+        points = np.array([[0, 0], [1, 0], [1, 0], [0, 1], [-1, 0], [0, -1]], dtype=float)
+        results = []
+        for flag in (False, True):
+            with unittest.mock.patch.object(absolute_angles.__globals__["config"], "REMOVE_0_VECS", flag):
+                results.append(absolute_angles(points, [], _no_errors(len(points)), skip=0, wall_threshold_cm=0.0, min_step_px=0.0))
+        np.testing.assert_array_equal(results[0], results[1])
+        self.assertEqual(results[0][0, 2], 2)
+
+    def test_remove_zero_vecs_parameter_removed(self):
+        points = _ccw_square_loop(n_laps=2)
+        with self.assertRaises(TypeError):
+            absolute_angles(points, [], _no_errors(len(points)), remove_zero_vecs=True)
 
 
 class TestUnaveraged(unittest.TestCase):
     """unaveraged=True returns one [row, angle, excluded] line per angle instead of interval means."""
 
     KW = dict(skip=0, remove_zero_vecs=False, wall_threshold_cm=0.0, min_step_px=0.0)
+    KW_ABS = dict(skip=0, wall_threshold_cm=0.0, min_step_px=0.0)
 
     def test_shape_and_rows(self):
         points = _ccw_square_loop(n_laps=2)  # 9 points -> 7 angles at middle points 1..7
@@ -112,7 +142,7 @@ class TestUnaveraged(unittest.TestCase):
     def test_absolute_takes_abs(self):
         points = _alternating_zigzag(n_steps=8)
         signed = turning_angle(points, [], _no_errors(len(points)), unaveraged=True, **self.KW)
-        absolute = absolute_angles(points, [], _no_errors(len(points)), unaveraged=True, **self.KW)
+        absolute = absolute_angles(points, [], _no_errors(len(points)), unaveraged=True, **self.KW_ABS)
         np.testing.assert_allclose(absolute[:, 1], np.abs(signed[:, 1]))
         self.assertTrue((signed[:, 1] < 0).any())
 
@@ -177,8 +207,8 @@ class TestWallExclusion(unittest.TestCase):
             area=self.AREA,
             data_px=self.points,
             skip=0,
-            remove_zero_vecs=remove_zero_vecs,
             wall_threshold_cm=wall,
+            **_rzv(metric, remove_zero_vecs),
         )
 
     def test_wall_exclusion_removes_angles(self):
@@ -196,11 +226,10 @@ class TestWallExclusion(unittest.TestCase):
 
     def test_wall_result_independent_of_remove_zero_vecs(self):
         # No stationary steps in this path, so the flag must not change anything.
-        for metric in (turning_angle, absolute_angles):
-            with self.subTest(metric=metric.__name__):
-                keep = self._run(metric, wall=self.THRESHOLD, remove_zero_vecs=False)
-                remove = self._run(metric, wall=self.THRESHOLD, remove_zero_vecs=True)
-                np.testing.assert_array_equal(keep, remove)
+        keep = self._run(turning_angle, wall=self.THRESHOLD, remove_zero_vecs=False)
+        remove = self._run(turning_angle, wall=self.THRESHOLD, remove_zero_vecs=True)
+        np.testing.assert_array_equal(keep, remove)
+        self.assertEqual(self._run(absolute_angles, wall=self.THRESHOLD, remove_zero_vecs=True)[0, 2], remove[0, 2])
 
     def test_streak_length_excludes_wall_angles(self):
         kwargs = dict(area=self.AREA, data_px=self.points, skip=0, wall_threshold_cm=self.THRESHOLD, unaveraged=True)
@@ -219,7 +248,7 @@ class TestMinStepPx(unittest.TestCase):
     CM = PX * 0.05  # angles are computed in cm; the cut-off must still be judged in pixels
 
     def _run(self, metric, *, min_step_px: float, remove_zero_vecs: bool, **kw) -> NDArray[np.float64]:
-        return metric(self.CM, [], _no_errors(len(self.PX)), data_px=self.PX, skip=0, remove_zero_vecs=remove_zero_vecs, wall_threshold_cm=0.0, min_step_px=min_step_px, **kw)
+        return metric(self.CM, [], _no_errors(len(self.PX)), data_px=self.PX, skip=0, wall_threshold_cm=0.0, min_step_px=min_step_px, **_rzv(metric, remove_zero_vecs), **kw)
 
     def test_short_steps_dropped_with_remove_zero_vecs(self):
         for metric in (turning_angle, absolute_angles):
@@ -229,7 +258,8 @@ class TestMinStepPx(unittest.TestCase):
                 self.assertAlmostEqual(result[0, 0], np.pi / 2)
 
     def test_short_steps_count_as_zero_without_remove_zero_vecs(self):
-        result = self._run(absolute_angles, min_step_px=3.0, remove_zero_vecs=False)
+        # Angles at middle points 1-3 touch a jitter step and fill 0.0; points 4-6 are +90 degrees.
+        result = self._run(turning_angle, min_step_px=3.0, remove_zero_vecs=False)
         self.assertEqual(result[0, 2], 6)
         self.assertAlmostEqual(result[0, 0], 3 * (np.pi / 2) / 6)
 
