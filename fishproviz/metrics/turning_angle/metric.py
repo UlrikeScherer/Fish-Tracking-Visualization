@@ -25,8 +25,9 @@ def _prepare_angle_inputs(
 ) -> tuple[NDArray[np.float64], NDArray[np.bool_], list[int], Optional[NDArray[np.bool_]]]:
     """Subsample, build the error index (flagging wall-adjacent points) and the stationary-step mask.
 
-    When skip > 0, data, filter_index, and frame_interval are rescaled to M-space
-    so that error_index[j] covers exactly the subsampled triplet producing angle[j].
+    When skip > 0, data and filter_index are subsampled to M-space so that error_index[j]
+    covers exactly the subsampled triplet producing angle[j]. frame_interval (data-row split
+    points) is mapped to angle indices, so each angle lands in the interval of its middle point.
     Points closer to the wall than wall_threshold_cm are added to the per-point filter, so
     every angle whose triplet touches one is dropped from the statistics regardless of fill_value.
     Subsampled steps shorter than min_step_px (measured on the integer tracker pixels) are marked
@@ -37,11 +38,12 @@ def _prepare_angle_inputs(
     if skip > 0:
         data_eff = data[:: skip + 1]
         filter_eff = filter_index[:: skip + 1]
-        frame_interval = [i // (skip + 1) for i in frame_interval]
         data_px_eff = data_px[:: skip + 1] if data_px is not None else None
     else:
         data_eff, filter_eff = data, filter_index
         data_px_eff = data_px
+    # angle j has its middle point on data row (j + 1) * (skip + 1); the first angle at or after row i is ceil(i / (skip + 1)) - 1
+    angle_interval = [max(-(-i // (skip + 1)) - 1, 0) for i in frame_interval]
 
     if wall_threshold_cm > 0 and area is not None and data_px_eff is not None:
         dtw = px2cm(distance_to_wall_chunk(data_px_eff, area[1]), fish_key=area[0]).astype("double")
@@ -50,7 +52,7 @@ def _prepare_angle_inputs(
     error_index = update_filter_three_points(compute_step_lengths(data_eff), filter_eff)
     stationary = np.linalg.norm(np.diff(data_px_eff, axis=0), axis=1) < min_step_px if min_step_px > 0 else None
 
-    return data_eff, error_index, frame_interval, stationary
+    return data_eff, error_index, angle_interval, stationary
 
 
 def _angle_metric(

@@ -119,6 +119,28 @@ class TestAbsoluteAngles(unittest.TestCase):
             absolute_angles(points, [], _no_errors(len(points)), remove_zero_vecs=True)
 
 
+class TestIntervalBoundaries(unittest.TestCase):
+    """Each angle is counted in the interval that holds its middle point."""
+
+    def _counts(self, metric, n_points: int, split: list[int], skip: int) -> list[float]:
+        points = np.column_stack([np.arange(n_points, dtype=float), np.zeros(n_points)])
+        kw = dict(skip=skip, wall_threshold_cm=0.0, min_step_px=0.0, unaveraged=False, **_rzv(metric, False))
+        return metric(points, split, _no_errors(n_points), **kw)[:, 2].tolist()
+
+    def test_split_counts(self):
+        # (n_points, split rows, skip) -> angles per interval; middle rows are 1..n-2 (skip 0) or 2, 4, ... (skip 1)
+        cases = {
+            (10, (5,), 0): [4.0, 4.0],
+            (20, (10,), 1): [4.0, 4.0],
+            (20, (11,), 1): [5.0, 3.0],
+            (10, (0, 5), 0): [0.0, 4.0, 4.0],
+        }
+        for metric in (turning_angle, absolute_angles):
+            for (n, split, skip), expected in cases.items():
+                with self.subTest(metric=metric.__name__, n=n, split=split, skip=skip):
+                    self.assertEqual(self._counts(metric, n, list(split), skip), expected)
+
+
 class TestUnaveraged(unittest.TestCase):
     """unaveraged=True returns one [row, angle, excluded] line per angle instead of interval means."""
 
