@@ -31,8 +31,8 @@ DIRT_FILTER = int(_env("DIRT_FILTER"))  # 1 to filter by dirt, 0 to not filter
 # --- Dataset parameters ---
 MIN_BATCH_IDX = int(_env("MIN_BATCH_IDX"))
 MAX_BATCH_IDX = int(_env("MAX_BATCH_IDX"))
-SQRT_N = (MAX_BATCH_IDX+2-MIN_BATCH_IDX)**0.5
-FIG_WIDTH = 0.95/(-(-SQRT_N//1.0))
+SQRT_N = (MAX_BATCH_IDX + 2 - MIN_BATCH_IDX) ** 0.5
+FIG_WIDTH = 0.95 / (-(-SQRT_N // 1.0))
 HOURS_PER_DAY = float(_env("HOURS_PER_DAY"))
 BATCH_SIZE = int(_env("BATCH_SIZE"))
 FRAMES_PER_SECOND = int(_env("FRAMES_PER_SECOND"))
@@ -43,6 +43,7 @@ UNAVERAGED = bool(int(_env("UNAVERAGED")))
 AGGREGATE_EVERY_N = int(_env("AGGREGATE_EVERY_N"))
 REMOVE_0_VECS = bool(int(_env("REMOVE_0_VECS")))
 DIST_FROM_WALL_TANGLE_IGNORED = float(_env("DIST_FROM_WALL_TANGLE_IGNORED"))
+TANGLE_MIN_STEP_PX = float(_env("TANGLE_MIN_STEP_PX"))
 
 # --- Paths ---
 DIR_CSV_LOCAL = _env("path_csv_local")

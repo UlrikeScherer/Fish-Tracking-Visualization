@@ -40,6 +40,19 @@ class TestComputeTurningAngles(unittest.TestCase):
         points = np.array([[0, 0], [1, 0], [1, 0], [1, 1], [np.nan, 0], [1, 0], [0, 1]], dtype=float)
         assert np.all(np.isnan(compute_turning_angles(points, fill_value=np.nan)))
 
+    def test_stationary_mask_gets_fill(self):
+        points = np.array([[0, 0], [1, 0], [2, 0], [2, 1], [3, 1]], dtype=float)
+        stationary = np.array([False, False, True, False])
+        result = compute_turning_angles(points, fill_value=np.nan, stationary=stationary)
+        assert result[0] == 0.0
+        assert np.isnan(result[1:]).all()
+
+    def test_stationary_mask_does_not_override_gap_nan(self):
+        points = np.array([[0, 0], [1, 0], [2, 0], [np.nan, 0], [4, 0]], dtype=float)
+        result = compute_turning_angles(points, fill_value=0.0, stationary=np.array([True, True, True, True]))
+        assert result[0] == 0.0
+        assert np.isnan(result[1:]).all()
+
     def test_two_points_returns_empty(self):
         points = np.array([[0, 0], [1, 0]], dtype=float)
         result = compute_turning_angles(points)

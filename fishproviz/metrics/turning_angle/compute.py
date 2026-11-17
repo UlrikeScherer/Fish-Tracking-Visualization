@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 from numpy.typing import NDArray
 
@@ -5,6 +7,7 @@ from numpy.typing import NDArray
 def compute_turning_angles(
     points: NDArray[np.float64],
     fill_value: float = 0.0,
+    stationary: Optional[NDArray[np.bool_]] = None,
 ) -> NDArray[np.float64]:
     """Compute signed turning angles for a sequence of 2D positions.
 
@@ -13,11 +16,12 @@ def compute_turning_angles(
     a y-up frame, which is clockwise (a right turn) on tracker pixel coordinates (y down).
     An angle with a non-finite adjacent displacement (a NaN or inf position, i.e. a gap) is always
     NaN. An angle with finite displacements where either has zero length (the fish did not move)
-    receives fill_value.
+    receives fill_value, as does one adjacent to a step marked in stationary.
 
     Args:
         points: (M, 2) array; NaN entries mark missing positions.
-        fill_value: written where an adjacent displacement has zero length; 0.0 or np.nan.
+        fill_value: written where an adjacent displacement has zero length or is stationary; 0.0 or np.nan.
+        stationary: optional (M-1,) mask of steps to treat as zero length (e.g. below a pixel cut-off).
 
     Returns:
         Array of shape (M-2,). Entry j covers triplet (points[j], points[j+1], points[j+2]).
@@ -26,6 +30,8 @@ def compute_turning_angles(
     norms = np.sqrt(np.einsum("ij,ij->i", diffs, diffs))
     finite = np.isfinite(norms)
     moving = finite & (norms > 0)
+    if stationary is not None:
+        moving &= ~stationary
     computable = moving[:-1] & moving[1:]
     gap = ~(finite[:-1] & finite[1:])
     in_vecs = diffs[:-1][computable]

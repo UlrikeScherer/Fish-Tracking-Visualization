@@ -21,14 +21,19 @@ def _prepare_angle_inputs(
     skip: int,
     fill_value: float,
     wall_threshold_cm: float,
-) -> tuple[NDArray[np.float64], NDArray[np.bool_], list[int]]:
-    """Subsample and build the error index, flagging wall-adjacent points as errors.
+    min_step_px: float,
+) -> tuple[NDArray[np.float64], NDArray[np.bool_], list[int], Optional[NDArray[np.bool_]]]:
+    """Subsample, build the error index (flagging wall-adjacent points) and the stationary-step mask.
 
     When skip > 0, data, filter_index, and frame_interval are rescaled to M-space
     so that error_index[j] covers exactly the subsampled triplet producing angle[j].
     Points closer to the wall than wall_threshold_cm are added to the per-point filter, so
     every angle whose triplet touches one is dropped from the statistics regardless of fill_value.
+    Subsampled steps shorter than min_step_px (measured on the integer tracker pixels) are marked
+    stationary, so their angles receive fill_value like zero-length steps.
     """
+    if min_step_px > 0 and data_px is None:
+        raise ValueError(f"min_step_px={min_step_px} needs data_px (tracker pixel positions); pass data_px or set min_step_px=0")
     if skip > 0:
         data_eff = data[:: skip + 1]
         filter_eff = filter_index[:: skip + 1]
@@ -43,8 +48,9 @@ def _prepare_angle_inputs(
         filter_eff = filter_eff | (dtw < wall_threshold_cm)
 
     error_index = update_filter_three_points(compute_step_lengths(data_eff), filter_eff)
+    stationary = np.linalg.norm(np.diff(data_px_eff, axis=0), axis=1) < min_step_px if min_step_px > 0 else None
 
-    return data_eff, error_index, frame_interval
+    return data_eff, error_index, frame_interval, stationary
 
 
 def _angle_metric(
@@ -57,6 +63,7 @@ def _angle_metric(
     skip: int,
     fill_value: float,
     wall_threshold_cm: float,
+    min_step_px: float,
     absolute: bool,
     unaveraged: bool = False,
 ) -> NDArray[np.float64]:
@@ -73,7 +80,7 @@ def _angle_metric(
         excluded is 1.0 where the averaged metric would drop the angle (error,
         spike or wall filter touching one of its three points).
     """
-    subsampled, error_index, frame_interval = _prepare_angle_inputs(
+    subsampled, error_index, frame_interval, stationary = _prepare_angle_inputs(
         data,
         filter_index,
         frame_interval,
@@ -82,8 +89,9 @@ def _angle_metric(
         skip=skip,
         fill_value=fill_value,
         wall_threshold_cm=wall_threshold_cm,
+        min_step_px=min_step_px,
     )
-    angles = compute_turning_angles(subsampled, fill_value)
+    angles = compute_turning_angles(subsampled, fill_value, stationary)
     if absolute:
         angles = np.abs(angles)
     if unaveraged:
@@ -102,6 +110,7 @@ def turning_angle(
     skip: Optional[int] = None,
     remove_zero_vecs: Optional[bool] = None,
     wall_threshold_cm: Optional[float] = None,
+    min_step_px: Optional[float] = None,
     unaveraged: Optional[bool] = None,
 ) -> NDArray[np.float64]:
     """Mean signed turning angle per time interval.
@@ -122,6 +131,8 @@ def turning_angle(
             None reads config.REMOVE_0_VECS.
         wall_threshold_cm: wall-proximity exclusion threshold in cm;
             None reads config.DIST_FROM_WALL_TANGLE_IGNORED.
+        min_step_px: steps shorter than this (in tracker pixels) count as stationary;
+            None reads config.TANGLE_MIN_STEP_PX.
         unaveraged: if True, return every angle instead of interval averages;
             None reads config.UNAVERAGED.
 
@@ -132,6 +143,7 @@ def turning_angle(
     _skip = config.TANGLE_N_SKIP if skip is None else skip
     _rzv = bool(config.REMOVE_0_VECS) if remove_zero_vecs is None else remove_zero_vecs
     _wall = config.DIST_FROM_WALL_TANGLE_IGNORED if wall_threshold_cm is None else wall_threshold_cm
+    _min_step = config.TANGLE_MIN_STEP_PX if min_step_px is None else min_step_px
     return _angle_metric(
         data,
         frame_interval,
@@ -141,6 +153,7 @@ def turning_angle(
         skip=_skip,
         fill_value=np.nan if _rzv else 0.0,
         wall_threshold_cm=_wall,
+        min_step_px=_min_step,
         absolute=False,
         unaveraged=bool(config.UNAVERAGED) if unaveraged is None else unaveraged,
     )
@@ -156,6 +169,7 @@ def absolute_angles(
     skip: Optional[int] = None,
     remove_zero_vecs: Optional[bool] = None,
     wall_threshold_cm: Optional[float] = None,
+    min_step_px: Optional[float] = None,
     unaveraged: Optional[bool] = None,
 ) -> NDArray[np.float64]:
     """Mean absolute turning angle per time interval.
@@ -169,6 +183,7 @@ def absolute_angles(
     _skip = config.TANGLE_N_SKIP if skip is None else skip
     _rzv = bool(config.REMOVE_0_VECS) if remove_zero_vecs is None else remove_zero_vecs
     _wall = config.DIST_FROM_WALL_TANGLE_IGNORED if wall_threshold_cm is None else wall_threshold_cm
+    _min_step = config.TANGLE_MIN_STEP_PX if min_step_px is None else min_step_px
     return _angle_metric(
         data,
         frame_interval,
@@ -178,6 +193,7 @@ def absolute_angles(
         skip=_skip,
         fill_value=np.nan if _rzv else 0.0,
         wall_threshold_cm=_wall,
+        min_step_px=_min_step,
         absolute=True,
         unaveraged=bool(config.UNAVERAGED) if unaveraged is None else unaveraged,
     )
@@ -193,6 +209,7 @@ def turning_angle_streak_length(
     skip: Optional[int] = None,
     remove_zero_vecs: Optional[bool] = None,
     wall_threshold_cm: Optional[float] = None,
+    min_step_px: Optional[float] = None,
     unaveraged: Optional[bool] = None,
 ) -> NDArray[np.float64]:
     """Mean run length of consecutive same-sign turning angles.
@@ -207,10 +224,11 @@ def turning_angle_streak_length(
     _skip = config.TANGLE_N_SKIP if skip is None else skip
     _rzv = bool(config.REMOVE_0_VECS) if remove_zero_vecs is None else remove_zero_vecs
     _wall = config.DIST_FROM_WALL_TANGLE_IGNORED if wall_threshold_cm is None else wall_threshold_cm
+    _min_step = config.TANGLE_MIN_STEP_PX if min_step_px is None else min_step_px
     _unaveraged = bool(config.UNAVERAGED) if unaveraged is None else unaveraged
     fill_value = np.nan if _rzv else 0.0
 
-    subsampled, error_index, _ = _prepare_angle_inputs(
+    subsampled, error_index, _, stationary = _prepare_angle_inputs(
         data,
         filter_index,
         frame_interval,
@@ -219,8 +237,9 @@ def turning_angle_streak_length(
         skip=_skip,
         fill_value=fill_value,
         wall_threshold_cm=_wall,
+        min_step_px=_min_step,
     )
-    angles = compute_turning_angles(subsampled, fill_value)
+    angles = compute_turning_angles(subsampled, fill_value, stationary)
     valid = ~error_index & ~np.isnan(angles)
     streak_lengths = compute_turning_angle_streak_lengths(angles[valid])
     return streak_lengths if _unaveraged else np.concatenate([np.array(mean_std(streak_lengths)), [len(streak_lengths)]])
