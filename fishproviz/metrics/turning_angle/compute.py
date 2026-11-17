@@ -32,8 +32,10 @@ def compute_turning_angles(
         stationary: optional (M-1,) mask of steps to treat as zero length (e.g. below a pixel cut-off).
 
     Returns:
-        Array of shape (M-2,). Entry j covers triplet (points[j], points[j+1], points[j+2]).
+        Array of shape (M-2,), empty for M < 3. Entry j covers triplet (points[j], points[j+1], points[j+2]).
     """
+    if len(points) < 3:
+        return np.zeros(0, dtype=float)
     diffs = np.diff(points, axis=0)
     norms = np.sqrt(np.einsum("ij,ij->i", diffs, diffs))
     finite = np.isfinite(norms)
@@ -60,19 +62,57 @@ def score_reversals_as_zero(angles: NDArray[np.float64]) -> NDArray[np.float64]:
     return np.where(angles == np.pi, 0.0, angles)
 
 
-def compute_turning_angle_streak_lengths(
-    turning_angles: NDArray[np.float64],
-) -> NDArray[np.float64]:
-    """Extract run lengths of consecutive same-sign turning angles.
+def straight_turns(points: NDArray[np.float64], max_lateral: float) -> NDArray[np.bool_]:
+    """Mark angles whose outgoing step deviates sideways by at most max_lateral from the incoming direction.
 
-    NaN values break streaks. Returns negative and positive run lengths concatenated.
+    Entry j is True where |cross| / |incoming step| <= max_lateral and dot > 0, i.e. the outgoing
+    step leaves at most max_lateral (in the units of points) to either side of the incoming line
+    and keeps going forward. Angles with a non-finite or zero-length adjacent step are False.
+
+    Returns:
+        Boolean array of shape (M-2,), empty for M < 3.
     """
-    n = len(turning_angles)
-    if n == 0:
-        return np.array([], dtype=np.float64)
-    # NaN → 0 (separator), >0 → 1, <=0 → -1; matches original loop's else-branch treatment of 0.0
-    signs = np.where(np.isnan(turning_angles), 0, np.where(turning_angles > 0, 1, -1)).astype(np.int8)
-    changes = np.flatnonzero(np.diff(signs, prepend=signs[0] - 1))
-    run_lengths = np.diff(np.append(changes, n))
-    run_values = signs[changes]
-    return np.concatenate([run_lengths[run_values == -1], run_lengths[run_values == 1]]).astype(np.float64)
+    if len(points) < 3:
+        return np.zeros(0, dtype=bool)
+    diffs = np.diff(points, axis=0)
+    norms = np.sqrt(np.einsum("ij,ij->i", diffs, diffs))
+    moving = np.isfinite(norms) & (norms > 0)
+    computable = moving[:-1] & moving[1:]
+    in_vecs = diffs[:-1][computable]
+    out_vecs = diffs[1:][computable]
+    cross_products = in_vecs[:, 0] * out_vecs[:, 1] - in_vecs[:, 1] * out_vecs[:, 0]
+    dot_products = np.einsum("ij,ij->i", in_vecs, out_vecs)
+    result = np.zeros(len(points) - 2, dtype=bool)
+    result[computable] = (np.abs(cross_products) <= max_lateral * norms[:-1][computable]) & (dot_products > 0)
+    return result
+
+
+def compute_turning_angle_streaks(
+    angles: NDArray[np.float64],
+    breaks: NDArray[np.bool_],
+    straight: NDArray[np.bool_],
+) -> NDArray[np.int64]:
+    """Find runs of consecutive turns to the same side.
+
+    Per angle, in order of precedence: a break (breaks, NaN, or the exact reversal +pi) ends the
+    current streak; a neutral angle (straight, or exactly 0.0) neither ends a streak nor adds to it;
+    otherwise the angle counts towards side +1 (> 0, right turn on tracker pixels) or -1 (< 0, left).
+    An exactly-0 angle that is not marked straight can only occur when straight was judged on other
+    coordinates than angles; it has no side, so it is neutral too.
+
+    Returns:
+        (n_streaks, 4) int64 array of [first_angle_idx, last_angle_idx, side, length] in time order,
+        where the indices are of the first and last counted angles and length counts counted angles.
+    """
+    is_break = breaks | np.isnan(angles) | (angles == np.pi)
+    side = np.where(is_break | straight, 0, np.sign(np.nan_to_num(angles))).astype(np.int64)
+    counted = np.flatnonzero(side)
+    if len(counted) == 0:
+        return np.zeros((0, 4), dtype=np.int64)
+    counted_side = side[counted]
+    break_count = np.cumsum(is_break)[counted]
+    starts_new = np.ones(len(counted), dtype=bool)
+    starts_new[1:] = (counted_side[1:] != counted_side[:-1]) | (break_count[1:] != break_count[:-1])
+    starts = np.flatnonzero(starts_new)
+    ends = np.append(starts[1:], len(counted)) - 1
+    return np.column_stack([counted[starts], counted[ends], counted_side[starts], ends - starts + 1]).astype(np.int64)

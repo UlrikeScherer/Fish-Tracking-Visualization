@@ -44,6 +44,7 @@ AGGREGATE_EVERY_N = int(_env("AGGREGATE_EVERY_N"))
 REMOVE_0_VECS = bool(int(_env("REMOVE_0_VECS")))
 DIST_FROM_WALL_TANGLE_IGNORED = float(_env("DIST_FROM_WALL_TANGLE_IGNORED"))
 TANGLE_MIN_STEP_PX = float(_env("TANGLE_MIN_STEP_PX"))
+STREAK_STRAIGHT_PX = float(_env("STREAK_STRAIGHT_PX"))
 
 # --- Paths ---
 DIR_CSV_LOCAL = _env("path_csv_local")

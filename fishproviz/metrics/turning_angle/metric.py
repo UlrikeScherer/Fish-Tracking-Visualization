@@ -8,7 +8,7 @@ from fishproviz.methods import distance_to_wall_chunk, mean_std
 from fishproviz.utils.transformation import px2cm
 from ..compute_primitives import compute_step_lengths
 from ..metrics import update_filter_three_points, calculate_result_for_interval, metric_per_interval
-from .compute import compute_turning_angles, compute_turning_angle_streak_lengths, score_reversals_as_zero
+from .compute import compute_turning_angles, compute_turning_angle_streaks, score_reversals_as_zero, straight_turns
 
 
 def _prepare_angle_inputs(
@@ -22,7 +22,7 @@ def _prepare_angle_inputs(
     fill_value: float,
     wall_threshold_cm: float,
     min_step_px: float,
-) -> tuple[NDArray[np.float64], NDArray[np.bool_], list[int], Optional[NDArray[np.bool_]]]:
+) -> tuple[NDArray[np.float64], NDArray[np.bool_], list[int], Optional[NDArray[np.bool_]], Optional[NDArray[np.float64]]]:
     """Subsample, build the error index (flagging wall-adjacent points) and the stationary-step mask.
 
     When skip > 0, data and filter_index are subsampled to M-space so that error_index[j]
@@ -32,6 +32,7 @@ def _prepare_angle_inputs(
     every angle whose triplet touches one is dropped from the statistics regardless of fill_value.
     Subsampled steps shorter than min_step_px (measured on the integer tracker pixels) are marked
     stationary, so their angles receive fill_value like zero-length steps.
+    Returns the subsampled data, error index, angle split points, stationary mask and subsampled data_px.
     """
     if min_step_px > 0 and data_px is None:
         raise ValueError(f"min_step_px={min_step_px} needs data_px (tracker pixel positions); pass data_px or set min_step_px=0")
@@ -52,7 +53,7 @@ def _prepare_angle_inputs(
     error_index = update_filter_three_points(compute_step_lengths(data_eff), filter_eff)
     stationary = np.linalg.norm(np.diff(data_px_eff, axis=0), axis=1) < min_step_px if min_step_px > 0 else None
 
-    return data_eff, error_index, angle_interval, stationary
+    return data_eff, error_index, angle_interval, stationary, data_px_eff
 
 
 def _angle_metric(
@@ -84,7 +85,7 @@ def _angle_metric(
         or wall filter touching one of its three points, or a NaN angle (gap, or
         stationary step under NaN fill).
     """
-    subsampled, error_index, frame_interval, stationary = _prepare_angle_inputs(
+    subsampled, error_index, frame_interval, stationary, _ = _prepare_angle_inputs(
         data,
         filter_index,
         frame_interval,
@@ -212,44 +213,66 @@ def turning_angle_streak_length(
     data_px: Optional[NDArray[np.float64]] = None,
     *,
     skip: Optional[int] = None,
-    remove_zero_vecs: Optional[bool] = None,
     wall_threshold_cm: Optional[float] = None,
     min_step_px: Optional[float] = None,
+    straight_px: Optional[float] = None,
     unaveraged: Optional[bool] = None,
 ) -> NDArray[np.float64]:
-    """Mean run length of consecutive same-sign turning angles.
+    """Mean number of consecutive turns made to the same side, per time interval.
 
-    Exact reversals (+pi) count as positive turns here, unlike in turning_angle.
+    A streak breaks at a removed angle (error, spike or wall filter on one of its three points, or a
+    gap), a stationary angle (a step of 0 px or under min_step_px) and an exact reversal. A straight
+    angle (outgoing step at most straight_px tracker pixels sideways of the incoming line, going
+    forward) is neutral: it neither breaks the streak nor adds to its length. Otherwise positive angles
+    (right turns) and negative angles (left turns) form separate streaks. Each streak is assigned to
+    the interval of its first counted angle and is not split at interval boundaries.
 
     Args:
-        unaveraged: if True, returns raw streak length array; if False, returns
-            [mean, std, n]. None reads config.UNAVERAGED.
+        skip: frames skipped between sampled points; None reads config.TANGLE_N_SKIP.
+        wall_threshold_cm: wall-proximity exclusion threshold in cm;
+            None reads config.DIST_FROM_WALL_TANGLE_IGNORED.
+        min_step_px: steps shorter than this (in tracker pixels) count as stationary;
+            None reads config.TANGLE_MIN_STEP_PX.
+        straight_px: sideways deviation in tracker pixels up to which an angle counts as straight;
+            0 means exactly straight only. None reads config.STREAK_STRAIGHT_PX.
+        unaveraged: if True, return every streak instead of interval averages;
+            None reads config.UNAVERAGED.
 
     Returns:
-        [mean, std, n] when unaveraged=False, or flat streak length array when True.
+        (n_intervals, 3) array of [mean, std, n] over streak lengths (left and right pooled, n =
+        number of streaks, [nan, nan, 0] for an interval without streaks), or when unaveraged an
+        (n_streaks, 4) array of [row_start, row_end, side, length] in time order, where the rows are
+        the input data rows of the middle points of the first and last counted angles, side is +1
+        (right) or -1 (left) and length is the number of counted angles.
     """
     _skip = config.TANGLE_N_SKIP if skip is None else skip
-    _rzv = bool(config.REMOVE_0_VECS) if remove_zero_vecs is None else remove_zero_vecs
     _wall = config.DIST_FROM_WALL_TANGLE_IGNORED if wall_threshold_cm is None else wall_threshold_cm
     _min_step = config.TANGLE_MIN_STEP_PX if min_step_px is None else min_step_px
+    _straight = config.STREAK_STRAIGHT_PX if straight_px is None else straight_px
     _unaveraged = bool(config.UNAVERAGED) if unaveraged is None else unaveraged
-    fill_value = np.nan if _rzv else 0.0
+    if _straight > 0 and data_px is None:
+        raise ValueError(f"straight_px={_straight} needs data_px (tracker pixel positions); pass data_px or set straight_px=0")
 
-    subsampled, error_index, _, stationary = _prepare_angle_inputs(
+    subsampled, error_index, angle_interval, stationary, subsampled_px = _prepare_angle_inputs(
         data,
         filter_index,
         frame_interval,
         data_px,
         area,
         skip=_skip,
-        fill_value=fill_value,
+        fill_value=np.nan,
         wall_threshold_cm=_wall,
         min_step_px=_min_step,
     )
-    angles = compute_turning_angles(subsampled, fill_value, stationary)
-    valid = ~error_index & ~np.isnan(angles)
-    streak_lengths = compute_turning_angle_streak_lengths(angles[valid])
-    return streak_lengths if _unaveraged else np.concatenate([np.array(mean_std(streak_lengths)), [len(streak_lengths)]])
+    angles = compute_turning_angles(subsampled, np.nan, stationary)
+    straight = straight_turns(subsampled if subsampled_px is None else subsampled_px, _straight)
+    streaks = compute_turning_angle_streaks(angles, error_index, straight)
+    if _unaveraged:
+        rows = (streaks[:, :2] + 1) * (_skip + 1)
+        return np.column_stack([rows, streaks[:, 2:]]).astype(np.float64)
+    lengths = streaks[:, 3].astype(np.float64)
+    split_index = np.searchsorted(streaks[:, 0], angle_interval, side="left")
+    return calculate_result_for_interval(lengths, split_index, mean_std, np.zeros(len(lengths), dtype=bool))
 
 
 def turning_angle_per_interval(*args, **kwargs) -> dict:
@@ -264,4 +287,4 @@ def absolute_angle_per_interval(*args, **kwargs) -> dict:
 
 def turning_angle_streak_length_per_interval(*args, **kwargs) -> dict:
     """Entry point: delegates to metric_per_interval with metric=turning_angle_streak_length."""
-    return metric_per_interval(*args, **kwargs, metric=turning_angle_streak_length, is_summary=True)
+    return metric_per_interval(*args, **kwargs, metric=turning_angle_streak_length)

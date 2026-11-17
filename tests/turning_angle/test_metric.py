@@ -1,5 +1,6 @@
 import unittest
 import unittest.mock
+from typing import Optional
 
 import numpy as np
 from numpy.typing import NDArray
@@ -273,13 +274,14 @@ class TestWallExclusion(unittest.TestCase):
         np.testing.assert_array_equal(keep, remove)
         self.assertEqual(self._run(absolute_angles, wall=self.THRESHOLD, remove_zero_vecs=True)[0, 2], remove[0, 2])
 
-    def test_streak_length_excludes_wall_angles(self):
-        kwargs = dict(area=self.AREA, data_px=self.points, skip=0, wall_threshold_cm=self.THRESHOLD, unaveraged=True)
-        keep = turning_angle_streak_length(self.points, [], self.no_errors, remove_zero_vecs=False, **kwargs)
-        remove = turning_angle_streak_length(self.points, [], self.no_errors, remove_zero_vecs=True, **kwargs)
-        np.testing.assert_array_equal(keep, remove)
-        free = turning_angle_streak_length(self.points, [], self.no_errors, skip=0, remove_zero_vecs=False, wall_threshold_cm=0.0, min_step_px=0.0, unaveraged=True)
-        self.assertLess(keep.sum(), free.sum())
+    def test_streak_length_breaks_at_wall_angles(self):
+        # straight_px=0: the 10 degree turns on this circle deviate about 1.2 px sideways
+        kwargs = dict(area=self.AREA, data_px=self.points, skip=0, min_step_px=0.0, straight_px=0.0, unaveraged=True)
+        free = turning_angle_streak_length(self.points, [], self.no_errors, wall_threshold_cm=0.0, **kwargs)
+        walled = turning_angle_streak_length(self.points, [], self.no_errors, wall_threshold_cm=self.THRESHOLD, **kwargs)
+        self.assertEqual(len(free), 1)
+        self.assertGreater(len(walled), 1)
+        self.assertLess(walled[:, 3].sum(), free[0, 3])
 
 
 class TestMinStepPx(unittest.TestCase):
@@ -320,86 +322,9 @@ class TestMinStepPx(unittest.TestCase):
         self.assertEqual(turning_angle(px, [], _no_errors(20), skip=0, **kw)[0, 2], 0)
         self.assertEqual(turning_angle(px, [], _no_errors(20), skip=1, **kw)[0, 2], 8)
 
-    def test_streak_length_ignores_short_steps(self):
-        result = self._run(turning_angle_streak_length, min_step_px=3.0, remove_zero_vecs=True, unaveraged=True)
-        np.testing.assert_array_equal(result, [3.0])
-
     def test_requires_pixel_positions(self):
         with self.assertRaises(ValueError):
             turning_angle(self.CM, [], _no_errors(len(self.CM)), skip=0, remove_zero_vecs=True, wall_threshold_cm=0.0, min_step_px=3.0)
-
-
-class TestTurningAngleStreakLength(unittest.TestCase):
-    def test_all_same_sign_one_streak(self):
-        points = _ccw_square_loop(n_laps=2)
-        n = len(points)
-        result = turning_angle_streak_length(
-            points,
-            [],
-            _no_errors(n),
-            skip=0,
-            remove_zero_vecs=False,
-            wall_threshold_cm=0.0,
-            min_step_px=0.0,
-            unaveraged=True,
-        )
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0], n - 2)
-
-    def test_alternating_sign_unit_streaks(self):
-        points = _alternating_zigzag(n_steps=8)
-        n = len(points)
-        result = turning_angle_streak_length(
-            points,
-            [],
-            _no_errors(n),
-            skip=0,
-            remove_zero_vecs=False,
-            wall_threshold_cm=0.0,
-            min_step_px=0.0,
-            unaveraged=True,
-        )
-        self.assertTrue(np.all(result == 1.0))
-
-    def test_unaveraged_false_returns_summary(self):
-        points = _ccw_square_loop(n_laps=2)
-        n = len(points)
-        result = turning_angle_streak_length(
-            points,
-            [],
-            _no_errors(n),
-            skip=0,
-            remove_zero_vecs=False,
-            wall_threshold_cm=0.0,
-            min_step_px=0.0,
-            unaveraged=False,
-        )
-        self.assertEqual(result.shape, (3,))
-
-    def test_remove_zero_vecs_nan_fill_excluded_from_streaks(self):
-        # With remove_zero_vecs=True, stationary point produces NaN fill → excluded.
-        points = np.array([[0, 0], [1, 0], [1, 0], [1, 1], [0, 1], [0, 0], [1, 0]], dtype=float)
-        r_keep = turning_angle_streak_length(
-            points,
-            [],
-            _no_errors(7),
-            skip=0,
-            remove_zero_vecs=False,
-            wall_threshold_cm=0.0,
-            min_step_px=0.0,
-            unaveraged=True,
-        )
-        r_remove = turning_angle_streak_length(
-            points,
-            [],
-            _no_errors(7),
-            skip=0,
-            remove_zero_vecs=True,
-            wall_threshold_cm=0.0,
-            min_step_px=0.0,
-            unaveraged=True,
-        )
-        self.assertGreater(sum(r_keep), sum(r_remove))
 
 
 class TestReversalScoring(unittest.TestCase):
@@ -430,12 +355,6 @@ class TestReversalScoring(unittest.TestCase):
 class TestReversalEdgeCases(unittest.TestCase):
     KW = dict(skip=0, wall_threshold_cm=0.0)
 
-    def test_streak_counts_reversal_as_positive_turn(self):
-        # Four positive-cross turns, the second an exact reversal: one run of 4 (scoring it 0.0 would split the run).
-        points = np.array([[0, 0], [2, 0], [2, 2], [2, 0], [4, 0], [4, 2]], dtype=float)
-        result = turning_angle_streak_length(points, [], _no_errors(len(points)), remove_zero_vecs=True, min_step_px=0.0, unaveraged=True, **self.KW)
-        np.testing.assert_array_equal(result, [4.0])
-
     def test_reversal_next_to_short_step_is_stationary_not_pi(self):
         # Steps (10,0), (0,10), (0,-1), (0,10): both reversal angles touch the 1 px step (< min_step_px).
         px = np.array([[0, 0], [10, 0], [10, 10], [10, 9], [10, 19]], dtype=float)
@@ -446,6 +365,140 @@ class TestReversalEdgeCases(unittest.TestCase):
         self.assertAlmostEqual(aa[0, 0], np.pi / 2)
         ta = turning_angle(cm, [], _no_errors(n), data_px=px, min_step_px=3.0, remove_zero_vecs=False, unaveraged=True, **self.KW)
         np.testing.assert_allclose(ta[:, 1], [np.pi / 2, 0.0, 0.0])
+
+
+def _path(steps: list[tuple[int, int]], start: tuple[int, int] = (100, 100)) -> NDArray[np.float64]:
+    """Integer pixel path from a start point and a list of step vectors."""
+    return np.cumsum(np.vstack([start, steps]), axis=0).astype(float)
+
+
+# On tracker pixels (y down) these step pairs turn right (+) and left (-)
+SQUARE_RIGHT = [(5, 0), (0, 5), (-5, 0), (0, -5)] * 2  # 7 right turns at rows 1..7
+RIGHT_THEN_LEFT = [(5, 0), (0, 5), (-5, 0), (0, -5), (-5, 0), (0, 5), (5, 0)]  # R, R, R at rows 1..3, L, L, L at rows 4..6
+
+
+class TestTurningAngleStreakLength(unittest.TestCase):
+    """Streaks count consecutive same-side turns; removed, stationary and reversal angles break them, straight ones are neutral."""
+
+    KW = dict(skip=0, wall_threshold_cm=0.0, min_step_px=0.0, straight_px=0.0)
+
+    def _raw(self, px: NDArray[np.float64], errors: Optional[NDArray[np.bool_]] = None, **kw) -> list[list[float]]:
+        errors = _no_errors(len(px)) if errors is None else errors
+        result = turning_angle_streak_length(px, [], errors, data_px=px, unaveraged=True, **{**self.KW, **kw})
+        self.assertEqual(result.shape[1:], (4,))
+        self.assertEqual(result.dtype, np.float64)
+        return result.tolist()
+
+    def test_same_side_one_streak(self):
+        self.assertEqual(self._raw(_path(SQUARE_RIGHT)), [[1, 7, 1, 7]])
+
+    def test_side_change_splits_in_time_order(self):
+        self.assertEqual(self._raw(_path(RIGHT_THEN_LEFT)), [[1, 3, 1, 3], [4, 6, -1, 3]])
+
+    def test_gap_breaks(self):
+        px = _path(SQUARE_RIGHT)
+        px[4] = np.nan  # angles at middle rows 3, 4, 5 are NaN
+        self.assertEqual(self._raw(px), [[1, 2, 1, 2], [6, 7, 1, 2]])
+
+    def test_error_point_breaks(self):
+        errors = _no_errors(9)
+        errors[4] = True
+        self.assertEqual(self._raw(_path(SQUARE_RIGHT), errors), [[1, 2, 1, 2], [6, 7, 1, 2]])
+
+    def test_zero_length_step_breaks(self):
+        steps = SQUARE_RIGHT[:4] + [(0, 0)] + SQUARE_RIGHT[4:]  # angles at rows 4 and 5 touch the zero step
+        self.assertEqual(self._raw(_path(steps)), [[1, 3, 1, 3], [6, 8, 1, 3]])
+
+    def test_short_step_breaks_only_under_min_step_px(self):
+        # a 1 px step continuing the incoming direction: straight (neutral) without a cut-off, stationary with one
+        steps = [(5, 0), (0, 5), (-5, 0), (-1, 0), (0, -5), (5, 0)]
+        px = _path(steps)
+        self.assertEqual(self._raw(px), [[1, 5, 1, 4]])
+        self.assertEqual(self._raw(px, min_step_px=3.0), [[1, 2, 1, 2], [5, 5, 1, 1]])
+
+    def test_exact_reversal_breaks(self):
+        steps = [(5, 0), (0, 5), (0, -5), (5, 0), (0, 5)]  # R, reversal, R, R
+        self.assertEqual(self._raw(_path(steps)), [[1, 1, 1, 1], [3, 4, 1, 2]])
+
+    def test_straight_is_neutral(self):
+        # R, S, R is one streak of 2; L, S, R gives two streaks of 1
+        self.assertEqual(self._raw(_path([(5, 0), (0, 5), (0, 5), (-5, 0)])), [[1, 3, 1, 2]])
+        self.assertEqual(self._raw(_path([(5, 0), (0, -5), (0, -5), (5, 0)])), [[1, 1, -1, 1], [3, 3, 1, 1]])
+
+    def test_only_straight_gives_no_streak(self):
+        px = _path([(5, 0)] * 6)
+        self.assertEqual(self._raw(px), [])
+        averaged = turning_angle_streak_length(px, [], _no_errors(len(px)), data_px=px, unaveraged=False, **self.KW)
+        self.assertEqual(averaged.shape, (1, 3))
+        self.assertTrue(np.isnan(averaged[0, :2]).all())
+        self.assertEqual(averaged[0, 2], 0)
+
+    def test_break_beats_straight(self):
+        steps = [(5, 0), (0, 5), (0, 5), (0, 5), (0, 5), (-5, 0)]  # R, S, S, S, R
+        px = _path(steps)
+        self.assertEqual(self._raw(px), [[1, 5, 1, 2]])
+        errors = _no_errors(len(px))
+        errors[3] = True  # removes the straight angles at rows 2, 3, 4
+        self.assertEqual(self._raw(px, errors), [[1, 1, 1, 1], [5, 5, 1, 1]])
+
+    def test_rounded_straight_path_has_no_streaks_at_default_threshold(self):
+        # constant 7 px per frame at 23 degrees, rounded to integer pixels like BioTracker output
+        t = np.arange(200)
+        px = np.round(np.column_stack([100 + 7 * np.cos(np.deg2rad(23)) * t, 100 + 7 * np.sin(np.deg2rad(23)) * t]))
+        self.assertEqual(self._raw(px, straight_px=1.5), [])
+        self.assertGreater(len(self._raw(px, straight_px=0.0)), 20)
+
+    def test_straight_px_needs_pixel_positions(self):
+        px = _path(SQUARE_RIGHT)
+        with self.assertRaises(ValueError):
+            turning_angle_streak_length(px, [], _no_errors(len(px)), skip=0, wall_threshold_cm=0.0, min_step_px=0.0, straight_px=1.5)
+        result = turning_angle_streak_length(px, [], _no_errors(len(px)), unaveraged=True, **self.KW)
+        self.assertEqual(result.tolist(), [[1, 7, 1, 7]])
+
+    def test_interval_by_first_angle(self):
+        px = _path(RIGHT_THEN_LEFT)
+        n = len(px)
+
+        def averaged(split: list[int]) -> NDArray[np.float64]:
+            return turning_angle_streak_length(px, split, _no_errors(n), data_px=px, unaveraged=False, **self.KW)
+
+        # split at row 3: the right streak (rows 1..3) spans the boundary but stays whole in interval 0
+        np.testing.assert_array_equal(averaged([3]), [[3, 0, 1], [3, 0, 1]])
+        # split at rows 4 and 5: the left streak starts in interval 1, interval 2 is empty
+        np.testing.assert_array_equal(averaged([4, 5]), [[3, 0, 1], [3, 0, 1], [np.nan, np.nan, 0]])
+        # split at row 5: both streaks start before it
+        np.testing.assert_array_equal(averaged([5]), [[3, 0, 2], [np.nan, np.nan, 0]])
+
+    def test_skip_row_mapping(self):
+        corners = _path(SQUARE_RIGHT)
+        px = np.empty((2 * len(corners) - 1, 2))
+        px[::2] = corners
+        px[1::2] = (corners[:-1] + corners[1:]) / 2  # odd rows are skipped
+        self.assertEqual(self._raw(px, skip=1), [[2, 14, 1, 7]])
+
+    def test_averaged_matches_unaveraged(self):
+        rng = np.random.default_rng(0)
+        px = np.round(np.cumsum(rng.normal(scale=5.0, size=(500, 2)), axis=0))
+        errors = rng.random(500) < 0.05
+        kw = dict(data_px=px, skip=0, wall_threshold_cm=0.0, min_step_px=3.0, straight_px=1.5)
+        raw = turning_angle_streak_length(px, [], errors, unaveraged=True, **kw)
+        averaged = turning_angle_streak_length(px, [], errors, unaveraged=False, **kw)
+        self.assertEqual(averaged[0, 2], len(raw))
+        self.assertAlmostEqual(averaged[0, 0], raw[:, 3].mean())
+
+    def test_short_inputs(self):
+        for n in (0, 1, 2):
+            with self.subTest(n=n):
+                px = _path(SQUARE_RIGHT)[:n]
+                self.assertEqual(self._raw(px), [])
+                averaged = turning_angle_streak_length(px, [], _no_errors(n), data_px=px, unaveraged=False, **self.KW)
+                self.assertEqual(averaged.shape, (1, 3))
+                self.assertEqual(averaged[0, 2], 0)
+
+    def test_remove_zero_vecs_parameter_removed(self):
+        px = _path(SQUARE_RIGHT)
+        with self.assertRaises(TypeError):
+            turning_angle_streak_length(px, [], _no_errors(len(px)), remove_zero_vecs=True, **self.KW)
 
 
 if __name__ == "__main__":
