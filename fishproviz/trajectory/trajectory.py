@@ -196,6 +196,7 @@ class Trajectory:
             # print(f'\terroneous data filtered out for key: <{fish_key}>, date: {date} in timespan {time_span}')
             return -1
         alphas = compute_turning_angles(batchxy)
+        alphas = np.where(alphas == np.pi, 0.0, alphas)  # exact reversals have no turn side
         alphas = alphas[~np.isnan(alphas)]
         avg_alpha = alphas.mean() if alphas.size > 0 else np.nan
         sum_alpha = alphas.sum()

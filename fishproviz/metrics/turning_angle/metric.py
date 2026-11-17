@@ -70,7 +70,8 @@ def _angle_metric(
     """Shared implementation for turning_angle and absolute_angles.
 
     Args:
-        absolute: if True, takes np.abs() of the angle array before averaging.
+        absolute: if True, takes np.abs() of the angle array before averaging; otherwise
+            exact reversals (+pi) are scored 0.0.
         unaveraged: if True, skips interval averaging and returns every angle.
 
     Returns:
@@ -92,8 +93,7 @@ def _angle_metric(
         min_step_px=min_step_px,
     )
     angles = compute_turning_angles(subsampled, fill_value, stationary)
-    if absolute:
-        angles = np.abs(angles)
+    angles = np.abs(angles) if absolute else np.where(angles == np.pi, 0.0, angles)
     if unaveraged:
         rows = (np.arange(len(angles)) + 1) * (skip + 1)
         return np.column_stack([rows, angles, error_index]).astype(np.float64)
@@ -124,6 +124,8 @@ def turning_angle(
     to the right and y downwards, and checked raw turning angles against the observed
     fish movement. Right turns are positive and left turns negative; the current
     convention is correct. Do not flip it.
+
+    Exact reversals have no turn side and are scored 0.0 (still counted in n).
 
     Args:
         skip: frames skipped between sampled points; None reads config.TANGLE_N_SKIP.

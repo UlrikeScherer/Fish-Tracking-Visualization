@@ -1,6 +1,7 @@
 import unittest
 
 import numpy as np
+from numpy.typing import NDArray
 
 from fishproviz.metrics.turning_angle.compute import compute_turning_angles, compute_turning_angle_streak_lengths
 
@@ -57,6 +58,65 @@ class TestComputeTurningAngles(unittest.TestCase):
         points = np.array([[0, 0], [1, 0]], dtype=float)
         result = compute_turning_angles(points)
         assert result.shape == (0,)
+
+
+def _px_to_cm(px: NDArray[np.float64], origin: NDArray[np.float64], scale: float) -> NDArray[np.float64]:
+    """Same form as transformation.pixel_to_cm: (px - origin) @ R(pi/4) * scale."""
+    t = np.pi / 4
+    rot = np.array([[np.cos(t), -np.sin(t)], [np.sin(t), np.cos(t)]])
+    return (px - origin) @ rot * scale
+
+
+class TestReversals(unittest.TestCase):
+    """Exact reversals have no turn side and always return the canonical +pi."""
+
+    def test_axis_and_diagonal_reversals_return_plus_pi(self):
+        cases = {
+            "forward_back": [[0, 0], [1, 0], [0, 0]],
+            "back_forward": [[0, 0], [-1, 0], [0, 0]],
+            "vertical": [[5, 5], [5, 9], [5, 7]],
+            "diagonal": [[0, 0], [2, 3], [-2, -3]],
+            "unequal_lengths": [[0, 0], [1, 0], [-1, 0]],
+        }
+        for name, pts in cases.items():
+            with self.subTest(case=name):
+                result = compute_turning_angles(np.array(pts, dtype=float))
+                self.assertEqual(result[0], np.pi)
+
+    def test_reversals_after_cm_transform_are_always_plus_pi(self):
+        rng = np.random.default_rng(42)
+        n = 5000
+        for scale in (0.0227, 0.0194, 0.0311):
+            with self.subTest(scale=scale):
+                origin = rng.integers(0, 1500, size=2).astype(float)
+                p0 = rng.integers(0, 1500, size=(n, 2))
+                d = rng.integers(-20, 21, size=(n, 2))
+                d[(d == 0).all(axis=1)] = [1, 0]
+                a = rng.integers(1, 6, size=(n, 1))
+                b = rng.integers(1, 6, size=(n, 1))
+                p1 = p0 + a * d
+                p2 = p1 - b * d
+                angles = np.array([compute_turning_angles(_px_to_cm(np.array([q0, q1, q2], dtype=float), origin, scale))[0] for q0, q1, q2 in zip(p0, p1, p2)])
+                self.assertFalse((angles == -np.pi).any())
+                self.assertTrue((angles == np.pi).all())
+
+    def test_near_reversal_keeps_geometric_sign(self):
+        # (3,0) then (-3,1): cross = +3, so positive (a right turn on y-down pixels)
+        px = np.array([[0, 0], [3, 0], [0, 1]], dtype=float)
+        for points in (px, _px_to_cm(px, np.array([700.0, 400.0]), 0.0227)):
+            with self.subTest(points=points.tolist()):
+                angle = compute_turning_angles(points)[0]
+                self.assertGreater(angle, 0.0)
+                self.assertLess(angle, np.pi)
+        mirrored = np.array([[0, 0], [3, 0], [0, -1]], dtype=float)
+        self.assertLess(compute_turning_angles(mirrored)[0], 0.0)
+
+    def test_gap_and_fill_rules_unchanged_around_reversal(self):
+        points = np.array([[0, 0], [1, 0], [0, 0], [0, 0], [np.nan, 0]], dtype=float)
+        result = compute_turning_angles(points, fill_value=0.0)
+        self.assertEqual(result[0], np.pi)
+        self.assertEqual(result[1], 0.0)
+        self.assertTrue(np.isnan(result[2]))
 
 
 class TestComputeStreakLengths(unittest.TestCase):
