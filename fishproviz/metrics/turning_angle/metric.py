@@ -228,13 +228,14 @@ def turning_angle_streak_length(
     the interval of its first counted angle and is not split at interval boundaries.
 
     Args:
+        data_px: tracker pixel positions matching data; required, since straightness is judged on them.
         skip: frames skipped between sampled points; None reads config.TANGLE_N_SKIP.
         wall_threshold_cm: wall-proximity exclusion threshold in cm;
             None reads config.DIST_FROM_WALL_TANGLE_IGNORED.
         min_step_px: steps shorter than this (in tracker pixels) count as stationary;
             None reads config.TANGLE_MIN_STEP_PX.
         straight_px: sideways deviation in tracker pixels up to which an angle counts as straight;
-            0 means exactly straight only. None reads config.STREAK_STRAIGHT_PX.
+            0 means exactly straight only, negative raises. None reads config.STREAK_STRAIGHT_PX.
         unaveraged: if True, return every streak instead of interval averages;
             None reads config.UNAVERAGED.
 
@@ -250,8 +251,10 @@ def turning_angle_streak_length(
     _min_step = config.TANGLE_MIN_STEP_PX if min_step_px is None else min_step_px
     _straight = config.STREAK_STRAIGHT_PX if straight_px is None else straight_px
     _unaveraged = bool(config.UNAVERAGED) if unaveraged is None else unaveraged
-    if _straight > 0 and data_px is None:
-        raise ValueError(f"straight_px={_straight} needs data_px (tracker pixel positions); pass data_px or set straight_px=0")
+    if data_px is None:
+        raise ValueError("turning_angle_streak_length needs data_px (tracker pixel positions): straight angles are judged on tracker pixels")
+    if _straight < 0:
+        raise ValueError(f"straight_px={_straight} must be >= 0 (sideways deviation in tracker pixels); set straight_px=0 for exactly straight only")
 
     subsampled, error_index, angle_interval, stationary, subsampled_px = _prepare_angle_inputs(
         data,
@@ -265,7 +268,7 @@ def turning_angle_streak_length(
         min_step_px=_min_step,
     )
     angles = compute_turning_angles(subsampled, np.nan, stationary)
-    straight = straight_turns(subsampled if subsampled_px is None else subsampled_px, _straight)
+    straight = straight_turns(subsampled_px, _straight)
     streaks = compute_turning_angle_streaks(angles, error_index, straight)
     if _unaveraged:
         rows = (streaks[:, :2] + 1) * (_skip + 1)

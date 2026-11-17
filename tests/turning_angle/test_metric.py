@@ -448,12 +448,23 @@ class TestTurningAngleStreakLength(unittest.TestCase):
         self.assertEqual(self._raw(px, straight_px=1.5), [])
         self.assertGreater(len(self._raw(px, straight_px=0.0)), 20)
 
-    def test_straight_px_needs_pixel_positions(self):
+    def test_requires_pixel_positions(self):
         px = _path(SQUARE_RIGHT)
+        for straight_px in (0.0, 1.5):
+            with self.subTest(straight_px=straight_px), self.assertRaises(ValueError):
+                turning_angle_streak_length(px, [], _no_errors(len(px)), unaveraged=True, **{**self.KW, "straight_px": straight_px})
+
+    def test_negative_straight_px_raises(self):
         with self.assertRaises(ValueError):
-            turning_angle_streak_length(px, [], _no_errors(len(px)), skip=0, wall_threshold_cm=0.0, min_step_px=0.0, straight_px=1.5)
-        result = turning_angle_streak_length(px, [], _no_errors(len(px)), unaveraged=True, **self.KW)
-        self.assertEqual(result.tolist(), [[1, 7, 1, 7]])
+            self._raw(_path(SQUARE_RIGHT), straight_px=-1.0)
+
+    def test_straightness_judged_on_pixels_not_cm(self):
+        # collinear pixel motion stays straight at straight_px=0 even though the rotated cm positions give cross ~ 1e-14
+        px = np.array([[0, 0], [3, 1], [6, 2], [9, 3], [12, 4], [15, 5]], dtype=float)
+        c, s = np.cos(np.pi / 4), np.sin(np.pi / 4)
+        cm = ((px - 450) @ np.array([[c, -s], [s, c]])) * 0.05
+        result = turning_angle_streak_length(cm, [], _no_errors(len(px)), data_px=px, unaveraged=True, **self.KW)
+        self.assertEqual(result.tolist(), [])
 
     def test_interval_by_first_angle(self):
         px = _path(RIGHT_THEN_LEFT)

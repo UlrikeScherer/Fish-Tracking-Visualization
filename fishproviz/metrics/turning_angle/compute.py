@@ -97,8 +97,7 @@ def compute_turning_angle_streaks(
     Per angle, in order of precedence: a break (breaks, NaN, or the exact reversal +pi) ends the
     current streak; a neutral angle (straight, or exactly 0.0) neither ends a streak nor adds to it;
     otherwise the angle counts towards side +1 (> 0, right turn on tracker pixels) or -1 (< 0, left).
-    An exactly-0 angle that is not marked straight can only occur when straight was judged on other
-    coordinates than angles; it has no side, so it is neutral too.
+    An angle of exactly 0.0 has no side, so it is neutral even when not marked straight.
 
     Returns:
         (n_streaks, 4) int64 array of [first_angle_idx, last_angle_idx, side, length] in time order,
