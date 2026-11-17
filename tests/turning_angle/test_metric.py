@@ -166,6 +166,26 @@ class TestUnaveraged(unittest.TestCase):
         np.testing.assert_allclose(result[~touched, 1], np.pi / 2)
         self.assertFalse(result[~touched, 2].any())
 
+    def test_stationary_nan_angles_are_excluded(self):
+        points = _ccw_square_loop(n_laps=2)
+        points = np.insert(points, 4, points[4], axis=0)  # repeat point 4: zero-length step 4 -> 5
+        n = len(points)
+        signed = turning_angle(points, [], _no_errors(n), unaveraged=True, skip=0, remove_zero_vecs=True, wall_threshold_cm=0.0, min_step_px=0.0)
+        absolute = absolute_angles(points, [], _no_errors(n), unaveraged=True, **self.KW_ABS)
+        for result in (signed, absolute):
+            stationary = np.isin(result[:, 0], [4, 5])
+            self.assertTrue(np.isnan(result[stationary, 1]).all())
+            self.assertTrue((result[stationary, 2] == 1.0).all())
+            self.assertFalse(result[~stationary, 2].any())
+
+    def test_stationary_zero_fill_stays_included(self):
+        points = _ccw_square_loop(n_laps=2)
+        points = np.insert(points, 4, points[4], axis=0)
+        result = turning_angle(points, [], _no_errors(len(points)), unaveraged=True, **self.KW)
+        stationary = np.isin(result[:, 0], [4, 5])
+        np.testing.assert_array_equal(result[stationary, 1], 0.0)
+        self.assertFalse(result[:, 2].any())
+
     def test_mean_of_included_equals_averaged(self):
         rng = np.random.default_rng(0)
         points = np.cumsum(rng.normal(size=(500, 2)), axis=0)

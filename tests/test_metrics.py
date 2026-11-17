@@ -69,7 +69,8 @@ class TestUtils(unittest.TestCase):
                     for day, table in days.items():
                         self.assertEqual(list(table.columns), ["frame", "xpx", "ypx", name, "excluded"])
                         self.assertTrue(table["frame"].is_monotonic_increasing)
-                        included = table.loc[~table["excluded"], name].dropna()
+                        included = table.loc[~table["excluded"], name]
+                        self.assertFalse(included.isna().any())
                         mean, _, n = averaged[fish_key][day].iloc[0]
                         self.assertAlmostEqual(included.mean(), mean)
                         self.assertEqual(len(included), n)

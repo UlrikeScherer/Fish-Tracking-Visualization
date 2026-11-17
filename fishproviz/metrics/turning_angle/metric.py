@@ -78,8 +78,9 @@ def _angle_metric(
         (n_intervals, 3) array of [mean, std, n] per interval, or when unaveraged
         an (M-2, 3) array of [row, angle, excluded] where row is the index into the
         input data of the middle point of the triplet the angle belongs to, and
-        excluded is 1.0 where the averaged metric would drop the angle (error,
-        spike or wall filter touching one of its three points).
+        excluded is 1.0 where the averaged metric drops the angle: an error, spike
+        or wall filter touching one of its three points, or a NaN angle (gap, or
+        stationary step under NaN fill).
     """
     subsampled, error_index, frame_interval, stationary = _prepare_angle_inputs(
         data,
@@ -96,7 +97,7 @@ def _angle_metric(
     angles = np.abs(angles) if absolute else score_reversals_as_zero(angles)
     if unaveraged:
         rows = (np.arange(len(angles)) + 1) * (skip + 1)
-        return np.column_stack([rows, angles, error_index]).astype(np.float64)
+        return np.column_stack([rows, angles, error_index | np.isnan(angles)]).astype(np.float64)
     return calculate_result_for_interval(angles, frame_interval, mean_std, error_index, checkfornans=True)
 
 
