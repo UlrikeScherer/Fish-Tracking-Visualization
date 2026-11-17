@@ -45,7 +45,7 @@ def compute_turning_angles(
     in_vecs = diffs[:-1][computable]
     out_vecs = diffs[1:][computable]
     dot_products = np.einsum("ij,ij->i", in_vecs, out_vecs)
-    cross_products = np.cross(in_vecs, out_vecs)
+    cross_products = in_vecs[:, 0] * out_vecs[:, 1] - in_vecs[:, 1] * out_vecs[:, 0]
     angles = np.arctan2(cross_products, dot_products)
     reversal = (np.abs(cross_products) <= REVERSAL_SIN_TOL * norms[:-1][computable] * norms[1:][computable]) & (dot_products < 0)
     angles[reversal] = np.pi
