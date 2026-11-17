@@ -3,7 +3,8 @@ from typing import Optional
 import numpy as np
 from numpy.typing import NDArray
 
-# Relative |sin| below which an anti-parallel step pair counts as an exact reversal.
+# Relative |sin| below which an anti-parallel step pair counts as an exact reversal. For integer pixel
+# positions a non-reversal has |sin| >= 1/(n1*n2) (step lengths in px), about 4e-7 even for 1500 px steps.
 REVERSAL_SIN_TOL: float = 1e-9
 
 
@@ -22,7 +23,8 @@ def compute_turning_angles(
     receives fill_value, as does one adjacent to a step marked in stationary.
     An exact reversal (outgoing step anti-parallel to the incoming one) returns +pi, since its
     turn side is undefined; callers needing a signed value map +pi to their own convention.
-    The tolerance relies on integer pixel positions: any non-reversal has |cross| >= 1 px^2.
+    The tolerance relies on integer pixel positions: any non-reversal has |cross| >= 1 px^2, so
+    |sin| >= 1/(n1*n2), far above REVERSAL_SIN_TOL for any realistic step length.
 
     Args:
         points: (M, 2) array; NaN entries mark missing positions.
@@ -51,6 +53,11 @@ def compute_turning_angles(
     result[computable] = angles
     result[gap] = np.nan
     return result
+
+
+def score_reversals_as_zero(angles: NDArray[np.float64]) -> NDArray[np.float64]:
+    """Signed callers score the canonical +pi of an exact reversal as 0.0."""
+    return np.where(angles == np.pi, 0.0, angles)
 
 
 def compute_turning_angle_streak_lengths(

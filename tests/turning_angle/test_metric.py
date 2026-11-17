@@ -385,5 +385,26 @@ class TestReversalScoring(unittest.TestCase):
         self.assertEqual(aa[1, 1], np.pi)
 
 
+class TestReversalEdgeCases(unittest.TestCase):
+    KW = dict(skip=0, wall_threshold_cm=0.0)
+
+    def test_streak_counts_reversal_as_positive_turn(self):
+        # Four positive-cross turns, the second an exact reversal: one run of 4 (scoring it 0.0 would split the run).
+        points = np.array([[0, 0], [2, 0], [2, 2], [2, 0], [4, 0], [4, 2]], dtype=float)
+        result = turning_angle_streak_length(points, [], _no_errors(len(points)), remove_zero_vecs=True, min_step_px=0.0, unaveraged=True, **self.KW)
+        np.testing.assert_array_equal(result, [4.0])
+
+    def test_reversal_next_to_short_step_is_stationary_not_pi(self):
+        # Steps (10,0), (0,10), (0,-1), (0,10): both reversal angles touch the 1 px step (< min_step_px).
+        px = np.array([[0, 0], [10, 0], [10, 10], [10, 9], [10, 19]], dtype=float)
+        cm = px * 0.05
+        n = len(px)
+        aa = absolute_angles(cm, [], _no_errors(n), data_px=px, min_step_px=3.0, **self.KW)
+        self.assertEqual(aa[0, 2], 1)
+        self.assertAlmostEqual(aa[0, 0], np.pi / 2)
+        ta = turning_angle(cm, [], _no_errors(n), data_px=px, min_step_px=3.0, remove_zero_vecs=False, unaveraged=True, **self.KW)
+        np.testing.assert_allclose(ta[:, 1], [np.pi / 2, 0.0, 0.0])
+
+
 if __name__ == "__main__":
     unittest.main()

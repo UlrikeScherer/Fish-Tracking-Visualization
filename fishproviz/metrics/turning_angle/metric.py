@@ -8,7 +8,7 @@ from fishproviz.methods import distance_to_wall_chunk, mean_std
 from fishproviz.utils.transformation import px2cm
 from ..compute_primitives import compute_step_lengths
 from ..metrics import update_filter_three_points, calculate_result_for_interval, metric_per_interval
-from .compute import compute_turning_angles, compute_turning_angle_streak_lengths
+from .compute import compute_turning_angles, compute_turning_angle_streak_lengths, score_reversals_as_zero
 
 
 def _prepare_angle_inputs(
@@ -93,7 +93,7 @@ def _angle_metric(
         min_step_px=min_step_px,
     )
     angles = compute_turning_angles(subsampled, fill_value, stationary)
-    angles = np.abs(angles) if absolute else np.where(angles == np.pi, 0.0, angles)
+    angles = np.abs(angles) if absolute else score_reversals_as_zero(angles)
     if unaveraged:
         rows = (np.arange(len(angles)) + 1) * (skip + 1)
         return np.column_stack([rows, angles, error_index]).astype(np.float64)
@@ -215,6 +215,8 @@ def turning_angle_streak_length(
     unaveraged: Optional[bool] = None,
 ) -> NDArray[np.float64]:
     """Mean run length of consecutive same-sign turning angles.
+
+    Exact reversals (+pi) count as positive turns here, unlike in turning_angle.
 
     Args:
         unaveraged: if True, returns raw streak length array; if False, returns

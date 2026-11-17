@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 from numpy.typing import NDArray
 
-from fishproviz.metrics.turning_angle.compute import compute_turning_angles, compute_turning_angle_streak_lengths
+from fishproviz.metrics.turning_angle.compute import compute_turning_angles, compute_turning_angle_streak_lengths, score_reversals_as_zero
 
 
 class TestComputeTurningAngles(unittest.TestCase):
@@ -117,6 +117,15 @@ class TestReversals(unittest.TestCase):
         self.assertEqual(result[0], np.pi)
         self.assertEqual(result[1], 0.0)
         self.assertTrue(np.isnan(result[2]))
+
+
+class TestScoreReversalsAsZero(unittest.TestCase):
+    def test_maps_pi_only_and_does_not_mutate(self):
+        angles = np.array([np.pi, -np.pi, 0.5, np.nan, 0.0])
+        original = angles.copy()
+        result = score_reversals_as_zero(angles)
+        np.testing.assert_array_equal(result, [0.0, -np.pi, 0.5, np.nan, 0.0])
+        np.testing.assert_array_equal(angles, original)
 
 
 class TestComputeStreakLengths(unittest.TestCase):
