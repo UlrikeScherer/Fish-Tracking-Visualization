@@ -8,7 +8,10 @@ from fishproviz.utils.utile import get_interval_name_from_seconds
 csv_columns_time = ["day", "time"]
 csv_columns_results = ["mean", "std", "median"]
 num_datapoints = "num_valid_points"
+TURNING_ANGLE_STREAK_LENGTH = "turning_angle_streak_length"
 RAW_ANGLE_METRICS = ("turning_angle", "absolute_angles")
+RAW_STREAK_METRICS = (TURNING_ANGLE_STREAK_LENGTH,)
+SKIP_SUFFIXED_METRICS = (*RAW_ANGLE_METRICS, TURNING_ANGLE_STREAK_LENGTH)
 
 
 def get_csv_columns_from_results_dim(dimension, metric_name):
@@ -61,8 +64,8 @@ def metric_result_to_csv(
         )
     else:
         directory = get_results_directory(metric_name)
-        raw_angles = metric_name in RAW_ANGLE_METRICS
-        suffix = f"_skip{config.TANGLE_N_SKIP}" if raw_angles else ""
+        suffix = f"_skip{config.TANGLE_N_SKIP}" if metric_name in SKIP_SUFFIXED_METRICS else ""
+        no_index = metric_name in RAW_ANGLE_METRICS or metric_name in RAW_STREAK_METRICS
         for key in results.keys():
             for subkey in results[key].keys():
                 subdir = f"{directory}/raw"
@@ -71,7 +74,7 @@ def metric_result_to_csv(
                 if len(results[key][subkey]) > 0:
                     results[key][subkey].to_csv(
                         f"{subdir}/{key}_{subkey}{suffix}.csv",
-                        index=not raw_angles,
+                        index=not no_index,
                         index_label="i",
                     )
 
@@ -92,7 +95,7 @@ def get_filename_for_metric_csv(
     :return: filename for csv file
     """
     directory = get_results_directory(metric_name)
-    if metric_name == "turning_angle":
+    if metric_name in SKIP_SUFFIXED_METRICS:
         metric_name = metric_name + f"_skip{config.TANGLE_N_SKIP}"
     if all_points:
         return "%s/%s.csv" % (directory, metric_name)

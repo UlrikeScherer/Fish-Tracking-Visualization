@@ -16,7 +16,7 @@ from fishproviz.methods import (
     mean_std,
     distance_to_object_chunk,
 )
-from .results_to_csv import metric_result_to_csv, RAW_ANGLE_METRICS
+from .results_to_csv import metric_result_to_csv, RAW_ANGLE_METRICS, RAW_STREAK_METRICS, TURNING_ANGLE_STREAK_LENGTH
 from .compute_primitives import (
     compute_step_lengths,
     entropy_for_chunk,
@@ -179,7 +179,6 @@ def metric_per_interval(
     is_sociability: bool = False,
     all_points: bool = False,
     every_point: bool = False,
-    is_summary: bool = False,
 ) -> dict:
     """
     Applies a given function to all fishes in fish_ids with the time_interval, for all days in the day_interval interval
@@ -206,7 +205,8 @@ def metric_per_interval(
     )
     metric_kwargs = dict()
     raw_angles = every_point and metric.__name__ in RAW_ANGLE_METRICS
-    if metric.__name__ in RAW_ANGLE_METRICS:
+    raw_streaks = every_point and metric.__name__ in RAW_STREAK_METRICS
+    if metric.__name__ in (*RAW_ANGLE_METRICS, TURNING_ANGLE_STREAK_LENGTH):
         # explicit, so config.UNAVERAGED and every_point can never disagree for these metrics
         metric_kwargs.update(unaveraged=every_point)
     if include_median:
@@ -276,12 +276,7 @@ def metric_per_interval(
                     else:
                         result = metric(data_cm, split_by_interval_idx, err_filter, **metric_kwargs)
                 # concat the results array with the index of df for every time_interval step
-                if is_summary:
-                    if every_point:
-                        day_dict[day] = pd.DataFrame(result.reshape((-1, 1)))
-                    else:
-                        day_dict[day] = pd.DataFrame(result.reshape((1, -1)))
-                elif raw_angles:
+                if raw_angles:
                     # result columns: [row, angle, excluded]; attach frame numbers and tracker coordinates
                     rows = result[:, 0].astype(int)
                     day_dict[day] = pd.DataFrame(
@@ -291,6 +286,16 @@ def metric_per_interval(
                             "ypx": data[rows, 1],
                             metric.__name__: result[:, 1],
                             "excluded": result[:, 2].astype(bool),
+                        }
+                    )
+                elif raw_streaks:
+                    # result columns: [row_start, row_end, side, length]; rows become day-level frame numbers
+                    day_dict[day] = pd.DataFrame(
+                        {
+                            "frame_start": df.index[result[:, 0].astype(int)],
+                            "frame_end": df.index[result[:, 1].astype(int)],
+                            "side": result[:, 2].astype(int),
+                            "length": result[:, 3].astype(int),
                         }
                     )
                 else:
