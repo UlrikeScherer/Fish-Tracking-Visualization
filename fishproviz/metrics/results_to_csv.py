@@ -11,7 +11,7 @@ num_datapoints = "num_valid_points"
 TURNING_ANGLE_STREAK_LENGTH = "turning_angle_streak_length"
 RAW_ANGLE_METRICS = ("turning_angle", "absolute_angles")
 RAW_STREAK_METRICS = (TURNING_ANGLE_STREAK_LENGTH,)
-SKIP_SUFFIXED_METRICS = (*RAW_ANGLE_METRICS, TURNING_ANGLE_STREAK_LENGTH)
+TANGLE_METRICS = (*RAW_ANGLE_METRICS, *RAW_STREAK_METRICS)
 
 
 def get_csv_columns_from_results_dim(dimension, metric_name):
@@ -64,8 +64,8 @@ def metric_result_to_csv(
         )
     else:
         directory = get_results_directory(metric_name)
-        suffix = f"_skip{config.TANGLE_N_SKIP}" if metric_name in SKIP_SUFFIXED_METRICS else ""
-        no_index = metric_name in RAW_ANGLE_METRICS or metric_name in RAW_STREAK_METRICS
+        suffix = f"_skip{config.TANGLE_N_SKIP}" if metric_name in TANGLE_METRICS else ""
+        no_index = metric_name in TANGLE_METRICS
         for key in results.keys():
             for subkey in results[key].keys():
                 subdir = f"{directory}/raw"
@@ -95,7 +95,7 @@ def get_filename_for_metric_csv(
     :return: filename for csv file
     """
     directory = get_results_directory(metric_name)
-    if metric_name in SKIP_SUFFIXED_METRICS:
+    if metric_name in TANGLE_METRICS:
         metric_name = metric_name + f"_skip{config.TANGLE_N_SKIP}"
     if all_points:
         return "%s/%s.csv" % (directory, metric_name)

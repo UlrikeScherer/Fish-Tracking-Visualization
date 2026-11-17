@@ -16,7 +16,7 @@ from fishproviz.methods import (
     mean_std,
     distance_to_object_chunk,
 )
-from .results_to_csv import metric_result_to_csv, RAW_ANGLE_METRICS, RAW_STREAK_METRICS, TURNING_ANGLE_STREAK_LENGTH
+from .results_to_csv import metric_result_to_csv, RAW_ANGLE_METRICS, RAW_STREAK_METRICS, TANGLE_METRICS
 from .compute_primitives import (
     compute_step_lengths,
     entropy_for_chunk,
@@ -206,7 +206,7 @@ def metric_per_interval(
     metric_kwargs = dict()
     raw_angles = every_point and metric.__name__ in RAW_ANGLE_METRICS
     raw_streaks = every_point and metric.__name__ in RAW_STREAK_METRICS
-    if metric.__name__ in (*RAW_ANGLE_METRICS, TURNING_ANGLE_STREAK_LENGTH):
+    if metric.__name__ in TANGLE_METRICS:
         # explicit, so config.UNAVERAGED and every_point can never disagree for these metrics
         metric_kwargs.update(unaveraged=every_point)
     if include_median:
