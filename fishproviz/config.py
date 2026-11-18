@@ -1,4 +1,4 @@
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, fields
 from dotenv import load_dotenv
 import os
 import fishproviz
@@ -22,6 +22,21 @@ FRONT, BACK = "front", "back"
 sep = ";"
 MAZE_FILE = "maze_data.json"
 
+
+def validate_config(*, spike_threshold: float, frames_per_second: int, batch_size: int, min_batch_idx: int, max_batch_idx: int, aggregate_every_n: int) -> None:
+    """Raises ValueError naming the key and value of the first invalid setting."""
+    if not spike_threshold > 0:
+        raise ValueError(f"SPIKE_THRESHOLD must be > 0 (cm per frame), got {spike_threshold}")
+    if not frames_per_second > 0:
+        raise ValueError(f"FRAMES_PER_SECOND must be > 0, got {frames_per_second}")
+    if not batch_size > 0:
+        raise ValueError(f"BATCH_SIZE must be > 0, got {batch_size}")
+    if not 0 <= min_batch_idx <= max_batch_idx:
+        raise ValueError(f"Batch indices must satisfy 0 <= MIN_BATCH_IDX <= MAX_BATCH_IDX, got MIN_BATCH_IDX={min_batch_idx}, MAX_BATCH_IDX={max_batch_idx}")
+    if not aggregate_every_n >= 1:
+        raise ValueError(f"AGGREGATE_EVERY_N must be >= 1, got {aggregate_every_n}")
+
+
 # --- Filtering thresholds ---
 SPIKE_THRESHOLD = float(_env("SPIKE_THRESHOLD"))  # cm per frame
 DIRT_THRESHOLD = int(_env("DIRT_THRESHOLD"))
@@ -32,8 +47,6 @@ DIRT_FILTER = int(_env("DIRT_FILTER"))  # 1 to filter by dirt, 0 to not filter
 # --- Dataset parameters ---
 MIN_BATCH_IDX = int(_env("MIN_BATCH_IDX"))
 MAX_BATCH_IDX = int(_env("MAX_BATCH_IDX"))
-SQRT_N = (MAX_BATCH_IDX + 2 - MIN_BATCH_IDX) ** 0.5
-FIG_WIDTH = 0.95 / (-(-SQRT_N // 1.0))
 BATCH_SIZE = int(_env("BATCH_SIZE"))
 FRAMES_PER_SECOND = int(_env("FRAMES_PER_SECOND"))
 
@@ -45,6 +58,17 @@ REMOVE_0_VECS = bool(int(_env("REMOVE_0_VECS")))
 DIST_FROM_WALL_TANGLE_IGNORED = float(_env("DIST_FROM_WALL_TANGLE_IGNORED"))
 TANGLE_MIN_STEP_PX = float(_env("TANGLE_MIN_STEP_PX"))
 STREAK_STRAIGHT_PX = float(_env("STREAK_STRAIGHT_PX"))
+
+validate_config(
+    spike_threshold=SPIKE_THRESHOLD,
+    frames_per_second=FRAMES_PER_SECOND,
+    batch_size=BATCH_SIZE,
+    min_batch_idx=MIN_BATCH_IDX,
+    max_batch_idx=MAX_BATCH_IDX,
+    aggregate_every_n=AGGREGATE_EVERY_N,
+)
+SQRT_N = (MAX_BATCH_IDX + 2 - MIN_BATCH_IDX) ** 0.5
+FIG_WIDTH = 0.95 / (-(-SQRT_N // 1.0))
 
 # --- Paths ---
 PATH_RECORDINGS = _env("path_recordings")
@@ -92,12 +116,12 @@ def build_root_paths(root: str) -> RootPaths:
 
 
 def _apply_root_paths(root: str) -> None:
-    global DIR_CSV_LOCAL, dir_front, dir_back, CONFIG_DATA, VIS_DIR, PLOTS_DIR, RESULTS_PATH, TEX_DIR, DIR_TRACES, err_file, area_front, area_back
-    paths = asdict(build_root_paths(root))
-    DIR_CSV_LOCAL, dir_front, dir_back = paths["DIR_CSV_LOCAL"], paths["dir_front"], paths["dir_back"]
-    CONFIG_DATA, VIS_DIR, PLOTS_DIR = paths["CONFIG_DATA"], paths["VIS_DIR"], paths["PLOTS_DIR"]
-    RESULTS_PATH, TEX_DIR, DIR_TRACES = paths["RESULTS_PATH"], paths["TEX_DIR"], paths["DIR_TRACES"]
-    err_file, area_front, area_back = paths["err_file"], paths["area_front"], paths["area_back"]
+    globals().update(asdict(build_root_paths(root)))
+
+
+def _current_root_paths() -> RootPaths:
+    """Reads the live module attributes, which tests and callers may have set directly."""
+    return RootPaths(**{f.name: globals()[f.name] for f in fields(RootPaths)})
 
 
 _apply_root_paths(_env("path_csv_local"))
@@ -125,30 +149,6 @@ TRIAL_TIMES_CSV = _env("TRIAL_TIMES_CSV")
 CALIBRATION_DIST_CM = float(_env("CALIBRATION_DIST_CM"))
 
 
-def validate_config(*, spike_threshold: float, frames_per_second: int, batch_size: int, min_batch_idx: int, max_batch_idx: int, aggregate_every_n: int) -> None:
-    """Raises ValueError naming the key and value of the first invalid setting."""
-    if not spike_threshold > 0:
-        raise ValueError(f"SPIKE_THRESHOLD must be > 0 (cm per frame), got {spike_threshold}")
-    if not frames_per_second > 0:
-        raise ValueError(f"FRAMES_PER_SECOND must be > 0, got {frames_per_second}")
-    if not batch_size > 0:
-        raise ValueError(f"BATCH_SIZE must be > 0, got {batch_size}")
-    if not 0 <= min_batch_idx <= max_batch_idx:
-        raise ValueError(f"Batch indices must satisfy 0 <= MIN_BATCH_IDX <= MAX_BATCH_IDX, got MIN_BATCH_IDX={min_batch_idx}, MAX_BATCH_IDX={max_batch_idx}")
-    if not aggregate_every_n >= 1:
-        raise ValueError(f"AGGREGATE_EVERY_N must be >= 1, got {aggregate_every_n}")
-
-
-validate_config(
-    spike_threshold=SPIKE_THRESHOLD,
-    frames_per_second=FRAMES_PER_SECOND,
-    batch_size=BATCH_SIZE,
-    min_batch_idx=MIN_BATCH_IDX,
-    max_batch_idx=MAX_BATCH_IDX,
-    aggregate_every_n=AGGREGATE_EVERY_N,
-)
-
-
 def set_config_paths(root: str) -> None:
     """Points every root-derived path at a new data root and drops cached calibration/area functions."""
     _apply_root_paths(root)
@@ -159,14 +159,15 @@ def set_config_paths(root: str) -> None:
 
 def create_directories():
     """Creates the output directory structure under DIR_CSV_LOCAL."""
-    if not os.path.exists(DIR_CSV_LOCAL):
-        raise Exception("path_csv_local does not exist: %s" % DIR_CSV_LOCAL)
-    for d in [VIS_DIR, PLOTS_DIR, RESULTS_PATH, DIR_TRACES, TEX_DIR, CONFIG_DATA]:
+    paths = _current_root_paths()
+    if not os.path.exists(paths.DIR_CSV_LOCAL):
+        raise Exception("path_csv_local does not exist: %s" % paths.DIR_CSV_LOCAL)
+    for d in [paths.VIS_DIR, paths.PLOTS_DIR, paths.RESULTS_PATH, paths.DIR_TRACES, paths.TEX_DIR, paths.CONFIG_DATA]:
         if not os.path.exists(d):
             os.makedirs(d, exist_ok=True)
             print("Created directory: %s" % d)
-    if not os.path.exists(err_file):
-        with open(err_file, "w") as f:
+    if not os.path.exists(paths.err_file):
+        with open(paths.err_file, "w") as f:
             f.write(
                 ";".join(
                     [

@@ -2,6 +2,8 @@ import dataclasses
 import json
 import pathlib
 import shutil
+import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -70,7 +72,47 @@ class TestValidateConfig(unittest.TestCase):
             config.validate_config(**{**_VALID, "frames_per_second": 0})
 
 
+class TestImportValidationOrder(unittest.TestCase):
+    def test_invalid_batch_range_raises_named_error_at_import(self) -> None:
+        # load_dotenv(override=True) lets the env file win over the shell, so the override is applied after it runs.
+        code = "import os, dotenv\n" "orig = dotenv.load_dotenv\n" "dotenv.load_dotenv = lambda *a, **k: (orig(*a, **k), os.environ.update(MIN_BATCH_IDX='20', MAX_BATCH_IDX='12'))[0]\n" "import fishproviz.config\n"
+        result = subprocess.run([sys.executable, "-c", code], cwd=_TEST_DATA.parent, capture_output=True, text=True, timeout=120)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("ValueError: Batch indices must satisfy 0 <= MIN_BATCH_IDX <= MAX_BATCH_IDX", result.stderr)
+        self.assertIn("MIN_BATCH_IDX=20", result.stderr)
+
+
 class TestCalibrationAndAreas(_ConfigRestoringCase):
+    def _copy_area_folders(self) -> tuple[pathlib.Path, pathlib.Path]:
+        front, back = self._tmp / "front_areas", self._tmp / "back_areas"
+        shutil.copytree(_TEST_DATA / "area_config" / "areas_front", front)
+        shutil.copytree(_TEST_DATA / "area_config" / "areas_back", back)
+        self._point_at_test_data(front, back)
+        return front, back
+
+    def test_unmappable_polygon_raises_naming_camera_and_file(self) -> None:
+        front, _ = self._copy_area_folders()
+        # 4 vertices cannot take 5 distinct reference points, so two map onto the same vertex
+        bad = front / "11111111_areas.csv"
+        bad.write_text("Last#579,516;494,595;3067,3172;3155,3089#0,0;10,0;10,10;0,10#2#0\n")
+        with self.assertRaisesRegex(ValueError, f"11111111_front.*{bad.name}.*5-point reference polygon"):
+            tank_area_config.get_areas()
+
+    def test_smallest_polygon_of_file_is_returned(self) -> None:
+        file = self._tmp / "99999999_areas.csv"
+        file.write_text("Last#1,1;2,2;3,3;4,4#0,0;1,0;1,1;0,1;0,2#2#0\nLast#1,1;2,2;3,3;4,4#0,0;1,0;1,1#2#0\n")
+        self.assertEqual(tank_area_config._smallest_polygon(str(file), "99999999_front").shape, (3, 2))
+        file.write_text("nothing\n")
+        with self.assertRaisesRegex(ValueError, "99999999_areas.csv"):
+            tank_area_config._smallest_polygon(str(file), "99999999_front")
+
+    def test_wrong_reference_point_count_raises_naming_file(self) -> None:
+        front, _ = self._copy_area_folders()
+        target = front / "23442333_areas.csv"
+        target.write_text(target.read_text().replace("579,516;494,595;3067,3172;3155,3089", "579,516;494,595;3067,3172"))
+        with self.assertRaisesRegex(ValueError, "23442333_areas.csv"):
+            tank_area_config.compute_calibrations()
+
     def test_px2cm_requires_fish_key(self) -> None:
         with self.assertRaises(TypeError):
             px2cm(1.0)  # type: ignore[call-arg]

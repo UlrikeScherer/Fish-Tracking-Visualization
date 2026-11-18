@@ -54,37 +54,44 @@ def _parse_polygon(file: str, line: str) -> np.ndarray:
         raise ValueError(f"Malformed 'Last' line in area file {file}: expected '...#<points>#<polygon>' with 'x,y' pairs ({e})") from e
 
 
-def _merge_area_file(area_data: dict[str, np.ndarray], key: str, file: str) -> None:
-    """Stores the smallest polygon on the file's 'Last' lines under key; raises if there is none."""
-    found = False
+def _smallest_polygon(file: str, key: str) -> np.ndarray:
+    """Returns the smallest polygon on the file's 'Last' lines; raises if there is none."""
+    polygons = []
     with open(file, "r") as file_read:
         for line in file_read.readlines():
             if "Last" in line:
-                found = True
-                data_a = _parse_polygon(file, line)
-                if key not in area_data or area_data[key].size > data_a.size:
-                    area_data[key] = data_a
-    if not found:
+                polygons.append(_parse_polygon(file, line))
+    if not polygons:
         raise ValueError(f"No 'Last' line found in area file {file} ({key})")
+    return min(polygons, key=lambda poly: poly.size)
+
+
+def _on_reference(key: str, polygon: np.ndarray, reference: np.ndarray, file: str) -> np.ndarray:
+    """Returns a 5-point polygon as is, otherwise maps it onto the reference polygon's vertex order."""
+    if polygon.shape[0] == 5:
+        return polygon
+    mapped = update_area(reference, polygon)
+    if mapped is None:
+        raise ValueError(f"Tank polygon for camera '{key}' in area file {file} could not be mapped onto the 5-point reference polygon")
+    return mapped
 
 
 def get_areas() -> dict[str, np.ndarray]:
-    area_data = dict()
-    example_dict = {config.FRONT: np.array([]), config.BACK: np.array([])}
+    raw: dict[str, np.ndarray] = {}
+    source: dict[str, str] = {}
+    reference = {config.FRONT: np.array([]), config.BACK: np.array([])}
     for p, path in zip([config.FRONT, config.BACK], [config.area_front, config.area_back]):
         for f in _area_csv_files(path):
             c = os.path.basename(f)[:8]
             if c.isnumeric():
                 key = "%s_%s" % (c, p)
-                _merge_area_file(area_data, key, f)
-                if area_data[key].shape[0] == 5 and len(example_dict[p]) == 0:
-                    example_dict[p] = area_data[key]
+                polygon = _smallest_polygon(f, key)
+                if key not in raw or raw[key].size > polygon.size:
+                    raw[key], source[key] = polygon, f
+                if raw[key].shape[0] == 5 and len(reference[p]) == 0:
+                    reference[p] = raw[key]
 
-    for k, v in area_data.items():
-        if v.shape[0] != 5:
-            area_data[k] = update_area(example_dict[k.split("_")[1]], v)
-            if area_data[k] is None:
-                del area_data[k]
+    area_data = {k: _on_reference(k, v, reference[k.split("_")[1]], source[k]) for k, v in raw.items()}
 
     searched = {config.FRONT: config.area_front, config.BACK: config.area_back}
     for key in get_camera_pos_keys():
@@ -126,6 +133,8 @@ def _calibration_of_file(file: str) -> float:
         raise ValueError(f"No line starting with 'Last' found in area file {file}")
     try:
         cal = np.array([(list(map(lambda x: int(x), coord.split(","))) if "," in coord else None) for coord in line.split("#")[1].split(";")])
+        if cal.shape != (4, 2):
+            raise ValueError(f"expected 4 reference points, got array of shape {cal.shape}")
         return config.CALIBRATION_DIST_CM / np.mean(np.sqrt(np.sum((cal[:2] - cal[2:]) ** 2, axis=1)))
     except (IndexError, ValueError, TypeError) as e:
         raise ValueError(f"Malformed 'Last' line in area file {file}: expected '...#<4 reference points as x,y>#...' ({e})") from e
