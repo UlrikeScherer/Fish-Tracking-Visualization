@@ -17,16 +17,18 @@ from fishproviz.trajectory import (
     SociabilityTrajectory,
 )
 from fishproviz.metrics import (
-    activity_per_interval,
-    turning_angle_per_interval,
-    turning_angle_streak_length_per_interval,
-    tortuosity_per_interval,
-    entropy_per_interval,
-    distance_to_wall_per_interval,
-    distance_to_object_per_interval,
-    absolute_angle_per_interval,
-    step_length_per_interval,
+    metric_per_interval,
+    activity,
+    turning_angle,
+    turning_angle_streak_length,
+    tortuosity,
+    entropy,
+    distance_to_wall,
+    distance_to_object,
+    absolute_angles,
+    step_length,
 )
+from fishproviz.metrics.results_to_csv import require_raw_mode
 
 TRAJECTORY = "trajectory"
 FEEDING = "feeding"
@@ -70,15 +72,15 @@ programs = [
 MIN_TIME_INTERVAL = 30  # seconds; shorter bins make the csv files too large
 
 metric_functions = {
-    ACTIVITY: activity_per_interval,
-    TORTUOSITY: tortuosity_per_interval,
-    TURNING_ANGLE: turning_angle_per_interval,
-    TURNING_ANGLE_STREAK_LENGTH: turning_angle_streak_length_per_interval,
-    ABS_ANGLE: absolute_angle_per_interval,
-    ENTROPY: entropy_per_interval,
-    WALL_DISTANCE: distance_to_wall_per_interval,
-    NOVEL_OBJECT_DISTANCE: distance_to_object_per_interval,
-    STEP_LENGTH: step_length_per_interval,
+    ACTIVITY: activity,
+    TORTUOSITY: tortuosity,
+    TURNING_ANGLE: turning_angle,
+    TURNING_ANGLE_STREAK_LENGTH: turning_angle_streak_length,
+    ABS_ANGLE: absolute_angles,
+    ENTROPY: entropy,
+    WALL_DISTANCE: distance_to_wall,
+    NOVEL_OBJECT_DISTANCE: distance_to_object,
+    STEP_LENGTH: step_length,
 }
 
 
@@ -97,17 +99,34 @@ def parse_time_interval(value: str) -> int | Literal["day"]:
     return seconds
 
 
-def validate_include_median(program: str, include_median: bool) -> None:
-    """Raise unless include_median is off or the program runs activity."""
-    if include_median and program not in (ACTIVITY, ALL_METRICS):
+def metric_programs(program: str) -> list[str]:
+    """Metric programs that program runs: every metric for 'all', itself for a single metric, none otherwise."""
+    if program == ALL_METRICS:
+        return metric_names
+    return [program] if program in metric_functions else []
+
+
+def validate_include_median(program: str, include_median: bool, unaveraged: bool) -> None:
+    """Raise unless include_median is off, or the program runs activity with averaged output."""
+    if not include_median:
+        return
+    if program not in (ACTIVITY, ALL_METRICS):
         raise ValueError(f"--include_median is only valid for '{ACTIVITY}' (or '{ALL_METRICS}', where it applies to {ACTIVITY} only), not for '{program}'")
+    if unaveraged:
+        raise ValueError("--include_median applies to averaged output only, but UNAVERAGED=1 requests raw output; set UNAVERAGED=0 or drop --include_median")
+
+
+def validate_raw_mode(program: str, unaveraged: bool) -> None:
+    """With raw output requested, raise naming every metric the program runs that has no raw mode."""
+    if unaveraged:
+        require_raw_mode([metric_functions[p].__name__ for p in metric_programs(program)])
 
 
 def main_metrics(program: str, include_median: bool = False, **kwargs_metrics) -> None:
     """Computes one metric program and writes its results to csv."""
     if program not in metric_functions:
         raise ValueError(f"'{program}' is not a metric program; choose one of {list(metric_functions)}")
-    metric_functions[program](include_median=include_median, **kwargs_metrics)
+    metric_per_interval(metric=metric_functions[program], include_median=include_median, **kwargs_metrics)
 
 
 def get_fish_ids_to_run(program, fish_id):
@@ -149,7 +168,8 @@ def main(
         fish_id: camera_position or index, default all fish
         include_median: activity only (for 'all', applied to activity alone)
     """
-    validate_include_median(program, include_median)
+    validate_include_median(program, include_median, config.UNAVERAGED)
+    validate_raw_mode(program, config.UNAVERAGED)
     fish_ids = get_fish_ids_to_run(program, fish_id)
     kwargs_metrics = dict(
         fish_ids=fish_ids,
@@ -184,8 +204,8 @@ def main(
         ST.object_data_to_tex()
     elif program == TRIAL_TIMES:
         exploration_trials()
-    elif program in metric_functions or program == ALL_METRICS:
-        for p in metric_names if program == ALL_METRICS else [program]:
+    elif metric_programs(program):
+        for p in metric_programs(program):
             main_metrics(p, include_median=include_median and p == ACTIVITY, **kwargs_metrics)
     elif program == CLEAR:  # clear all data remove directories DANGEROUS!
         for path in [config.PLOTS_DIR, config.RESULTS_PATH]:  # VIS_DIR

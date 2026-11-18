@@ -16,7 +16,7 @@ import fishproviz
 import fishproviz.config as config
 import fishproviz.metrics as metrics
 from fishproviz.metrics.exploration_trials import exploration_trials
-from fishproviz.metrics.metrics import interval_split
+from fishproviz.metrics.metrics import _day_frame, _metric_for_day, interval_split
 from fishproviz.metrics.results_to_csv import STEP_METRICS, metric_result_to_csv
 from fishproviz.utils import csv_of_the_day, get_camera_pos_keys
 from fishproviz.utils.transformation import clear_transformation_cache
@@ -106,6 +106,48 @@ class TestStepMetrics(StepMetricTestCase):
         np.testing.assert_array_equal(time_points, [10000, 10004, 10008])
         self.assertEqual(split, [4, 8])
 
+    def test_interval_split_has_no_degenerate_last_bin(self) -> None:
+        # last - first is a multiple of the step: the last frame joins the previous bin, as before
+        frames = pd.Index(range(0, 13))
+        time_points, split = interval_split(frames, 4)
+        np.testing.assert_array_equal(time_points, np.arange(0, 12, 4))
+        self.assertEqual(split, [4, 8])
+
+    def test_day_outside_window_is_empty_not_an_error(self) -> None:
+        fish_key, day = self.fish_keys[0], "20210911_060000"
+        camera, position = fish_key.split("_")
+        keys, batches = csv_of_the_day(camera, day, is_back=position == config.BACK)
+        late = 24 * 3600 - 1  # window at the end of the day, after every loaded frame
+        windows = {f"{day.split('_')[0]}_{fish_key}": (late, late)}
+        df = _day_frame(keys, batches, windows, day, fish_key)
+        self.assertTrue(df.empty)
+        self.assertTrue(_day_frame([], [], None, day, fish_key).empty)
+        area_tuple = (fish_key, None)
+        for kwargs, width in ((dict(), 3), (dict(include_median=True), 4)):
+            table = _metric_for_day(metrics.activity, df, area_tuple, day, step_frames=None, ellipse=None, metric_kwargs=kwargs, every_point=False, out_dim=width)
+            self.assertEqual(table.shape, (0, width))
+        raw = _metric_for_day(metrics.activity, df, area_tuple, day, step_frames=None, ellipse=None, metric_kwargs=dict(unaveraged=True), every_point=True, out_dim=3)
+        self.assertEqual(len(raw), 0)
+
+    def test_median_with_raw_output_raises(self) -> None:
+        data = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0]])
+        with self.assertRaisesRegex(ValueError, "include_median"):
+            metrics.activity(data, [], np.zeros(3, dtype=bool), include_median=True, unaveraged=True)
+
+    def test_raw_mode_raises_for_metrics_without_one(self) -> None:
+        for per_interval, name in ((metrics.tortuosity_per_interval, "tortuosity"), (metrics.entropy_per_interval, "entropy")):
+            with self.subTest(metric=name), self.assertRaisesRegex(ValueError, f"'{name}'"):
+                per_interval(fish_ids=[0], all_points=True, every_point=True, write_to_csv=True)
+        self.assertEqual(list(self.results.iterdir()), [])
+
+    def test_hour_column_counts_bins_from_first_loaded_frame(self) -> None:
+        with patch.object(config, "MIN_BATCH_IDX", 1):
+            metrics.activity_per_interval(fish_ids=[0], time_interval=3600, write_to_csv=True)
+        table = pd.read_csv(self.results / "activity" / "hour_activity.csv", sep=config.sep)
+        for _, day in table.groupby(["cam_pos", "day"]):
+            self.assertEqual(day["df_index"].iloc[0], config.BATCH_SIZE)
+            self.assertEqual(list(day["hour"]), list(range(len(day))))
+
     def test_bins_start_at_first_loaded_frame(self) -> None:
         with patch.object(config, "MIN_BATCH_IDX", 1):
             first = config.BATCH_SIZE
@@ -123,6 +165,15 @@ class TestCsvWriter(StepMetricTestCase):
         for results in ({}, {"12345678_front": {}}):
             with self.assertRaisesRegex(ValueError, "'activity'"):
                 metric_result_to_csv(results=results, metric_name="activity", all_points=True)
+
+    def test_fish_with_only_empty_days_raises_naming_fish(self) -> None:
+        day = pd.DataFrame([[1.0, 0.5, 10]], index=[0])
+        empty = pd.DataFrame(np.empty([0, 3]))
+        results = {"12345678_front": {"20210911_060000": day}, "87654321_back": {"20210911_060000": empty}}
+        with self.assertRaisesRegex(ValueError, "'87654321_back'.*'activity'"):
+            metric_result_to_csv(results=results, metric_name="activity", all_points=True)
+        with self.assertRaisesRegex(ValueError, "No fish produced any data for metric 'activity'"):
+            metric_result_to_csv(results={"87654321_back": {"20210911_060000": empty}}, metric_name="activity", all_points=True)
 
     def test_fish_without_days_raises_naming_fish(self) -> None:
         day = pd.DataFrame([[1.0, 0.5, 10]], index=[0])
@@ -176,9 +227,23 @@ class TestMain(StepMetricTestCase):
             self.assertTrue(any((self.results / name).glob("*.csv")), name)
 
     def test_include_median_rejected_for_other_programs(self) -> None:
-        with self.assertRaisesRegex(ValueError, "include_median"):
+        with patch.object(config, "UNAVERAGED", False), self.assertRaisesRegex(ValueError, "include_median"):
             main.main("step_length", include_median=True)
         self.assertFalse((self.results / "step_length").exists())
+
+    def test_include_median_rejected_with_raw_output(self) -> None:
+        for program in ("activity", "all"):
+            with self.subTest(program=program), patch.object(config, "UNAVERAGED", True), self.assertRaisesRegex(ValueError, "include_median.*UNAVERAGED"):
+                main.main(program, include_median=True)
+        self.assertEqual(list(self.results.iterdir()), [])
+
+    def test_raw_mode_validated_before_running(self) -> None:
+        with patch.object(config, "UNAVERAGED", True):
+            with self.assertRaisesRegex(ValueError, "'tortuosity'"):
+                main.main("tortuosity")
+            with self.assertRaisesRegex(ValueError, r"\['tortuosity', 'entropy'\]"):
+                main.main("all")
+        self.assertEqual(list(self.results.iterdir()), [])
 
 
 class TestTrialTimes(StepMetricTestCase):

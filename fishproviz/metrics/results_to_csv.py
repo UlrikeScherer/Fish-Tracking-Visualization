@@ -1,4 +1,5 @@
 import os
+from collections.abc import Sequence
 from typing import Literal, Optional
 
 import pandas as pd
@@ -17,6 +18,16 @@ TANGLE_METRICS = (*RAW_ANGLE_METRICS, *RAW_STREAK_METRICS)
 STEP_METRICS = ("activity", "step_length")
 # metrics whose raw output is one row per angle or step: frame, xpx, ypx, <metric>, excluded
 RAW_ROW_METRICS = (*RAW_ANGLE_METRICS, *STEP_METRICS)
+# metrics whose raw output is per-point values summed over AGGREGATE_EVERY_N windows
+AGGREGATED_RAW_METRICS = ("distance_to_wall",)
+RAW_METRICS = (*RAW_ROW_METRICS, *RAW_STREAK_METRICS, *AGGREGATED_RAW_METRICS)
+
+
+def require_raw_mode(metric_names: Sequence[str]) -> None:
+    """Raise naming every metric in metric_names that has no raw (unaveraged) output."""
+    without_raw = [name for name in metric_names if name not in RAW_METRICS]
+    if without_raw:
+        raise ValueError(f"Raw output (UNAVERAGED=1 / every_point) is not available for {without_raw}; it exists for {list(RAW_METRICS)}. Set UNAVERAGED=0 or run another metric")
 
 
 def get_csv_columns_from_results_dim(dimension, metric_name):
@@ -31,12 +42,13 @@ def get_csv_columns_from_results_dim(dimension, metric_name):
 
 
 def _check_results(results: dict[str, dict[str, pd.DataFrame]], metric_name: str) -> None:
-    """Raise when no fish, or any single fish, produced no days for the metric."""
-    if not any(results.values()):
+    """Raise when no fish, or any single fish, produced no rows of data for the metric."""
+    rows_per_fish = {fish_key: sum(len(day_data) for day_data in fish_data.values()) for fish_key, fish_data in results.items()}
+    if not results or not any(rows_per_fish.values()):
         raise ValueError(f"No fish produced any data for metric '{metric_name}'; check the data directories and the day folders of every camera")
-    for fish_key, fish_data in results.items():
-        if len(fish_data) == 0:
-            raise ValueError(f"Fish '{fish_key}' produced no days for metric '{metric_name}'; check its day folders or exclude it with -fid")
+    for fish_key, n_rows in rows_per_fish.items():
+        if n_rows == 0:
+            raise ValueError(f"Fish '{fish_key}' produced no data in any day for metric '{metric_name}'; check its day folders or exclude it with -fid")
 
 
 def metric_result_to_csv(
@@ -62,7 +74,9 @@ def metric_result_to_csv(
         df_sum[num_datapoints] = df_sum[num_datapoints].astype(int)
 
         if interval_name == HOUR:
-            df_sum["hour"] = df_sum["df_index"] // (time_interval * config.FRAMES_PER_SECOND)
+            # bin ordinal within the day, counted from the day's first loaded frame
+            first_frame = df_sum.groupby(["cam_pos", "day"])["df_index"].transform("min")
+            df_sum["hour"] = (df_sum["df_index"] - first_frame) // (time_interval * config.FRAMES_PER_SECOND)
         df_sum.to_csv(
             get_filename_for_metric_csv(metric_name, interval_name, all_points=all_points),
             float_format="%.10f",

@@ -7,8 +7,7 @@ from fishproviz.utils import (
     get_seconds_from_time,
     start_time_of_day_to_seconds,
 )
-from fishproviz.utils.tank_area_config import get_area_functions
-from fishproviz.utils.transformation import pixel_to_cm
+from fishproviz.utils.transformation import _area_functions, pixel_to_cm
 from fishproviz.metrics import activity
 from fishproviz.utils.error_filter import all_error_filters
 import pandas as pd
@@ -34,7 +33,7 @@ def exploration_trials(path_trials: str = config.TRIAL_TIMES_CSV) -> None:
     block = int(BLOCK[-1])
     in_block = tdf["block"] == block
     tdf_b = tdf[in_block]
-    area_func = get_area_functions()
+    area_func = _area_functions()
     for fk in get_camera_pos_keys():
         cam, pos = fk.split("_")
         area_tuple = (fk, area_func(fk))

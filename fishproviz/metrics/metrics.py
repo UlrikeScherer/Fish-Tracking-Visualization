@@ -9,15 +9,14 @@ from fishproviz.utils import (
     get_fish2camera_map,
     all_error_filters,
 )
-from fishproviz.utils.tank_area_config import get_area_functions
-from fishproviz.utils.transformation import pixel_to_cm, px2cm
+from fishproviz.utils.transformation import _area_functions, pixel_to_cm, px2cm
 from fishproviz.methods import (
     tortuosity_of_chunk,
     distance_to_wall_chunk,
     mean_std,
     distance_to_object_chunk,
 )
-from .results_to_csv import metric_result_to_csv, RAW_ROW_METRICS, RAW_STREAK_METRICS
+from .results_to_csv import metric_result_to_csv, require_raw_mode, AGGREGATED_RAW_METRICS, RAW_ROW_METRICS, RAW_STREAK_METRICS
 from .compute_primitives import (
     compute_step_lengths,
     entropy_for_chunk,
@@ -163,6 +162,8 @@ def _step_metric(
     Returns (n_intervals, 3) rows of [mean, std, n] (4 with the median before n), or when unaveraged
     an (n_steps, 3) array of [row, step, excluded] in time order, row being the step's start row.
     """
+    if include_median and unaveraged:
+        raise ValueError("include_median applies to averaged output only; raw (unaveraged) step output has no median")
     steps, excluded = steps_and_exclusions(data, filter_index)
     if unaveraged:
         return np.column_stack([np.arange(len(steps)), steps, excluded]).astype(np.float64)
@@ -201,10 +202,10 @@ def step_length(
 def interval_split(frames: pd.Index, step_frames: Optional[int]) -> tuple[NDArray[np.int64], list[int]]:
     """Bin start frames from the first loaded frame, and the data rows where every later bin begins.
 
-    step_frames None gives a single bin covering every loaded frame.
+    step_frames None gives a single bin covering every loaded frame. The last frame never opens a bin of its own.
     """
     first, last = int(frames[0]), int(frames[-1])
-    time_points = np.array([first]) if step_frames is None else np.arange(first, last + 1, step_frames)
+    time_points = np.array([first]) if step_frames is None else np.arange(first, max(last, first + 1), step_frames)
     return time_points, np.searchsorted(frames, time_points[1:], side="left").tolist()
 
 
@@ -264,9 +265,41 @@ def _result_table(
                 "length": result[:, 3].astype(int),
             }
         )
-    if every_point:
+    if every_point and metric_name in AGGREGATED_RAW_METRICS:
         return pd.DataFrame({metric_name: np.add.reduceat(result, np.arange(0, len(result), config.AGGREGATE_EVERY_N)).reshape((-1,))})
     return pd.DataFrame(result, index=time_points)
+
+
+def _day_frame(keys: list[str], batches: list[pd.DataFrame], start_end_times: Optional[dict], day: str, fish_key: str) -> pd.DataFrame:
+    """Concatenates the day's batches, keeping only the frames inside each batch's feeding/trial window."""
+    windowed = []
+    for key, batch in zip(keys, batches):
+        start_idx, end_idx = get_start_end_index(start_end_times, day, key, fish_key)
+        windowed.append(batch[batch.FRAME.between(start_idx, end_idx)])
+    return pd.concat(windowed) if windowed else pd.DataFrame(columns=["FRAME", "xpx", "ypx"])
+
+
+def _metric_for_day(
+    metric: Callable,
+    df: pd.DataFrame,
+    area_tuple: tuple,
+    day: str,
+    *,
+    step_frames: Optional[int],
+    ellipse: Optional[dict],
+    metric_kwargs: dict,
+    every_point: bool,
+    out_dim: int,
+) -> pd.DataFrame:
+    """The day's result table; an empty frame of out_dim columns when no frame of the day was loaded."""
+    if df.empty:
+        return pd.DataFrame(np.empty([0, out_dim]))
+    # df is indexed by absolute day frame, used for the precise time when averaging
+    time_points, split_by_interval_idx = interval_split(df.index, step_frames)
+    data = df[["xpx", "ypx"]].to_numpy()
+    err_filter = all_error_filters(data, area_tuple, fish_key=area_tuple[0], day=day)
+    result = _compute_metric(metric, data, split_by_interval_idx, err_filter, area_tuple, ellipse, metric_kwargs)
+    return _result_table(metric.__name__, result, df.index, data, time_points, every_point)
 
 
 def metric_per_interval(
@@ -275,7 +308,6 @@ def metric_per_interval(
     day_interval: Optional[tuple[int, int]] = None,
     metric: Callable = activity,
     write_to_csv: bool = False,
-    out_dim: int = 3,
     include_median: bool = False,
     print_logs: bool = False,
     is_feeding: bool = False,
@@ -293,7 +325,7 @@ def metric_per_interval(
         metric(function):       A function to apply to the data, {activity, tortuosity, turning_angle,...}
         write_to_csv(bool):     Indicate weather the results should be written to a csv
         all_points(bool):       One bin per day written as <metric>.csv; time_interval is then ignored
-        every_point(bool):      Raw output for metrics accepting unaveraged (rows, steps, angles, streaks)
+        every_point(bool):      Raw output (rows, steps, angles, streaks); raises for metrics without one
     Returns:
         package:                dict of computed results, and meta information
     """
@@ -302,7 +334,9 @@ def metric_per_interval(
     fish2camera = get_fish2camera_map()
     if fish_ids is None:
         fish_ids = [i for i in range(len(fish2camera))]
-    area_func = get_area_functions()
+    if every_point:
+        require_raw_mode([metric.__name__])
+    area_func = _area_functions()
     results = dict()
     package = dict(
         metric_name=metric.__name__,
@@ -313,8 +347,9 @@ def metric_per_interval(
     if "unaveraged" in inspect.signature(metric).parameters:
         # explicit, so raw mode follows every_point only and never the global UNAVERAGED flag
         metric_kwargs.update(unaveraged=every_point)
+    # columns of an empty day: [entropy, n] for entropy, [mean, std, (median,) n] otherwise
+    out_dim = (2 if metric.__name__ == entropy.__name__ else 3) + int(include_median)
     if include_median:
-        out_dim = out_dim + 1
         metric_kwargs.update(include_median=include_median)
     step_frames = None if all_points or time_interval == DAY else time_interval * config.FRAMES_PER_SECOND
 
@@ -338,22 +373,17 @@ def metric_per_interval(
                 is_back=is_back,
                 print_logs=print_logs,
             )
-            if len(data_in_batches) == 0:
-                day_dict[day] = pd.DataFrame(np.empty([0, out_dim]))
-                continue
-            # batches are indexed by absolute day frame, used for the precise time when averaging
-            dfis = []
-            for k, dfi in zip(keys, data_in_batches):
-                start_idx, end_idx = get_start_end_index(start_end_times, day, k, fish_key)
-                dfis.append(dfi[dfi.FRAME.between(start_idx, end_idx)])
-            df = pd.concat(dfis)
-            time_points, split_by_interval_idx = interval_split(df.index, step_frames)
-            data = df[["xpx", "ypx"]].to_numpy()
-            area_tuple = (fish_key, area_func(fish_key))
-            err_filter = all_error_filters(data, area_tuple, fish_key=fish_key, day=day)
-            ellipse = dict_ellipses[fish_key][day] if dict_ellipses is not None else None
-            result = _compute_metric(metric, data, split_by_interval_idx, err_filter, area_tuple, ellipse, metric_kwargs)
-            day_dict[day] = _result_table(metric.__name__, result, df.index, data, time_points, every_point)
+            day_dict[day] = _metric_for_day(
+                metric,
+                _day_frame(keys, data_in_batches, start_end_times, day, fish_key),
+                (fish_key, area_func(fish_key)),
+                day,
+                step_frames=step_frames,
+                ellipse=dict_ellipses[fish_key][day] if dict_ellipses is not None else None,
+                metric_kwargs=metric_kwargs,
+                every_point=every_point,
+                out_dim=out_dim,
+            )
 
         results[fish_key] = day_dict
     if write_to_csv:
@@ -374,7 +404,7 @@ def tortuosity_per_interval(*args, **kwargs):
 
 
 def entropy_per_interval(*args, **kwargs):
-    return metric_per_interval(*args, **kwargs, metric=entropy, out_dim=2)
+    return metric_per_interval(*args, **kwargs, metric=entropy)
 
 
 def distance_to_wall_per_interval(*args, **kwargs):
