@@ -1,9 +1,10 @@
+from dataclasses import asdict, dataclass
 from dotenv import load_dotenv
 import os
 import fishproviz
 
 module_path = os.path.dirname(fishproviz.__file__)
-load_dotenv(os.path.join(module_path, "config.env"))
+load_dotenv(os.path.join(module_path, "config.env"), override=True)
 
 
 def _env(key: str) -> str:
@@ -22,7 +23,7 @@ sep = ";"
 MAZE_FILE = "maze_data.json"
 
 # --- Filtering thresholds ---
-SPIKE_THRESHOLD = int(_env("SPIKE_THRESHOLD"))
+SPIKE_THRESHOLD = float(_env("SPIKE_THRESHOLD"))  # cm per frame
 DIRT_THRESHOLD = int(_env("DIRT_THRESHOLD"))
 THRESHOLD_AREA_PX = int(_env("THRESHOLD_AREA_PX"))
 AREA_FILTER = int(_env("AREA_FILTER"))  # 1 to filter by area, 0 to not filter
@@ -47,21 +48,60 @@ TANGLE_MIN_STEP_PX = float(_env("TANGLE_MIN_STEP_PX"))
 STREAK_STRAIGHT_PX = float(_env("STREAK_STRAIGHT_PX"))
 
 # --- Paths ---
-DIR_CSV_LOCAL = _env("path_csv_local")
 PATH_RECORDINGS = _env("path_recordings")
 OBJECT_ZONE_COORDS_PATH = _env("OBJECT_ZONE_COORDS_PATH")
 PROJECT_ID = _env("PROJECT_ID")
-dir_front = os.path.join(DIR_CSV_LOCAL, _env("POSITION_STR_FRONT"))
-dir_back = os.path.join(DIR_CSV_LOCAL, _env("POSITION_STR_BACK"))
 
-# --- Output directories ---
-CONFIG_DATA = os.path.join(DIR_CSV_LOCAL, _env("CONFIG_DATA"))
-VIS_DIR = os.path.join(DIR_CSV_LOCAL, _env("VIS_DIR"))
-PLOTS_DIR = os.path.join(DIR_CSV_LOCAL, _env("PLOTS_DIR"))
-RESULTS_PATH = os.path.join(DIR_CSV_LOCAL, _env("RESULTS"))
-TEX_DIR = os.path.join(PLOTS_DIR, _env("TEX_DIR"))
-DIR_TRACES = os.path.join(RESULTS_PATH, PROJECT_ID, "traces")
-err_file = os.path.join(RESULTS_PATH, "log_error.csv")
+
+@dataclass(frozen=True)
+class RootPaths:
+    """Every path derived from the data root directory."""
+
+    DIR_CSV_LOCAL: str
+    dir_front: str
+    dir_back: str
+    CONFIG_DATA: str
+    VIS_DIR: str
+    PLOTS_DIR: str
+    RESULTS_PATH: str
+    TEX_DIR: str
+    DIR_TRACES: str
+    err_file: str
+    area_front: str
+    area_back: str
+
+
+def build_root_paths(root: str) -> RootPaths:
+    """Derives all root-dependent paths from the root and the env names."""
+    plots_dir = os.path.join(root, _env("PLOTS_DIR"))
+    results_path = os.path.join(root, _env("RESULTS"))
+    area_root = os.path.join(root, _env("area_folder"))
+    return RootPaths(
+        DIR_CSV_LOCAL=str(root),
+        dir_front=os.path.join(root, _env("POSITION_STR_FRONT")),
+        dir_back=os.path.join(root, _env("POSITION_STR_BACK")),
+        CONFIG_DATA=os.path.join(root, _env("CONFIG_DATA")),
+        VIS_DIR=os.path.join(root, _env("VIS_DIR")),
+        PLOTS_DIR=plots_dir,
+        RESULTS_PATH=results_path,
+        TEX_DIR=os.path.join(plots_dir, _env("TEX_DIR")),
+        DIR_TRACES=os.path.join(results_path, PROJECT_ID, "traces"),
+        err_file=os.path.join(results_path, "log_error.csv"),
+        area_front=os.path.join(area_root, _env("area_front")),
+        area_back=os.path.join(area_root, _env("area_back")),
+    )
+
+
+def _apply_root_paths(root: str) -> None:
+    global DIR_CSV_LOCAL, dir_front, dir_back, CONFIG_DATA, VIS_DIR, PLOTS_DIR, RESULTS_PATH, TEX_DIR, DIR_TRACES, err_file, area_front, area_back
+    paths = asdict(build_root_paths(root))
+    DIR_CSV_LOCAL, dir_front, dir_back = paths["DIR_CSV_LOCAL"], paths["dir_front"], paths["dir_back"]
+    CONFIG_DATA, VIS_DIR, PLOTS_DIR = paths["CONFIG_DATA"], paths["VIS_DIR"], paths["PLOTS_DIR"]
+    RESULTS_PATH, TEX_DIR, DIR_TRACES = paths["RESULTS_PATH"], paths["TEX_DIR"], paths["DIR_TRACES"]
+    err_file, area_front, area_back = paths["err_file"], paths["area_front"], paths["area_back"]
+
+
+_apply_root_paths(_env("path_csv_local"))
 
 # --- Program section names ---
 # TODO: These are output directory names that users should never change. Move
@@ -82,23 +122,37 @@ SERVER_FEEDING_TIMES_FILE = _env("SERVER_FEEDING_TIMES_FILE")
 SERVER_FEEDING_TIMES_SEP = _env("SERVER_FEEDING_TIMES_SEP")
 TRIAL_TIMES_CSV = _env("TRIAL_TIMES_CSV")
 
-# --- Calibration / area config ---
-area_back = os.path.join(DIR_CSV_LOCAL, _env("area_folder"), _env("area_back"))
-area_front = os.path.join(DIR_CSV_LOCAL, _env("area_folder"), _env("area_front"))
+# --- Calibration ---
 CALIBRATION_DIST_CM = float(_env("CALIBRATION_DIST_CM"))
-DEFAULT_CALIBRATION = float(_env("DEFAULT_CALIBRATION"))
 
 
-def set_config_paths(root):
-    global DIR_CSV_LOCAL, CONFIG_DATA, VIS_DIR, PLOTS_DIR, RESULTS_PATH, err_file, TEX_DIR
-    DIR_CSV_LOCAL = f"{root}"
-    CONFIG_DATA = os.path.join(root, _env("CONFIG_DATA"))
-    VIS_DIR = os.path.join(root, _env("VIS_DIR"))
-    PLOTS_DIR = os.path.join(root, _env("PLOTS_DIR"))
-    RESULTS_PATH = os.path.join(root, _env("RESULTS"))
-    err_file = os.path.join(RESULTS_PATH, "log_error.csv")
-    TEX_DIR = os.path.join(PLOTS_DIR, _env("TEX_DIR"))
-    # Clear cached area/calibration functions so they are reloaded from the new paths.
+def validate_config(*, spike_threshold: float, frames_per_second: int, batch_size: int, min_batch_idx: int, max_batch_idx: int, aggregate_every_n: int) -> None:
+    """Raises ValueError naming the key and value of the first invalid setting."""
+    if not spike_threshold > 0:
+        raise ValueError(f"SPIKE_THRESHOLD must be > 0 (cm per frame), got {spike_threshold}")
+    if not frames_per_second > 0:
+        raise ValueError(f"FRAMES_PER_SECOND must be > 0, got {frames_per_second}")
+    if not batch_size > 0:
+        raise ValueError(f"BATCH_SIZE must be > 0, got {batch_size}")
+    if not 0 <= min_batch_idx <= max_batch_idx:
+        raise ValueError(f"Batch indices must satisfy 0 <= MIN_BATCH_IDX <= MAX_BATCH_IDX, got MIN_BATCH_IDX={min_batch_idx}, MAX_BATCH_IDX={max_batch_idx}")
+    if not aggregate_every_n >= 1:
+        raise ValueError(f"AGGREGATE_EVERY_N must be >= 1, got {aggregate_every_n}")
+
+
+validate_config(
+    spike_threshold=SPIKE_THRESHOLD,
+    frames_per_second=FRAMES_PER_SECOND,
+    batch_size=BATCH_SIZE,
+    min_batch_idx=MIN_BATCH_IDX,
+    max_batch_idx=MAX_BATCH_IDX,
+    aggregate_every_n=AGGREGATE_EVERY_N,
+)
+
+
+def set_config_paths(root: str) -> None:
+    """Points every root-derived path at a new data root and drops cached calibration/area functions."""
+    _apply_root_paths(root)
     from fishproviz.utils.transformation import clear_transformation_cache
 
     clear_transformation_cache()

@@ -30,12 +30,14 @@ def error_default_points(data):
     return ((x == -1) & (y == -1)) | ((x == 0) & (y == 0)) | nan_filter
 
 
-def error_dirt_points(data, threshold=config.DIRT_THRESHOLD, fish_key="", day=""):  #
+def error_dirt_points(data: np.ndarray, threshold: Optional[int] = None, *, fish_key: str, day: str = "") -> np.ndarray:
     """
     @params:    data -- numpy array with x,y coordinates
                 threshold -- number of data frames that are sequentially equal such that we classify them as dirt.
     returns a boolean pandas array with all indices to filter set to True
     """
+    if threshold is None:
+        threshold = config.DIRT_THRESHOLD
     bool_array = np.all(data[1:] == data[:-1], axis=1)
     flt = np.zeros(data.shape[0], dtype=bool)
     indexer = np.argwhere(np.diff(bool_array)).squeeze()
@@ -48,11 +50,11 @@ def error_dirt_points(data, threshold=config.DIRT_THRESHOLD, fish_key="", day=""
                 msg_spike_s, msg_spike_e = "", ""
                 if start > 0:
                     spike_s = calc_steps(data[start - 1 : start + 1])[0]
-                    if px2cm(spike_s) > config.SPIKE_THRESHOLD:
+                    if px2cm(spike_s, fish_key) > config.SPIKE_THRESHOLD:
                         msg_spike_s = "SPIKE START"
                 if end < data.shape[0]:
                     spike_e = calc_steps(data[end - 1 : end + 1])[0]
-                    if px2cm(spike_e) > config.SPIKE_THRESHOLD:
+                    if px2cm(spike_e, fish_key) > config.SPIKE_THRESHOLD:
                         msg_spike_e = "SPIKE END"
                 print(
                     "DIRT: %s, %s: Found dirt: %d data points for [%d:%d] out of %d, data[start]=[%d,%d] \t %s \t %s"
@@ -67,8 +69,8 @@ def error_dirt_points(data, threshold=config.DIRT_THRESHOLD, fish_key="", day=""
                         msg_spike_s,
                         msg_spike_e,
                     ),
-                    "%.2f" % px2cm(spike_s),
-                    "%.2f" % px2cm(spike_e),
+                    "%.2f" % px2cm(spike_s, fish_key),
+                    "%.2f" % px2cm(spike_e, fish_key),
                 )
                 print(
                     "dirt threshold: %.02f" % (threshold / (5 * 60)),
