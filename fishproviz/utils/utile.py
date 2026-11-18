@@ -213,11 +213,8 @@ def csv_of_the_day(
     return merge_files(files_by_key)
 
 
-def filter_files(camera: str, day: str, files: list[str], min_idx: int, max_idx: int) -> tuple[dict[str, str], list[str]]:
-    """
-    Map batch keys in [min_idx, max_idx] to their file and list the keys in that range without one.
-    Raises ValueError if a csv matches no batch name or two files share a key (in or out of range).
-    """
+def group_batch_files(camera: str, day: str, files: list[str]) -> tuple[dict[str, list[str]], list[str]]:
+    """Group files by batch key; returns (files per key, files matching no batch name)."""
     pattern = re.compile(r"{}_{}\.{}(?:_back|_front)?_(\d{{6}})_.*\.csv".format(*map(re.escape, (camera, day, camera))))
     by_key: dict[str, list[str]] = {}
     unmatched: list[str] = []
@@ -227,6 +224,15 @@ def filter_files(camera: str, day: str, files: list[str], min_idx: int, max_idx:
             unmatched.append(f)
         else:
             by_key.setdefault(m.group(1), []).append(f)
+    return by_key, unmatched
+
+
+def filter_files(camera: str, day: str, files: list[str], min_idx: int, max_idx: int) -> tuple[dict[str, str], list[str]]:
+    """
+    Map batch keys in [min_idx, max_idx] to their file and list the keys in that range without one.
+    Raises ValueError if a csv matches no batch name or two files share a key (in or out of range).
+    """
+    by_key, unmatched = group_batch_files(camera, day, files)
     if unmatched:
         raise ValueError(f"CSV files in the day folder of camera {camera}, day {day} match no batch name '{camera}_{day}.{camera}[_back|_front]_<6-digit key>_*.csv': {sorted(unmatched)}")
     duplicates = {k: sorted(v) for k, v in by_key.items() if len(v) > 1}

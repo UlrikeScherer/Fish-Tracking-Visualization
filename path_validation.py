@@ -34,32 +34,33 @@ def check_foldersystem(path, n_files=15, delete=False):
                 days_unique.add(day_dir[:8])
             else:
                 Logger.debug(f"Duplicate day {day_dir} in folder: {path}/{camera_dir}/")
-            files = glob.glob(f"{working_dir}/*.csv")
-            files = [os.path.basename(f) for f in files]
-            wrote_folder = False
+            files = sorted(glob.glob(f"{working_dir}/*.csv"))
 
             # ignore no fish folders
             if "_no_fish" in day_dir:
                 if len(files) > 0:
                     Logger.debug("Folders with no_fish suffix should be empty!")
-                else:
-                    continue
-            # normal case
-            else:
-                if len(files) != n_files:
-                    wrote_folder = True
-                    Logger.debug(f"In folder {working_dir} the number of csv files is unequal the expected number {n_files}, it is {len(files)} instead")
-                msg_counter, duplicate_f_list, _correct_f = utile.filter_files(camera_dir, day_dir, files, n_files, Logger=Logger)
+                continue
+            check_day_folder(working_dir, camera_dir, day_dir.split(".")[0], files, n_files, delete)
 
-            # if the are any complains add them to the LOG list
-            if msg_counter > 0:
-                if not wrote_folder:
-                    Logger.debug(f"In folder {working_dir} has the correct number of csv files: ")
-                # if the delete flag is set and they are duplicates ==> remove them
-                if delete and len(duplicate_f_list) > 0:
-                    Logger.debug("----DELETING DUPLICATES----")
-                    for duplicate_f in duplicate_f_list:
-                        os.remove(f"{working_dir}/{duplicate_f}")
+
+def check_day_folder(working_dir: str, camera: str, day: str, files: list[str], n_files: int, delete: bool) -> None:
+    """Logs file count, unmatched names, duplicate keys and missing keys of one day folder; with `delete`, keeps the last-sorted file per duplicate key."""
+    if len(files) != n_files:
+        Logger.debug(f"In folder {working_dir} the number of csv files is unequal the expected number {n_files}, it is {len(files)} instead")
+    by_key, unmatched = utile.group_batch_files(camera, day, files)
+    missing = ["{:06d}".format(i) for i in range(n_files) if "{:06d}".format(i) not in by_key]
+    if missing:
+        Logger.debug(f"In folder {working_dir} the following batch keys are missing: {' '.join(missing)}")
+    if unmatched:
+        Logger.debug(f"In folder {working_dir} the following file names match no batch name, maybe wrong folder:\n\t" + "\n\t".join(unmatched))
+    duplicates = [f for key_files in by_key.values() if len(key_files) > 1 for f in sorted(key_files)[:-1]]
+    if duplicates:
+        Logger.debug(f"In folder {working_dir} the following files are duplicates of a later file with the same batch key:\n\t" + "\n\t".join(duplicates))
+        if delete:
+            Logger.debug("----DELETING DUPLICATES----")
+            for duplicate_f in duplicates:
+                os.remove(duplicate_f)
 
 
 def main(delete=False, n_files=15, path=DIR_CSV_LOCAL):
