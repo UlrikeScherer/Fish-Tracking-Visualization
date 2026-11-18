@@ -201,76 +201,39 @@ def csv_of_the_day(
         batch_keys_remove = {}
 
     dir_ = get_directory(is_back=is_back)
-
-    filenames_f = [
-        f
-        for f in glob.glob(
-            "{}/{}/{}*/{}_{}*.csv".format(dir_, camera, day, camera, day),
-            recursive=True,
-        )
-        if re.search(r"[0-9].*\.csv$", f[-6:])
-    ]
-    filenames_f = sorted(filenames_f)
-    LOG, _, filtered_files = filter_files(
-        camera,
-        day,
-        filenames_f,
-        n_files=config.MAX_BATCH_IDX + 1,
-        min_idx=config.MIN_BATCH_IDX,
-    )  # filters for duplicates in the batches for a day. It takes the LAST one!!!
-    if len(filtered_files) == 0:
+    day_dir_glob = "{}/{}/{}*".format(glob.escape(dir_), camera, day)
+    filenames = sorted(glob.glob("{}/*.csv".format(day_dir_glob)))
+    files_by_key, missing_keys = filter_files(camera, day, filenames, config.MIN_BATCH_IDX, config.MAX_BATCH_IDX)
+    if len(files_by_key) == 0:
         return [], []
     for key in batch_keys_remove:
-        filtered_files.pop(key, None)
-    if print_logs and len(LOG) > 0:
-        print("\n {}/{}/{}*: \n".format(dir_, camera, day), "\n".join(LOG))
-    return merge_files(filtered_files)
+        files_by_key.pop(key, None)
+    if print_logs and len(missing_keys) > 0:
+        print("\n {}: missing batch keys: {}".format(day_dir_glob, " ".join(missing_keys)))
+    return merge_files(files_by_key)
 
 
-def filter_files(c, d, files, n_files=15, min_idx=0, Logger=None):
+def filter_files(camera: str, day: str, files: list[str], min_idx: int, max_idx: int) -> tuple[dict[str, str], list[str]]:
     """
-    @params:
-    c: camera_id
-    d: folder name of a day
-    files: list of files that are to be filtered
-    n_files: number of files to expect.
-    logger: Logger defined in path_validation
-    @Returns: LOG, duplicate_f, correct_f
-    msg_counter: number of debug-messages
-    duplicate_f: a list of all duplicates occurring
-    correct_f: dict of the correct files for keys i in 0,...,n_files-1
+    Map batch keys in [min_idx, max_idx] to their file and list the keys in that range without one.
+    Raises ValueError if a csv matches no batch name or two files share a key (in or out of range).
     """
-    msg_counter = 0
-    missing_numbers = []
-    duplicate_f = []
-    correct_f = dict()
-    for i in range(min_idx, n_files):
-        key_i = "{:06d}".format(i)
-        pattern = re.compile(".*{}_{}.{}(_back|_front)*_{}_\d*-\d*-\d*T\d*_\d*_\d*_\d*.csv".format(c, d[:15], c, key_i))
-        i_f = [f for f in files if pattern.match(f) is not None]
-
-        if len(i_f) > 1:
-            i_f.sort()
-            duplicate_f.extend(i_f[:-1])
-            correct_f[key_i] = i_f[-1]
-        elif len(i_f) == 0:
-            missing_numbers.append(key_i)
+    pattern = re.compile(r"{}_{}\.{}(?:_back|_front)?_(\d{{6}})_.*\.csv".format(*map(re.escape, (camera, day, camera))))
+    by_key: dict[str, list[str]] = {}
+    unmatched: list[str] = []
+    for f in files:
+        m = pattern.fullmatch(path.basename(f))
+        if m is None:
+            unmatched.append(f)
         else:
-            correct_f[key_i] = i_f[-1]  # takes the last one
-
-    pattern_general = re.compile(".*{}_{}.{}_\d*_\d*-\d*-\d*T\d*_\d*_\d*_\d*.csv".format(c, d[:15], c))
-    corrupted_f = [f for f in files if pattern_general.match(f) is None]
-
-    if Logger and len(missing_numbers) > 0:
-        msg_counter += 1
-        Logger.debug("The following files are missing: \n \t\t\t\t{}".format(" ".join(missing_numbers)))
-    if Logger and len(duplicate_f) > 0:
-        msg_counter += 1
-        Logger.debug("The following files are duplicates: \n\t\t\t\t{}".format("\n\t".join(duplicate_f)))
-    if Logger and len(corrupted_f) > 0:
-        msg_counter += 1
-        Logger.debug("The following file names are corrupted, maybe wrong folder: \n\t\t\t\t{}".format("\n\t".join(corrupted_f)))
-    return msg_counter, duplicate_f, correct_f
+            by_key.setdefault(m.group(1), []).append(f)
+    if unmatched:
+        raise ValueError(f"CSV files in the day folder of camera {camera}, day {day} match no batch name '{camera}_{day}.{camera}[_back|_front]_<6-digit key>_*.csv': {sorted(unmatched)}")
+    duplicates = {k: sorted(v) for k, v in by_key.items() if len(v) > 1}
+    if duplicates:
+        raise ValueError(f"Several files share one batch key for camera {camera}, day {day}: {duplicates}")
+    keys = ["{:06d}".format(i) for i in range(min_idx, max_idx + 1)]
+    return {k: by_key[k][0] for k in keys if k in by_key}, [k for k in keys if k not in by_key]
 
 
 def get_timestamp(format="%d-%m-%Y_%H:%M:%S"):

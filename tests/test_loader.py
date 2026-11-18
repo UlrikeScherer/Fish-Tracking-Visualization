@@ -1,5 +1,7 @@
 """Tests for the batch loader: every frame gap must surface as NaN on a dense, absolute frame grid."""
 
+import contextlib
+import io
 import pathlib
 import tempfile
 import unittest
@@ -40,11 +42,13 @@ def _blank_row(frame: int) -> str:
     return f"{frame};{frame * 40.0:.6f};;;;;;;;;;;;"
 
 
-def _write_batch(directory: pathlib.Path, key: str, lines: list[str]) -> None:
+def _write_batch(directory: pathlib.Path, key: str, lines: list[str], suffix: str = "2021-11-13T12_16_50_3484") -> pathlib.Path:
     day_dir = directory / _CAM / f"{_DAY}.{_CAM}"
     day_dir.mkdir(parents=True, exist_ok=True)
     comments = ["# Source name: synthetic", "# Source FPS: 25.", "# Generation time: 2021-11-13T12:16:50.000"]
-    (day_dir / f"{_CAM}_{_DAY}.{_CAM}_{key}_2021-11-13T12_16_50_3484.csv").write_text("\n".join([*comments, _HEADER, *lines]) + "\n")
+    file = day_dir / f"{_CAM}_{_DAY}.{_CAM}_{key}_{suffix}.csv"
+    file.write_text("\n".join([*comments, _HEADER, *lines]) + "\n")
+    return file
 
 
 class TestLoader(unittest.TestCase):
@@ -110,6 +114,68 @@ class TestLoader(unittest.TestCase):
 
     def test_no_batch_files_returns_empty(self) -> None:
         self.assertEqual(csv_of_the_day(_CAM, "20211114_060000", is_back=False), ([], []))
+
+
+class TestBatchFileMatching(unittest.TestCase):
+    def setUp(self) -> None:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = pathlib.Path(tmp.name)
+        patcher = patch.multiple(
+            config,
+            dir_front=str(self.root),
+            BATCH_SIZE=_BATCH_SIZE,
+            MIN_BATCH_IDX=_MIN_BATCH_IDX,
+            MAX_BATCH_IDX=_MAX_BATCH_IDX,
+            AREA_FILTER=0,
+            DIRT_FILTER=0,
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.lines = [_row(f) for f in range(_BATCH_SIZE)]
+
+    def _finite_count(self) -> int:
+        _, batches = csv_of_the_day(_CAM, _DAY, is_back=False)
+        return sum(int(np.isfinite(b.xpx).sum()) for b in batches)
+
+    def test_short_timestamp_format_loads(self) -> None:
+        for key in ("000000", "000001", "000002"):
+            _write_batch(self.root, key, self.lines, suffix="2022-03-23T00_00_0000")
+        self.assertEqual(self._finite_count(), 3 * _BATCH_SIZE)
+
+    def test_mixed_timestamp_formats_load(self) -> None:
+        _write_batch(self.root, "000000", self.lines)
+        _write_batch(self.root, "000001", self.lines, suffix="2022-03-23T00_00_0000")
+        _write_batch(self.root, "000002", self.lines, suffix="whatever")
+        self.assertEqual(self._finite_count(), 3 * _BATCH_SIZE)
+
+    def test_stray_csv_raises_naming_it(self) -> None:
+        _write_batch(self.root, "000000", self.lines)
+        stray = _write_batch(self.root, "000001", self.lines).with_name("notes.csv")
+        stray.write_text("junk\n")
+        with self.assertRaisesRegex(ValueError, "notes.csv"):
+            csv_of_the_day(_CAM, _DAY, is_back=False)
+
+    def test_duplicate_key_raises_naming_both(self) -> None:
+        first = _write_batch(self.root, "000000", self.lines, suffix="a")
+        second = _write_batch(self.root, "000000", self.lines, suffix="b")
+        with self.assertRaises(ValueError) as ctx:
+            csv_of_the_day(_CAM, _DAY, is_back=False)
+        self.assertIn(first.name, str(ctx.exception))
+        self.assertIn(second.name, str(ctx.exception))
+
+    def test_out_of_range_keys_ignored(self) -> None:
+        for key in ("000000", "000001", "000002", "000003", "000004"):
+            _write_batch(self.root, key, self.lines)
+        keys, _ = csv_of_the_day(_CAM, _DAY, is_back=False)
+        self.assertEqual(keys, ["000000", "000001", "000002"])
+
+    def test_print_logs_names_missing_keys(self) -> None:
+        _write_batch(self.root, "000000", self.lines)
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            csv_of_the_day(_CAM, _DAY, is_back=False, print_logs=True)
+        self.assertIn("000001 000002", out.getvalue())
 
 
 if __name__ == "__main__":
