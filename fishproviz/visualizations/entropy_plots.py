@@ -27,22 +27,15 @@ def entropy_density_main():
         start = 0
         days_per_week = 7
         data_by_week = []
-        for week_i, end in enumerate(
-            range(days_per_week, len(days) + 1, days_per_week)
-        ):
+        for week_i, end in enumerate(range(days_per_week, len(days) + 1, days_per_week)):
             area_tuple = (fk, area_f(fk))
-            data_batches = flatten_list(
-                [
-                    csv_of_the_day(cam, day, is_back=is_back)[1]
-                    for day in days[start:end]
-                ]
-            )
+            data_batches = flatten_list([csv_of_the_day(cam, day, is_back=is_back)[1] for day in days[start:end]])
             if len(data_batches) == 0:
                 data_by_week.append(np.empty((0, 2)))
                 continue
             data = pd.concat(data_batches)
             data_px = data[["xpx", "ypx"]].to_numpy()
-            filter_d = all_error_filters(data_px, area_tuple)
+            filter_d = all_error_filters(data_px, area_tuple, fish_key=fk)
             data_by_week.append(data_px[~filter_d])
             entropy_density_plot(
                 data_by_week[week_i],
@@ -93,8 +86,7 @@ def draw_density_entropy(
     )
     fig = go.Figure([res])
     fig.update_layout(
-        title="%s entropy: %.4f \t fish_key: %s"
-        % (timewindow, entropy_value, fish_key),
+        title="%s entropy: %.4f \t fish_key: %s" % (timewindow, entropy_value, fish_key),
         font={"size": 16},
         height=600,
         width=650,
