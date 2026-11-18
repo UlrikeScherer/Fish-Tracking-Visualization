@@ -14,6 +14,7 @@ import fishproviz.config as config
 from fishproviz.metrics.compute_primitives import compute_step_lengths
 from fishproviz.metrics.metrics import update_filter_three_points, update_filter_two_points
 from fishproviz.utils import all_error_filters, csv_of_the_day
+from fishproviz.utils.utile import batch_keys, missing_batch_keys
 
 _CAM = "12345678"
 _DAY = "20211113_060000"
@@ -176,6 +177,16 @@ class TestBatchFileMatching(unittest.TestCase):
         with contextlib.redirect_stdout(out):
             csv_of_the_day(_CAM, _DAY, is_back=False, print_logs=True)
         self.assertIn("000001 000002", out.getvalue())
+
+
+class TestBatchKeys(unittest.TestCase):
+    def test_inclusive_zero_padded_range(self) -> None:
+        self.assertEqual(batch_keys(0, 2), ["000000", "000001", "000002"])
+        self.assertEqual(batch_keys(11, 12), ["000011", "000012"])
+        self.assertEqual(batch_keys(3, 2), [])
+
+    def test_missing_keys_keep_order(self) -> None:
+        self.assertEqual(missing_batch_keys({"000001": "f"}, batch_keys(0, 2)), ["000000", "000002"])
 
 
 if __name__ == "__main__":

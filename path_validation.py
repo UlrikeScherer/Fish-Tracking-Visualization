@@ -49,7 +49,7 @@ def check_day_folder(working_dir: str, camera: str, day: str, files: list[str], 
     if len(files) != n_files:
         Logger.debug(f"In folder {working_dir} the number of csv files is unequal the expected number {n_files}, it is {len(files)} instead")
     by_key, unmatched = utile.group_batch_files(camera, day, files)
-    missing = ["{:06d}".format(i) for i in range(n_files) if "{:06d}".format(i) not in by_key]
+    missing = utile.missing_batch_keys(by_key, utile.batch_keys(0, n_files - 1))
     if missing:
         Logger.debug(f"In folder {working_dir} the following batch keys are missing: {' '.join(missing)}")
     if unmatched:

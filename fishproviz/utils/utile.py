@@ -1,6 +1,7 @@
 import warnings
 from datetime import datetime
 from time import gmtime, strftime
+from collections.abc import Mapping
 from typing import Literal, Optional
 import pandas as pd
 import numpy as np
@@ -186,9 +187,19 @@ def load_batch(key: str, filename: Optional[str]) -> pd.DataFrame:
     return df.set_axis(pd.Index(df.FRAME.to_numpy() + int(key) * config.BATCH_SIZE), axis="index")
 
 
+def batch_keys(min_idx: int, max_idx: int) -> list[str]:
+    """6-digit batch keys for the inclusive index range [min_idx, max_idx]."""
+    return ["{:06d}".format(i) for i in range(min_idx, max_idx + 1)]
+
+
+def missing_batch_keys(by_key: Mapping[str, object], keys: list[str]) -> list[str]:
+    """The keys without an entry in by_key."""
+    return [k for k in keys if k not in by_key]
+
+
 def merge_files(files_by_key: dict[str, str]) -> tuple[list[str], list[pd.DataFrame]]:
     """Load every batch key in [MIN_BATCH_IDX, MAX_BATCH_IDX], filling keys without a file with NaN."""
-    keys = ["{:06d}".format(i) for i in range(config.MIN_BATCH_IDX, config.MAX_BATCH_IDX + 1)]
+    keys = batch_keys(config.MIN_BATCH_IDX, config.MAX_BATCH_IDX)
     return keys, [load_batch(k, files_by_key.get(k)) for k in keys]
 
 
@@ -244,8 +255,8 @@ def filter_files(camera: str, day: str, files: list[str], min_idx: int, max_idx:
     duplicates = {k: sorted(v) for k, v in by_key.items() if len(v) > 1}
     if duplicates:
         raise ValueError(f"Several files share one batch key for camera {camera}, day {day}: {duplicates}")
-    keys = ["{:06d}".format(i) for i in range(min_idx, max_idx + 1)]
-    return {k: by_key[k][0] for k in keys if k in by_key}, [k for k in keys if k not in by_key]
+    keys = batch_keys(min_idx, max_idx)
+    return {k: by_key[k][0] for k in keys if k in by_key}, missing_batch_keys(by_key, keys)
 
 
 def get_timestamp(format="%d-%m-%Y_%H:%M:%S"):
