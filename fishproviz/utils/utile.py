@@ -1,7 +1,7 @@
 import warnings
 from datetime import datetime
 from time import gmtime, strftime
-from typing import Optional
+from typing import Literal, Optional
 import pandas as pd
 import numpy as np
 import re
@@ -28,13 +28,19 @@ def get_start_time_directory(is_feeding, is_novel_object, is_sociability):
     return config.P_FEEDING if is_feeding else ((config.P_NOVEL_OBJECT) if is_novel_object else (config.P_SOCIABILITY) if is_sociability else (config.P_TRAJECTORY))
 
 
-def get_interval_name_from_seconds(seconds):
-    if seconds == 3600:
-        return "hour"
-    if seconds == int(3600 * config.HOURS_PER_DAY):
-        return "day"
-    else:
-        return "%s_sec" % seconds
+# time interval meaning one bin per loaded day, written as day_<metric>.csv
+DAY = "day"
+HOUR = "hour"
+SECONDS_PER_HOUR = 3600
+
+
+def get_interval_name_from_seconds(seconds: int | Literal["day"]) -> str:
+    """Name of a time interval in output file names: day, hour or <seconds>_sec."""
+    if seconds == DAY:
+        return DAY
+    if seconds == SECONDS_PER_HOUR:
+        return HOUR
+    return "%s_sec" % seconds
 
 
 def get_directory(is_back=None):

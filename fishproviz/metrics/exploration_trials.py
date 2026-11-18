@@ -7,15 +7,16 @@ from fishproviz.utils import (
     get_seconds_from_time,
     start_time_of_day_to_seconds,
 )
+from fishproviz.utils.tank_area_config import get_area_functions
 from fishproviz.utils.transformation import pixel_to_cm
 from fishproviz.metrics import activity
-from fishproviz.utils.error_filter import error_default_points
+from fishproviz.utils.error_filter import all_error_filters
 import pandas as pd
 
 BLOCK = "block1"
 
 
-def exploration_trials(path_trials=config.TRIAL_TIMES_CSV):
+def exploration_trials(path_trials: str = config.TRIAL_TIMES_CSV) -> None:
     """
     This function takes the path to the csv file containing the trial times and
     writes the same csv file into the results folder with activity for the exploration times
@@ -30,10 +31,13 @@ def exploration_trials(path_trials=config.TRIAL_TIMES_CSV):
     else:
         tdf = pd.read_csv(res_mean, sep=config.sep)
         tdf_ndf = pd.read_csv(res_ndf, sep=config.sep)
-    # pd.DataFrame(None, tdf.index, pd.MultiIndex.from_product([get_camera_pos_keys(), ["mean", "std", "n_df"]]))
-    tdf_b = tdf[int(BLOCK[-1]) == tdf["block"]]
+    block = int(BLOCK[-1])
+    in_block = tdf["block"] == block
+    tdf_b = tdf[in_block]
+    area_func = get_area_functions()
     for fk in get_camera_pos_keys():
         cam, pos = fk.split("_")
+        area_tuple = (fk, area_func(fk))
         for d in get_days_in_order(camera=cam, is_back=config.BACK == pos):
             keys, df_days = csv_of_the_day(camera=cam, day=d, is_back=config.BACK == pos)
             daystr, daytime = d.split("_")
@@ -50,10 +54,11 @@ def exploration_trials(path_trials=config.TRIAL_TIMES_CSV):
                 )
                 trial_df = df_d[(df_d.index >= s) & (df_d.index <= e)]
                 data = trial_df[["xpx", "ypx"]].to_numpy()
-                err_filter = error_default_points(data)
-                act = activity(pixel_to_cm(data, fish_key=fk), data.shape[0], err_filter)
-                tdf.loc[tdf["date"] == date, fk] = act[0][0]
-                tdf_ndf.loc[tdf["date"] == date, fk] = act[0][2]
+                err_filter = all_error_filters(data, area_tuple, fish_key=fk, day=d)
+                mean, _, n = activity(pixel_to_cm(data, fish_key=fk), [], err_filter)[0]
+                trial_rows = in_block & (tdf["date"] == date)
+                tdf.loc[trial_rows, fk] = mean
+                tdf_ndf.loc[trial_rows, fk] = n
 
     tdf.to_csv(res_mean, sep=config.sep, index=False)
     tdf_ndf.to_csv(res_ndf, sep=config.sep, index=False)

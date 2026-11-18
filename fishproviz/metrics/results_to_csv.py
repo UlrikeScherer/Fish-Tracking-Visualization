@@ -1,9 +1,11 @@
 import os
+from typing import Literal, Optional
+
 import pandas as pd
 
 # direct import to allow global config changes
 import fishproviz.config as config
-from fishproviz.utils.utile import get_interval_name_from_seconds
+from fishproviz.utils.utile import HOUR, get_interval_name_from_seconds
 
 csv_columns_time = ["day", "time"]
 csv_columns_results = ["mean", "std", "median"]
@@ -12,6 +14,9 @@ TURNING_ANGLE_STREAK_LENGTH = "turning_angle_streak_length"
 RAW_ANGLE_METRICS = ("turning_angle", "absolute_angles")
 RAW_STREAK_METRICS = (TURNING_ANGLE_STREAK_LENGTH,)
 TANGLE_METRICS = (*RAW_ANGLE_METRICS, *RAW_STREAK_METRICS)
+STEP_METRICS = ("activity", "step_length")
+# metrics whose raw output is one row per angle or step: frame, xpx, ypx, <metric>, excluded
+RAW_ROW_METRICS = (*RAW_ANGLE_METRICS, *STEP_METRICS)
 
 
 def get_csv_columns_from_results_dim(dimension, metric_name):
@@ -25,28 +30,29 @@ def get_csv_columns_from_results_dim(dimension, metric_name):
         raise ValueError("dimension must be either 2, 3 or 4, but was %s" % dimension)
 
 
+def _check_results(results: dict[str, dict[str, pd.DataFrame]], metric_name: str) -> None:
+    """Raise when no fish, or any single fish, produced no days for the metric."""
+    if not any(results.values()):
+        raise ValueError(f"No fish produced any data for metric '{metric_name}'; check the data directories and the day folders of every camera")
+    for fish_key, fish_data in results.items():
+        if len(fish_data) == 0:
+            raise ValueError(f"Fish '{fish_key}' produced no days for metric '{metric_name}'; check its day folders or exclude it with -fid")
+
+
 def metric_result_to_csv(
-    results=None,
-    metric_name=None,
-    time_interval=None,
+    results: dict[str, dict[str, pd.DataFrame]],
+    metric_name: str,
+    time_interval: Optional[int | Literal["day"]] = None,
     all_points: bool = False,
     every_point: bool = False,
-):
+) -> None:
+    """Writes the averaged results to one csv per metric and interval, or raw results to one csv per camera-day."""
+    _check_results(results, metric_name)
     if not every_point:
         columns = ["cam_pos", "day", "df_index"]
-        interval_name = get_interval_name_from_seconds(time_interval)
+        interval_name = None if all_points else get_interval_name_from_seconds(time_interval)
         df_sum = pd.concat(
-            [
-                (
-                    pd.concat(
-                        [pd.DataFrame(day_data) for day_data in fish_data.values()],
-                        keys=fish_data.keys(),
-                    )
-                    if len(fish_data) > 0
-                    else None
-                )
-                for fish_data in results.values()
-            ],
+            [pd.concat([pd.DataFrame(day_data) for day_data in fish_data.values()], keys=fish_data.keys()) for fish_data in results.values()],
             keys=results.keys(),
         )
         measures = get_csv_columns_from_results_dim(df_sum.shape[1], metric_name)
@@ -55,7 +61,7 @@ def metric_result_to_csv(
         # update the type of the columns
         df_sum[num_datapoints] = df_sum[num_datapoints].astype(int)
 
-        if "hour" == interval_name:
+        if interval_name == HOUR:
             df_sum["hour"] = df_sum["df_index"] // (time_interval * config.FRAMES_PER_SECOND)
         df_sum.to_csv(
             get_filename_for_metric_csv(metric_name, interval_name, all_points=all_points),
@@ -65,7 +71,7 @@ def metric_result_to_csv(
     else:
         directory = get_results_directory(metric_name)
         suffix = f"_skip{config.TANGLE_N_SKIP}" if metric_name in TANGLE_METRICS else ""
-        no_index = metric_name in TANGLE_METRICS
+        no_index = metric_name in TANGLE_METRICS or metric_name in STEP_METRICS
         for key in results.keys():
             for subkey in results[key].keys():
                 subdir = f"{directory}/raw"

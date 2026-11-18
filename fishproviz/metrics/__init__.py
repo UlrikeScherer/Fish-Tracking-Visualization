@@ -13,6 +13,7 @@ from .metrics import (
     activity,
     step_length,
     step_length_per_interval,
+    steps_and_exclusions,
     tortuosity,
 )
 
@@ -71,6 +72,7 @@ __all__ = [
     "num_of_spikes",
     "compute_step_lengths",
     "activity_mean_sd",
+    "steps_and_exclusions",
     "activity",
     "tortuosity",
     "turning_angle",
