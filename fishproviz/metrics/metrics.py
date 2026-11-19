@@ -64,8 +64,8 @@ def included_step_runs(excluded: NDArray[np.bool_]) -> NDArray[np.int64]:
     Step i runs from row i to row i + 1, so a run of k steps spans k + 1 rows.
     """
     included = np.concatenate([[False], ~np.asarray(excluded, dtype=bool), [False]])
-    edges = np.flatnonzero(np.diff(included.astype(np.int8)))
-    return edges.reshape((-1, 2)).astype(np.int64)
+    edges = np.flatnonzero(np.diff(included))
+    return edges.reshape((-1, 2))
 
 
 def activity_mean_sd(steps: NDArray[np.float64], error_index: NDArray[np.bool_]) -> tuple[float, float]:

@@ -87,7 +87,7 @@ def metric_result_to_csv(
     else:
         directory = get_results_directory(metric_name)
         suffix = f"_skip{config.TANGLE_N_SKIP}" if metric_name in TANGLE_METRICS else ""
-        no_index = metric_name in (*TANGLE_METRICS, *STEP_METRICS, *RAW_WINDOW_METRICS)
+        no_index = metric_name not in AGGREGATED_RAW_METRICS
         for key in results.keys():
             for subkey in results[key].keys():
                 subdir = f"{directory}/raw"

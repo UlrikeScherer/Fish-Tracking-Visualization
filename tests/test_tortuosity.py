@@ -1,6 +1,5 @@
 """Tests for tortuosity: the window kernel, runs split at excluded steps, bins by window start and raw window output."""
 
-import dataclasses
 import pathlib
 import tempfile
 import unittest
@@ -9,17 +8,14 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 
-import fishproviz
 import fishproviz.config as config
 import fishproviz.metrics as metrics
 from fishproviz.methods import tortuosity_windows
 from fishproviz.metrics.metrics import _result_table, included_step_runs, steps_and_exclusions, tortuosity
 from fishproviz.utils.error_filter import error_default_points
-from fishproviz.utils.transformation import clear_transformation_cache
 from fishproviz.utils.utile import read_batch_csv
+from tests.test_step_metrics import StepMetricTestCase
 
-_TEST_DATA = pathlib.Path(fishproviz.__file__).parent.parent / "test_data"
-_CONFIG_GLOBALS = tuple(field.name for field in dataclasses.fields(config.RootPaths))
 _WINDOW_CM = 10.0
 _HEADER = "FRAME;MillisecsByFPS;objectName;valid;id;coordinateUnit;x;y;rad;deg;xpx;ypx;time;timeString"
 
@@ -109,6 +105,11 @@ class TestKernel(unittest.TestCase):
 
 
 class TestFloor(unittest.TestCase):
+    def setUp(self) -> None:
+        patcher = patch.object(config, "TORTUOSITY_WINDOW_CM", _WINDOW_CM)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def test_out_and_back_uses_floor_set_at_runtime(self) -> None:
         out_and_back = np.column_stack([np.concatenate([np.arange(6.0), np.arange(4.0, -1.0, -1.0)]), np.zeros(11)])
         error_index = np.zeros(len(out_and_back), dtype=bool)
@@ -121,6 +122,11 @@ class TestFloor(unittest.TestCase):
 
 
 class TestRuns(unittest.TestCase):
+    def setUp(self) -> None:
+        patcher = patch.object(config, "TORTUOSITY_WINDOW_CM", _WINDOW_CM)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def test_included_step_runs(self) -> None:
         excluded = np.array([True, False, False, True, True, False, False, False])
         np.testing.assert_array_equal(included_step_runs(excluded), [[1, 3], [5, 8]])
@@ -205,22 +211,12 @@ class TestBins(unittest.TestCase):
         np.testing.assert_array_equal(binned[:, 2], [(starts < 1000).sum(), ((starts >= 1000) & (starts < 2000)).sum(), (starts >= 2000).sum()])
 
 
-class TestRawOutput(unittest.TestCase):
+class TestRawOutput(StepMetricTestCase):
     def setUp(self) -> None:
-        saved = {name: getattr(config, name) for name in _CONFIG_GLOBALS}
-        tmp = tempfile.TemporaryDirectory()
-        self.addCleanup(tmp.cleanup)
-        self.addCleanup(clear_transformation_cache)
-        self.addCleanup(lambda: [setattr(config, name, value) for name, value in saved.items()])
-        config.set_config_paths(str(_TEST_DATA))
-        config.dir_front = str(_TEST_DATA / "front")
-        config.dir_back = str(_TEST_DATA / "back")
-        config.area_back = str(_TEST_DATA / "area_config" / "areas_back")
-        config.area_front = str(_TEST_DATA / "area_config" / "areas_front")
-        self.results = pathlib.Path(tmp.name)
-        config.RESULTS_PATH = tmp.name
-        config.err_file = str(self.results / "log_error.csv")
-        pathlib.Path(config.CONFIG_DATA).mkdir(exist_ok=True)
+        super().setUp()
+        patcher = patch.object(config, "TORTUOSITY_WINDOW_CM", _WINDOW_CM)
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     def test_raw_windows_match_averaged(self) -> None:
         averaged = metrics.tortuosity_per_interval(fish_ids=[0], all_points=True)["results"]
