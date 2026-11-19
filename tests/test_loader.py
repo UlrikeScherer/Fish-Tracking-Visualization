@@ -12,9 +12,9 @@ import pandas as pd
 
 import fishproviz.config as config
 from fishproviz.metrics.compute_primitives import compute_step_lengths
-from fishproviz.metrics.metrics import update_filter_three_points, update_filter_two_points
+from fishproviz.metrics.metrics import _day_frame, update_filter_three_points, update_filter_two_points
 from fishproviz.utils import all_error_filters, csv_of_the_day
-from fishproviz.utils.utile import batch_keys, missing_batch_keys
+from fishproviz.utils.utile import batch_keys, get_start_end_index, missing_batch_keys
 
 _CAM = "12345678"
 _DAY = "20211113_060000"
@@ -187,6 +187,58 @@ class TestBatchKeys(unittest.TestCase):
 
     def test_missing_keys_keep_order(self) -> None:
         self.assertEqual(missing_batch_keys({"000001": "f"}, batch_keys(0, 2)), ["000000", "000002"])
+
+
+class TestWindowIndex(unittest.TestCase):
+    """Feeding/trial window: the inclusive FRAME.between(start, end) must select nothing outside the window."""
+
+    _FPS = 5
+    _SIZE = 50
+    _DAY_SECONDS = 6 * 3600  # _DAY starts at 060000
+
+    def setUp(self) -> None:
+        patcher = patch.multiple(config, BATCH_SIZE=self._SIZE, FRAMES_PER_SECOND=self._FPS)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def _times(self, start_frame: int, end_frame: int) -> dict[str, tuple[float, float]]:
+        """Window dict keyed like the feeding-times file, with whole-second bounds from day frames."""
+        return {f"{_DAY.split('_')[0]}_{_CAM}": (self._DAY_SECONDS + start_frame // self._FPS, self._DAY_SECONDS + end_frame // self._FPS)}
+
+    def _selected(self, times: dict[str, tuple[float, float]], batch: int) -> list[int]:
+        frames = pd.Series(range(config.BATCH_SIZE))
+        return frames[frames.between(*get_start_end_index(times, _DAY, str(batch), _CAM))].tolist()
+
+    def test_window_selection_per_batch(self) -> None:
+        times = self._times(start_frame=60, end_frame=220)
+        expected = {
+            0: [],  # before the window
+            1: list(range(10, 50)),  # overlaps the start
+            2: list(range(50)),  # inside
+            3: list(range(50)),  # inside
+            4: list(range(0, 21)),  # overlaps the end
+            5: [],  # after the window
+            6: [],  # after the window
+        }
+        for batch, frames in expected.items():
+            with self.subTest(batch=batch):
+                self.assertEqual(self._selected(times, batch), frames)
+
+    def test_window_ending_at_batch_first_frame(self) -> None:
+        times = self._times(start_frame=60, end_frame=200)
+        self.assertEqual(self._selected(times, 4), [0])
+        self.assertEqual(self._selected(times, 5), [])
+
+    def test_no_window_selects_whole_batch(self) -> None:
+        self.assertEqual(get_start_end_index(None, _DAY, "3", _CAM), (0, self._SIZE))
+        with self.assertWarns(UserWarning):
+            self.assertEqual(get_start_end_index({}, _DAY, "3", _CAM), (0, self._SIZE))
+
+    def test_day_frame_keeps_only_window_frames(self) -> None:
+        keys = ["000000", "000001", "000002"]
+        batches = [pd.DataFrame({"FRAME": range(self._SIZE), "xpx": 1.0, "ypx": 1.0}, index=pd.RangeIndex(b * self._SIZE, (b + 1) * self._SIZE)) for b in range(3)]  # day-level index, batch-relative FRAME
+        window = _day_frame(keys, batches, self._times(start_frame=10, end_frame=30), _DAY, _CAM)
+        self.assertEqual(window.index.tolist(), list(range(10, 31)))
 
 
 if __name__ == "__main__":
