@@ -279,7 +279,7 @@ def get_start_end_index(
     batch_number: str,
     tank_id: Optional[str] = None,
 ) -> tuple[int, int]:
-    """Inclusive (start_idx, end_idx) of the window within the batch's frames 0..BATCH_SIZE-1; end_idx = -1 selects no frame."""
+    """Inclusive (start_idx, end_idx) bounds on the batch's FRAME for `FRAME.between`; a batch outside the window gets a pair that selects no frame."""
     if start_end_times is None:
         return 0, config.BATCH_SIZE
     day, track_start = day_key.split("_")[:2]
