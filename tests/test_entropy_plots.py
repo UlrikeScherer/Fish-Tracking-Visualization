@@ -135,6 +135,10 @@ class TestEntropyDayFigure(EntropyPlotsCase):
         plot_metric_figure_for_days("entropy")
         self.assertTrue((self.vis / "entropy.pdf").is_file())
 
+    def test_measure_is_rejected(self) -> None:
+        with self.assertRaisesRegex(ValueError, "entropy.*'mean'"):
+            plot_metric_figure_for_days("entropy", measure="mean")
+
 
 if __name__ == "__main__":
     unittest.main()

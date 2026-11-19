@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import os
 from fishproviz.metrics import metric_names
-from fishproviz.metrics.results_to_csv import get_filename_for_metric_csv
+from fishproviz.metrics.results_to_csv import ENTROPY, get_filename_for_metric_csv
 from fishproviz.utils import get_date_string
 import fishproviz.config as config
 
@@ -197,6 +197,8 @@ def plot_turning_direction(data, time_interval):
 
 
 def plot_metric_figure_for_days(metric_name, measure=None, write_fig=True):
+    if metric_name == ENTROPY and measure is not None:
+        raise ValueError(f"{metric_name} has no mean/std measure, got measure={measure!r}")
     file_e = get_filename_for_metric_csv(metric_name, "day")
     if not os.path.isfile(file_e):
         print("File not found:", file_e)
@@ -210,7 +212,7 @@ def plot_metric_figure_for_days(metric_name, measure=None, write_fig=True):
     fig, axis = plt.subplots(figsize=(10 * ncols, 5), ncols=ncols, sharey=True, squeeze=False)
     axis = np.ravel(axis)
 
-    column = "entropy" if metric_name == "entropy" else measure
+    column = ENTROPY if metric_name == ENTROPY else measure
     batch = int(np.ceil(nfish / ncols))
     for axi, ax in enumerate(axis):
         start = axi * batch
