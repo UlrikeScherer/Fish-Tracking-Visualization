@@ -52,31 +52,12 @@ def plot_activity(data, time_interval):
     return fig
 
 
-def sliding_window_figures_for_tex(
-    dataset,
-    *args,
-    fish_keys=None,
-    day_keys=None,
-    name="methode",
-    set_title=False,
-    set_legend=False,
-    **kwargs
-):
+def sliding_window_figures_for_tex(dataset, *args, fish_keys=None, day_keys=None, name="methode", set_title=False, set_legend=False, **kwargs):
     ncols = 6
     if day_keys is None:
         day_keys = list(dataset[fish_keys[0]].keys())
     for i in range(0, 29, ncols):
-        f = sliding_window(
-            dataset,
-            fish_keys=fish_keys,
-            day_keys=day_keys[i : i + ncols],
-            *args,
-            name="%s_%02d-%02d" % (name, i, i + ncols - 1),
-            set_title=set_title,
-            set_legend=set_legend,
-            first_day=i,
-            **kwargs
-        )
+        f = sliding_window(dataset, fish_keys=fish_keys, day_keys=day_keys[i : i + ncols], *args, name="%s_%02d-%02d" % (name, i, i + ncols - 1), set_title=set_title, set_legend=set_legend, first_day=i, **kwargs)
         plt.close(f)
     return None
 
@@ -114,9 +95,7 @@ def sliding_window(
     print("Number of fishes:", n_fishes, " Number of days: ", n_days)
     ncols = 6
     nrows = int(np.ceil(n_days / ncols))
-    fig, axes = plt.subplots(
-        ncols=ncols, nrows=nrows, figsize=(ncols * 6, 4 * nrows), sharey=True
-    )
+    fig, axes = plt.subplots(ncols=ncols, nrows=nrows, figsize=(ncols * 6, 4 * nrows), sharey=True)
     if n_days == 1:
         axes = [axes]
     if nrows > 1:
@@ -127,9 +106,7 @@ def sliding_window(
     for i, f_key in enumerate(fish_keys):
         for d_idx, d_key in enumerate(day_keys):
             data = dataset[f_key][d_key]
-            slide_data = [
-                np.mean(data[i : i + sw, 0]) for i in range(0, data.shape[0] - sw + 1)
-            ]
+            slide_data = [np.mean(data[i : i + sw, 0]) for i in range(0, data.shape[0] - sw + 1)]
             x_end = offset + (len(data) - sw + 1) * time_interval
             x_max = max(x_max, x_end)  # x_max update to draw the dashed baseline
             plot_metric_data(
@@ -143,9 +120,7 @@ def sliding_window(
             )
             if i == 0:
                 if set_title:
-                    axes[d_idx].set_title(
-                        "Date %s" % get_date_string(d_key), y=0.95, pad=4
-                    )
+                    axes[d_idx].set_title("Date %s" % get_date_string(d_key), y=0.95, pad=4)
                 if logscale:
                     axes[d_idx].set_yscale("log")
                 if d_idx >= (nrows - 1) * ncols:
@@ -179,28 +154,8 @@ def sliding_window(
     return fig
 
 
-def plot_metric_data(
-    ax,
-    x,
-    y,
-    color,
-    label=None,
-    linestyle="-",
-    x_label=None,
-    y_label=None,
-    title=None,
-    linewidth=2,
-    **kwargs
-):
-    ax.plot(
-        x,
-        y,
-        label=label,
-        color=color,
-        linestyle=linestyle,
-        linewidth=linewidth,
-        **kwargs
-    )
+def plot_metric_data(ax, x, y, color, label=None, linestyle="-", x_label=None, y_label=None, title=None, linewidth=2, **kwargs):
+    ax.plot(x, y, label=label, color=color, linestyle=linestyle, linewidth=linewidth, **kwargs)
     if x_label is not None:
         ax.set_xlabel(x_label)
     if y_label is not None:
@@ -211,9 +166,7 @@ def plot_metric_data(
     return ax
 
 
-def set_legend_for_metric_plot(
-    ax, legend_loc="upper center", ncol=1, fontsize=18, bbox_to_anchor=(0.5, 1.05)
-):
+def set_legend_for_metric_plot(ax, legend_loc="upper center", ncol=1, fontsize=18, bbox_to_anchor=(0.5, 1.05)):
     leg = ax.legend(
         loc=legend_loc,
         bbox_to_anchor=bbox_to_anchor,
@@ -254,16 +207,15 @@ def plot_metric_figure_for_days(metric_name, measure=None, write_fig=True):
     fish_keys = df.cam_pos.unique()
     nfish = len(fish_keys)
     ncols = min(3, 1 + nfish // 6)  # 3 columns max and at least 1 column
-    fig, axis = plt.subplots(
-        figsize=(10 * ncols, 5), ncols=ncols, sharey=True, squeeze=False
-    )
+    fig, axis = plt.subplots(figsize=(10 * ncols, 5), ncols=ncols, sharey=True, squeeze=False)
     axis = np.ravel(axis)
 
+    column = "entropy" if metric_name == "entropy" else measure
     batch = int(np.ceil(nfish / ncols))
     for axi, ax in enumerate(axis):
         start = axi * batch
         fks_to_plot = fish_keys[start : start + batch]  # noqa: F841
-        df.query("cam_pos in @fks_to_plot").groupby("cam_pos")[measure].plot(
+        df.query("cam_pos in @fks_to_plot").groupby("cam_pos")[column].plot(
             # by="cam_pos",
             ax=ax,
             linestyle="--",
@@ -276,13 +228,9 @@ def plot_metric_figure_for_days(metric_name, measure=None, write_fig=True):
         ax.set_ylabel("%s %s" % (metric_name, measure if measure is not None else ""))
         ax.tick_params(axis="x", labelrotation=45)
         ax.grid(axis="y")
-        set_legend_for_metric_plot(
-            ax, ncol=ncols, fontsize=8, bbox_to_anchor=(0.5, 1.15)
-        )
+        set_legend_for_metric_plot(ax, ncol=ncols, fontsize=8, bbox_to_anchor=(0.5, 1.15))
     if write_fig:
-        fig.savefig(
-            get_filepath_metric_plot(metric_name, measure=measure), bbox_inches="tight"
-        )
+        fig.savefig(get_filepath_metric_plot(metric_name, measure=measure), bbox_inches="tight")
 
 
 def get_filepath_metric_plot(metric_name, measure=None, subdir=None, ext="pdf"):
@@ -290,9 +238,7 @@ def get_filepath_metric_plot(metric_name, measure=None, subdir=None, ext="pdf"):
     if subdir is not None:
         dir2plot = "{}/{}/".format(dir2plot, subdir)
     os.makedirs(dir2plot, exist_ok=True)
-    return "{}/{}{}.{}".format(
-        dir2plot, metric_name, "_" + measure if measure is not None else "", ext
-    )
+    return "{}/{}{}.{}".format(dir2plot, metric_name, "_" + measure if measure is not None else "", ext)
 
 
 def plots_over_life_time():
