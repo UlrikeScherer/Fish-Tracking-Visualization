@@ -11,12 +11,12 @@ from fishproviz.utils import (
 )
 from fishproviz.utils.transformation import _area_functions, pixel_to_cm, px2cm
 from fishproviz.methods import (
-    tortuosity_of_chunk,
+    tortuosity_windows,
     distance_to_wall_chunk,
     mean_std,
     distance_to_object_chunk,
 )
-from .results_to_csv import metric_result_to_csv, require_raw_mode, AGGREGATED_RAW_METRICS, RAW_ROW_METRICS, RAW_STREAK_METRICS
+from .results_to_csv import metric_result_to_csv, require_raw_mode, AGGREGATED_RAW_METRICS, RAW_ROW_METRICS, RAW_STREAK_METRICS, RAW_WINDOW_METRICS
 from .compute_primitives import (
     compute_step_lengths,
     entropy_for_chunk,
@@ -56,6 +56,16 @@ def steps_and_exclusions(data: NDArray[np.float64], filter_index: NDArray[np.boo
     """
     steps = compute_step_lengths(data).astype(np.float64)
     return steps, update_filter_two_points(steps, filter_index)
+
+
+def included_step_runs(excluded: NDArray[np.bool_]) -> NDArray[np.int64]:
+    """(n_runs, 2) rows of [first_row, last_row] of every maximal run of consecutive steps not in excluded.
+
+    Step i runs from row i to row i + 1, so a run of k steps spans k + 1 rows.
+    """
+    included = np.concatenate([[False], ~np.asarray(excluded, dtype=bool), [False]])
+    edges = np.flatnonzero(np.diff(included.astype(np.int8)))
+    return edges.reshape((-1, 2)).astype(np.int64)
 
 
 def activity_mean_sd(steps: NDArray[np.float64], error_index: NDArray[np.bool_]) -> tuple[float, float]:
@@ -134,13 +144,38 @@ def distance_to_object(data, frame_interval, error_index, area):
     )
 
 
-def tortuosity(data, frame_interval, error_index):
-    return calculate_result_for_interval(
-        data.astype("double"),
-        frame_interval,
-        lambda chunk: mean_std(tortuosity_of_chunk(chunk)),
-        error_index,
-    )
+def _day_tortuosity_windows(data: NDArray[np.float64], filter_index: NDArray[np.bool_]) -> NDArray[np.float64]:
+    """(n_windows, 5) rows of [start_row, end_row, C, L, tortuosity] in time order; windows never cross an excluded step."""
+    _, excluded = steps_and_exclusions(data, filter_index)
+    positions = np.asarray(data, dtype=np.float64)
+    window_cm, min_l_cm = config.TORTUOSITY_WINDOW_CM, config.TORTUOSITY_MIN_L_CM
+    windows = [np.empty((0, 4), dtype=np.float64)]
+    for first, last in included_step_runs(excluded):
+        run_windows = tortuosity_windows(positions[first : last + 1], window_cm)
+        run_windows[:, :2] += first  # run rows to day rows
+        windows.append(run_windows)
+    rows = np.concatenate(windows)
+    return np.column_stack([rows, rows[:, 2] / np.maximum(rows[:, 3], min_l_cm)])
+
+
+def tortuosity(
+    data: NDArray[np.float64],
+    frame_interval: Sequence[int],
+    filter_index: NDArray[np.bool_],
+    *,
+    unaveraged: bool = False,
+) -> NDArray[np.float64]:
+    """Tortuosity C / max(L, TORTUOSITY_MIN_L_CM) over full TORTUOSITY_WINDOW_CM path windows within runs of included steps.
+
+    Returns (n_intervals, 3) rows of [mean, std, n_windows], each window counted in the interval of its start row,
+    or when unaveraged the (n_windows, 5) rows of [start_row, end_row, C, L, tortuosity] of the whole day.
+    """
+    windows = _day_tortuosity_windows(data, filter_index)
+    if unaveraged:
+        return windows
+    values = np.ascontiguousarray(windows[:, 4])
+    per_interval = np.split(values, np.searchsorted(windows[:, 0], frame_interval, side="left"))
+    return np.array([[*mean_std(chunk), len(chunk)] for chunk in per_interval], dtype=np.float64).reshape((-1, 3))
 
 
 def mean_std_median(chunk):
@@ -265,6 +300,17 @@ def _result_table(
                 "length": result[:, 3].astype(int),
             }
         )
+    if every_point and metric_name in RAW_WINDOW_METRICS:
+        # result columns: [row_start, row_end, path, straight, value]; rows become day-level frame numbers
+        return pd.DataFrame(
+            {
+                "frame_start": frames[result[:, 0].astype(int)],
+                "frame_end": frames[result[:, 1].astype(int)],
+                "path_cm": result[:, 2],
+                "straight_cm": result[:, 3],
+                metric_name: result[:, 4],
+            }
+        )
     if every_point and metric_name in AGGREGATED_RAW_METRICS:
         return pd.DataFrame({metric_name: np.add.reduceat(result, np.arange(0, len(result), config.AGGREGATE_EVERY_N)).reshape((-1,))})
     return pd.DataFrame(result, index=time_points)
@@ -325,7 +371,7 @@ def metric_per_interval(
         metric(function):       A function to apply to the data, {activity, tortuosity, turning_angle,...}
         write_to_csv(bool):     Indicate weather the results should be written to a csv
         all_points(bool):       One bin per day written as <metric>.csv; time_interval is then ignored
-        every_point(bool):      Raw output (rows, steps, angles, streaks); raises for metrics without one
+        every_point(bool):      Raw output (rows, steps, angles, streaks, windows); raises for metrics without one
     Returns:
         package:                dict of computed results, and meta information
     """

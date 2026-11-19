@@ -135,9 +135,8 @@ class TestStepMetrics(StepMetricTestCase):
             metrics.activity(data, [], np.zeros(3, dtype=bool), include_median=True, unaveraged=True)
 
     def test_raw_mode_raises_for_metrics_without_one(self) -> None:
-        for per_interval, name in ((metrics.tortuosity_per_interval, "tortuosity"), (metrics.entropy_per_interval, "entropy")):
-            with self.subTest(metric=name), self.assertRaisesRegex(ValueError, f"'{name}'"):
-                per_interval(fish_ids=[0], all_points=True, every_point=True, write_to_csv=True)
+        with self.assertRaisesRegex(ValueError, "'entropy'"):
+            metrics.entropy_per_interval(fish_ids=[0], all_points=True, every_point=True, write_to_csv=True)
         self.assertEqual(list(self.results.iterdir()), [])
 
     def test_hour_column_counts_bins_from_first_loaded_frame(self) -> None:
@@ -239,11 +238,14 @@ class TestMain(StepMetricTestCase):
 
     def test_raw_mode_validated_before_running(self) -> None:
         with patch.object(config, "UNAVERAGED", True):
-            with self.assertRaisesRegex(ValueError, "'tortuosity'"):
-                main.main("tortuosity")
-            with self.assertRaisesRegex(ValueError, r"\['tortuosity', 'entropy'\]"):
+            with self.assertRaisesRegex(ValueError, r"\['entropy'\]"):
                 main.main("all")
-        self.assertEqual(list(self.results.iterdir()), [])
+            self.assertEqual(list(self.results.iterdir()), [])
+            with contextlib.redirect_stdout(io.StringIO()):
+                main.main("tortuosity")
+        raw_files = sorted((self.results / "tortuosity" / "raw").glob("*.csv"))
+        self.assertTrue(raw_files)
+        self.assertEqual(list(pd.read_csv(raw_files[0], nrows=0).columns), ["frame_start", "frame_end", "path_cm", "straight_cm", "tortuosity"])
 
 
 class TestTrialTimes(StepMetricTestCase):

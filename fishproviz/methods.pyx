@@ -3,7 +3,7 @@ import cython
 # tag: numpy
 # You can ignore the previous line.
 # It's for internal testing of the cython documentation.
-from libc.math cimport acos, sqrt, ceil
+from libc.math cimport acos, sqrt, ceil, isfinite
 
 import numpy as np
 
@@ -18,18 +18,6 @@ cimport numpy as np
 # always calling "import_array" whenever you "cimport numpy"
 np.import_array()
 
-# We now need to fix a datatype for our arrays. I've used the variable
-# DTYPE for this, which is assigned to the usual NumPy runtime
-# type info object.
-DTYPE = int
-
-# "ctypedef" assigns a corresponding compile-time type to DTYPE_t. For
-# every type in the numpy module there's a corresponding compile-time
-# type with a _t-suffix.
-ctypedef np.int_t DTYPE_t
-ctypedef np.float64_t double
-cdef int NDIM = 3
-
 cdef double norm(double v0, double v1):
     return sqrt(v0**2 + v1**2)
 
@@ -38,30 +26,39 @@ cpdef np.ndarray[double, ndim=1] calc_steps(np.ndarray[double, ndim=2] data):
     c=np.sqrt(sq[:,0] + sq[:,1])
     return c
 
-cpdef np.ndarray[double, ndim=1] tortuosity_of_chunk(np.ndarray[double, ndim=2] data):
-    cdef int dist_length = 10 # normed by 10cm of distance traveled
-    cdef np.ndarray[double, ndim=1] steps = calc_steps(data)
-    cdef np.ndarray[double, ndim=1] c_steps = np.cumsum(steps)  # cumulative sum
-    cdef list t_result = []
-    cdef double L, C, curr_c
-    cdef int i = 0
-    cdef int j = 0
-    cdef double min_L = 0.1
-    curr_c = 0 # start with 0
-    while i < c_steps.size-2:
-        while j < c_steps.size-1 and c_steps[j]-curr_c < dist_length:
-            j+=1
-        L = np.sqrt(sum((data[j+1]-data[i])**2))
-        C = c_steps[j] - curr_c
-        if L < min_L: L=min_L
-        if C < min_L: C=min_L
-        if L > C: L=C
-        t_result.append(C/L)
-        curr_c = c_steps[j]
-        i=j+1
-        j=i
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef np.ndarray[double, ndim=2] tortuosity_windows(const double[:, :] run, double window_cm):
+    """(n_windows, 4) rows of [start_row, end_row, C, L] of the consecutive full path windows of one finite run.
 
-    return np.array(t_result, dtype=float)
+    A window starts at row s and ends at the first row e where its path length C reaches window_cm; the next starts at e.
+    L is the straight start-to-end distance; the trailing remainder shorter than window_cm is dropped.
+    """
+    if run.shape[1] != 2:
+        raise ValueError(f"run must have shape (n, 2), got (n, {run.shape[1]})")
+    if not window_cm > 0:
+        raise ValueError(f"window_cm must be > 0, got {window_cm}")
+    cdef Py_ssize_t n = run.shape[0]
+    cdef Py_ssize_t i
+    for i in range(n):
+        if not (isfinite(run[i, 0]) and isfinite(run[i, 1])):
+            raise ValueError(f"run row {i} is not finite ({run[i, 0]}, {run[i, 1]}); split runs at excluded points first")
+    cdef np.ndarray[double, ndim=2] windows = np.empty((max(n - 1, 0), 4), dtype=np.float64)
+    cdef double[:, ::1] out = windows
+    cdef Py_ssize_t start = 0
+    cdef Py_ssize_t k = 0
+    cdef double path = 0.0
+    for i in range(1, n):
+        path += norm(run[i, 0] - run[i - 1, 0], run[i, 1] - run[i - 1, 1])
+        if path >= window_cm:
+            out[k, 0] = start
+            out[k, 1] = i
+            out[k, 2] = path
+            out[k, 3] = norm(run[i, 0] - run[start, 0], run[i, 1] - run[start, 1])
+            k += 1
+            start = i
+            path = 0.0
+    return windows[:k]
 
 cpdef (double, double) mean_std(np.ndarray[double, ndim=1] data):
     if data.size == 0:

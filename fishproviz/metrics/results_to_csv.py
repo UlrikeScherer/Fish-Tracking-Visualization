@@ -14,13 +14,15 @@ num_datapoints = "num_valid_points"
 TURNING_ANGLE_STREAK_LENGTH = "turning_angle_streak_length"
 RAW_ANGLE_METRICS = ("turning_angle", "absolute_angles")
 RAW_STREAK_METRICS = (TURNING_ANGLE_STREAK_LENGTH,)
+# metrics whose raw output is one row per path window: frame_start, frame_end, path_cm, straight_cm, <metric>
+RAW_WINDOW_METRICS = ("tortuosity",)
 TANGLE_METRICS = (*RAW_ANGLE_METRICS, *RAW_STREAK_METRICS)
 STEP_METRICS = ("activity", "step_length")
 # metrics whose raw output is one row per angle or step: frame, xpx, ypx, <metric>, excluded
 RAW_ROW_METRICS = (*RAW_ANGLE_METRICS, *STEP_METRICS)
 # metrics whose raw output is per-point values summed over AGGREGATE_EVERY_N windows
 AGGREGATED_RAW_METRICS = ("distance_to_wall",)
-RAW_METRICS = (*RAW_ROW_METRICS, *RAW_STREAK_METRICS, *AGGREGATED_RAW_METRICS)
+RAW_METRICS = (*RAW_ROW_METRICS, *RAW_STREAK_METRICS, *RAW_WINDOW_METRICS, *AGGREGATED_RAW_METRICS)
 
 
 def require_raw_mode(metric_names: Sequence[str]) -> None:
@@ -85,7 +87,7 @@ def metric_result_to_csv(
     else:
         directory = get_results_directory(metric_name)
         suffix = f"_skip{config.TANGLE_N_SKIP}" if metric_name in TANGLE_METRICS else ""
-        no_index = metric_name in TANGLE_METRICS or metric_name in STEP_METRICS
+        no_index = metric_name in (*TANGLE_METRICS, *STEP_METRICS, *RAW_WINDOW_METRICS)
         for key in results.keys():
             for subkey in results[key].keys():
                 subdir = f"{directory}/raw"

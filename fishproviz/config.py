@@ -23,7 +23,7 @@ sep = ";"
 MAZE_FILE = "maze_data.json"
 
 
-def validate_config(*, spike_threshold: float, frames_per_second: int, batch_size: int, min_batch_idx: int, max_batch_idx: int, aggregate_every_n: int) -> None:
+def validate_config(*, spike_threshold: float, frames_per_second: int, batch_size: int, min_batch_idx: int, max_batch_idx: int, aggregate_every_n: int, tortuosity_window_cm: float, tortuosity_min_l_cm: float) -> None:
     """Raises ValueError naming the key and value of the first invalid setting."""
     if not spike_threshold > 0:
         raise ValueError(f"SPIKE_THRESHOLD must be > 0 (cm per frame), got {spike_threshold}")
@@ -35,6 +35,10 @@ def validate_config(*, spike_threshold: float, frames_per_second: int, batch_siz
         raise ValueError(f"Batch indices must satisfy 0 <= MIN_BATCH_IDX <= MAX_BATCH_IDX, got MIN_BATCH_IDX={min_batch_idx}, MAX_BATCH_IDX={max_batch_idx}")
     if not aggregate_every_n >= 1:
         raise ValueError(f"AGGREGATE_EVERY_N must be >= 1, got {aggregate_every_n}")
+    if not tortuosity_window_cm > 0:
+        raise ValueError(f"TORTUOSITY_WINDOW_CM must be > 0 (cm), got {tortuosity_window_cm}")
+    if not tortuosity_min_l_cm > 0:
+        raise ValueError(f"TORTUOSITY_MIN_L_CM must be > 0 (cm), got {tortuosity_min_l_cm}")
 
 
 # --- Filtering thresholds ---
@@ -58,6 +62,8 @@ REMOVE_0_VECS = bool(int(_env("REMOVE_0_VECS")))
 DIST_FROM_WALL_TANGLE_IGNORED = float(_env("DIST_FROM_WALL_TANGLE_IGNORED"))
 TANGLE_MIN_STEP_PX = float(_env("TANGLE_MIN_STEP_PX"))
 STREAK_STRAIGHT_PX = float(_env("STREAK_STRAIGHT_PX"))
+TORTUOSITY_WINDOW_CM = float(_env("TORTUOSITY_WINDOW_CM"))  # path length per window
+TORTUOSITY_MIN_L_CM = float(_env("TORTUOSITY_MIN_L_CM"))  # floor on the straight-line distance
 
 validate_config(
     spike_threshold=SPIKE_THRESHOLD,
@@ -66,6 +72,8 @@ validate_config(
     min_batch_idx=MIN_BATCH_IDX,
     max_batch_idx=MAX_BATCH_IDX,
     aggregate_every_n=AGGREGATE_EVERY_N,
+    tortuosity_window_cm=TORTUOSITY_WINDOW_CM,
+    tortuosity_min_l_cm=TORTUOSITY_MIN_L_CM,
 )
 SQRT_N = (MAX_BATCH_IDX + 2 - MIN_BATCH_IDX) ** 0.5
 FIG_WIDTH = 0.95 / (-(-SQRT_N // 1.0))

@@ -13,7 +13,7 @@ from fishproviz.utils.transformation import clear_transformation_cache, px2cm
 
 _TEST_DATA = pathlib.Path(__file__).resolve().parent.parent / "test_data"
 _PATH_NAMES = [f.name for f in dataclasses.fields(config.RootPaths)]
-_VALID = dict(spike_threshold=10.0, frames_per_second=5, batch_size=10000, min_batch_idx=0, max_batch_idx=12, aggregate_every_n=1)
+_VALID = dict(spike_threshold=10.0, frames_per_second=5, batch_size=10000, min_batch_idx=0, max_batch_idx=12, aggregate_every_n=1, tortuosity_window_cm=10.0, tortuosity_min_l_cm=0.1)
 
 
 class _ConfigRestoringCase(unittest.TestCase):
@@ -70,6 +70,12 @@ class TestValidateConfig(unittest.TestCase):
             config.validate_config(**{**_VALID, "aggregate_every_n": 0})
         with self.assertRaisesRegex(ValueError, "FRAMES_PER_SECOND"):
             config.validate_config(**{**_VALID, "frames_per_second": 0})
+
+    def test_tortuosity_lengths_must_be_positive(self) -> None:
+        for key in ("tortuosity_window_cm", "tortuosity_min_l_cm"):
+            for bad in (0.0, -0.5):
+                with self.subTest(key=key, bad=bad), self.assertRaisesRegex(ValueError, f"{key.upper()} must be > 0.*{bad}"):
+                    config.validate_config(**{**_VALID, key: bad})
 
 
 class TestImportValidationOrder(unittest.TestCase):
