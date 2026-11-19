@@ -11,6 +11,8 @@ from fishproviz.utils.utile import HOUR, get_interval_name_from_seconds
 csv_columns_time = ["day", "time"]
 csv_columns_results = ["mean", "std", "median"]
 num_datapoints = "num_valid_points"
+num_out_of_range = "num_out_of_range"
+ENTROPY = "entropy"
 TURNING_ANGLE_STREAK_LENGTH = "turning_angle_streak_length"
 RAW_ANGLE_METRICS = ("turning_angle", "absolute_angles")
 RAW_STREAK_METRICS = (TURNING_ANGLE_STREAK_LENGTH,)
@@ -32,15 +34,17 @@ def require_raw_mode(metric_names: Sequence[str]) -> None:
         raise ValueError(f"Raw output (UNAVERAGED=1 / every_point) is not available for {without_raw}; it exists for {list(RAW_METRICS)}. Set UNAVERAGED=0 or run another metric")
 
 
-def get_csv_columns_from_results_dim(dimension, metric_name):
-    if dimension == 2:
-        return [metric_name, num_datapoints]
-    elif dimension == 3:
+def get_csv_columns_from_results_dim(dimension: int, metric_name: str) -> list[str]:
+    """Names of the averaged result columns of metric_name, whose results have dimension columns."""
+    if metric_name == ENTROPY:
+        if dimension != 3:
+            raise ValueError(f"entropy results must have 3 columns [entropy, n, n_out_of_range], but had {dimension}")
+        return [metric_name, num_datapoints, num_out_of_range]
+    if dimension == 3:
         return [*csv_columns_results[:2], num_datapoints]
-    elif dimension == 4:
+    if dimension == 4:
         return [*csv_columns_results[:3], num_datapoints]
-    else:
-        raise ValueError("dimension must be either 2, 3 or 4, but was %s" % dimension)
+    raise ValueError(f"dimension must be either 3 or 4 for metric '{metric_name}', but was {dimension}")
 
 
 def _check_results(results: dict[str, dict[str, pd.DataFrame]], metric_name: str) -> None:
@@ -73,7 +77,8 @@ def metric_result_to_csv(
         df_sum = df_sum.reset_index()
         df_sum.columns = [*columns, *measures]
         # update the type of the columns
-        df_sum[num_datapoints] = df_sum[num_datapoints].astype(int)
+        count_columns = [column for column in (num_datapoints, num_out_of_range) if column in measures]
+        df_sum[count_columns] = df_sum[count_columns].astype(int)
 
         if interval_name == HOUR:
             # bin ordinal within the day, counted from the day's first loaded frame

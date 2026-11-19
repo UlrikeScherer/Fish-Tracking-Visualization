@@ -74,6 +74,11 @@ def activity_mean_sd(steps: NDArray[np.float64], error_index: NDArray[np.bool_])
     return mean, std
 
 
+def valid_chunks(data: NDArray[np.float64], split_index: Sequence[int], error_index: NDArray[np.bool_]) -> list[NDArray[np.float64]]:
+    """data split at split_index, each chunk without its error_index rows."""
+    return [chunk[~err_flt] for chunk, err_flt in zip(np.split(data, split_index), np.split(error_index, split_index))]
+
+
 def calculate_result_for_interval(
     data: NDArray[np.float64],
     split_index: Sequence[int],
@@ -88,7 +93,7 @@ def calculate_result_for_interval(
     With averaging, returns (len(split_index) + 1, NDIM) rows of [*avg_metric_f(chunk), n]; without,
     returns avg_metric_f of every chunk concatenated into one column.
     """
-    chunks = [chunk[~err_flt] for chunk, err_flt in zip(np.split(data, split_index), np.split(error_index, split_index))]
+    chunks = valid_chunks(data, split_index, error_index)
     if checkfornans:
         chunks = [chunk[~np.isnan(chunk)] for chunk in chunks]
     if not averaging:
@@ -100,14 +105,10 @@ def calculate_result_for_interval(
     return mu_sd
 
 
-def entropy(data, frame_interval, error_index, area):
-    return calculate_result_for_interval(
-        data,
-        frame_interval,
-        lambda chunk: entropy_for_chunk(chunk, area),
-        error_index,
-        NDIM=2,
-    )
+def entropy(data: NDArray[np.float64], frame_interval: Sequence[int], error_index: NDArray[np.bool_], area: tuple) -> NDArray[np.float64]:
+    """(n_intervals, 3) rows of [entropy, n_histogrammed, n_out_of_range] over the points not flagged in error_index."""
+    rows = [entropy_for_chunk(chunk, area[1]) for chunk in valid_chunks(data, frame_interval, error_index)]
+    return np.array(rows, dtype=np.float64).reshape((-1, 3))
 
 
 def distance_to_wall(data, frame_interval, error_index, area, *, unaveraged: bool = False):
@@ -393,8 +394,10 @@ def metric_per_interval(
     if "unaveraged" in inspect.signature(metric).parameters:
         # explicit, so raw mode follows every_point only and never the global UNAVERAGED flag
         metric_kwargs.update(unaveraged=every_point)
-    # columns of an empty day: [entropy, n] for entropy, [mean, std, (median,) n] otherwise
-    out_dim = (2 if metric.__name__ == entropy.__name__ else 3) + int(include_median)
+    if include_median and "include_median" not in inspect.signature(metric).parameters:
+        raise ValueError(f"include_median is not available for metric '{metric.__name__}'")
+    # columns of an empty day: [entropy, n, n_out_of_range] for entropy, [mean, std, (median,) n] otherwise
+    out_dim = 3 + int(include_median)
     if include_median:
         metric_kwargs.update(include_median=include_median)
     step_frames = None if all_points or time_interval == DAY else time_interval * config.FRAMES_PER_SECOND

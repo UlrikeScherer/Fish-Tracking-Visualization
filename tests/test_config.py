@@ -13,7 +13,7 @@ from fishproviz.utils.transformation import clear_transformation_cache, px2cm
 
 _TEST_DATA = pathlib.Path(__file__).resolve().parent.parent / "test_data"
 _PATH_NAMES = [f.name for f in dataclasses.fields(config.RootPaths)]
-_VALID = dict(spike_threshold=10.0, frames_per_second=5, batch_size=10000, min_batch_idx=0, max_batch_idx=12, aggregate_every_n=1, tortuosity_window_cm=10.0, tortuosity_min_l_cm=0.1)
+_VALID = dict(spike_threshold=10.0, frames_per_second=5, batch_size=10000, min_batch_idx=0, max_batch_idx=12, aggregate_every_n=1, tortuosity_window_cm=10.0, tortuosity_min_l_cm=0.1, entropy_bins=18, entropy_margin_px=50)
 
 
 class _ConfigRestoringCase(unittest.TestCase):
@@ -76,6 +76,16 @@ class TestValidateConfig(unittest.TestCase):
             for bad in (0.0, -0.5):
                 with self.subTest(key=key, bad=bad), self.assertRaisesRegex(ValueError, f"{key.upper()} must be > 0.*{bad}"):
                     config.validate_config(**{**_VALID, key: bad})
+
+    def test_entropy_bins_must_be_at_least_one(self) -> None:
+        for bad in (0, -3):
+            with self.subTest(bad=bad), self.assertRaisesRegex(ValueError, f"ENTROPY_BINS must be >= 1.*{bad}"):
+                config.validate_config(**{**_VALID, "entropy_bins": bad})
+
+    def test_entropy_margin_must_not_be_negative(self) -> None:
+        config.validate_config(**{**_VALID, "entropy_margin_px": 0})
+        with self.assertRaisesRegex(ValueError, "ENTROPY_MARGIN_PX must be >= 0.*-1"):
+            config.validate_config(**{**_VALID, "entropy_margin_px": -1})
 
 
 class TestImportValidationOrder(unittest.TestCase):

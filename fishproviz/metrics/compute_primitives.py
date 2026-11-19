@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.stats as scipy_stats
-import matplotlib.pyplot as plt
+from numpy.typing import NDArray
 import fishproviz.config as config
 
 
@@ -16,56 +16,25 @@ def calc_step_per_frame(batchxy, frames):
     return c
 
 
-def entropy_heatmap(chunk, area, bins=(18, 18)):
-    """Calculate the 2D histogram of the chunk"""
-    th = config.THRESHOLD_AREA_PX
-    xmin, xmax = min(area[:, 0]) - th, max(area[:, 0]) + th
-    ymin, ymax = min(area[:, 1]) - th, max(area[:, 1]) + th
-
-    return np.histogram2d(
-        chunk[:, 0],
-        chunk[:, 1],
-        bins=bins,
-        density=False,
-        range=[[xmin, xmax], [ymin, ymax]],
-    )[0]
+def entropy_heatmap(points: NDArray[np.float64], area: NDArray[np.float64]) -> tuple[NDArray[np.float64], int]:
+    """ENTROPY_BINS x ENTROPY_BINS histogram over the area polygon's bounding box +- ENTROPY_MARGIN_PX, and the number of points outside it."""
+    margin = config.ENTROPY_MARGIN_PX
+    (xmin, ymin), (xmax, ymax) = area.min(axis=0) - margin, area.max(axis=0) + margin
+    if not (xmax > xmin and ymax > ymin):
+        raise ValueError(f"Entropy grid range must have positive width and height, got x [{xmin}, {xmax}], y [{ymin}, {ymax}] from the area polygon and ENTROPY_MARGIN_PX={margin}")
+    # inclusive on both ends, like np.histogram2d's range (its last bin is closed); NaN counts as out of range
+    x, y = points[:, 0], points[:, 1]
+    in_range = (x >= xmin) & (x <= xmax) & (y >= ymin) & (y <= ymax)
+    hist = np.histogram2d(x[in_range], y[in_range], bins=config.ENTROPY_BINS, range=[[xmin, xmax], [ymin, ymax]])[0]
+    return hist, int(np.count_nonzero(~in_range))
 
 
-def entropy_for_chunk(chunk, area_tuple):
-    """
-    Args: chunk,
-    area = tuple(fish_key, data)
-    retrun entropy
-    """
-    if chunk.shape[0] == 0:
-        return np.nan
-    fish_key, area = area_tuple
-
-    hist = entropy_heatmap(chunk, area)
-    l_x, l_y = hist.shape
-    if config.BACK in fish_key:  # if back use take the upper triangle -3
-        tri = np.triu_indices(l_y, k=-3)
-    else:  # if front the lower triangle +3
-        tri = np.tril_indices(l_y, k=3)
-    sum_hist = np.sum(hist)
-    if sum_hist == 0:  #
-        # print(chunk[:10])
-        print("Warning for %s all %d data points were not in der range of histogram and removed" % (fish_key, chunk.shape[0]))
-        return np.nan
-    if chunk.shape[0] > sum_hist:
-        # print(chunk[:10])
-        print("Warning for %s %d out of %d data points were not in der range of histogram and removed" % (fish_key, chunk.shape[0] - sum_hist, chunk.shape[0]))
-    if sum_hist > np.sum(hist[tri]):
-        print(
-            "Warning for %s the selected area for entropy has lost some points: " % fish_key,
-            "sum hist: ",
-            np.sum(hist),
-            "sum selection: ",
-            sum(hist[tri]),
-            "\n",
-            fish_key,
-        )
-        print("entropy: ", scipy_stats.entropy(hist[tri]))
-        plt.plot(*area.T)
-        plt.plot(*chunk.T, "*")
-    return scipy_stats.entropy(hist[tri])
+def entropy_for_chunk(points: NDArray[np.float64], area: NDArray[np.float64]) -> tuple[float, int, int]:
+    """(Shannon entropy in nats of the occupancy histogram, points histogrammed, points out of range); entropy NaN when none is histogrammed."""
+    if len(points) == 0:
+        return np.nan, 0, 0
+    hist, n_out_of_range = entropy_heatmap(points, area)
+    n_histogrammed = int(hist.sum())
+    if n_histogrammed == 0:
+        return np.nan, 0, n_out_of_range
+    return float(scipy_stats.entropy(hist.ravel())), n_histogrammed, n_out_of_range
