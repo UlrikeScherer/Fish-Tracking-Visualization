@@ -11,6 +11,8 @@ import pandas as pd
 import fishproviz.config as config
 import fishproviz.metrics as metrics
 from fishproviz.metrics.compute_primitives import entropy_for_chunk, entropy_heatmap
+from fishproviz.metrics.metrics import _averaged_width, _metric_for_day
+from fishproviz.metrics.results_to_csv import ENTROPY_COLUMNS, metric_result_to_csv
 from fishproviz.utils.transformation import _area_functions, clear_transformation_cache
 
 _REPO = pathlib.Path(__file__).resolve().parent.parent
@@ -204,6 +206,26 @@ class TestWriter(unittest.TestCase):
         self.assertEqual(table.num_valid_points.tolist(), [5, 4, 0, 0])
         self.assertEqual(table.num_out_of_range.tolist(), [0, 1, 0, 5])
         np.testing.assert_allclose(table.entropy.to_numpy(), [0, np.log(2), np.nan, np.nan])
+
+    def test_empty_day_has_the_entropy_column_count(self) -> None:
+        empty_day = _metric_for_day(
+            metrics.entropy,
+            pd.DataFrame(columns=["xpx", "ypx"]),
+            (f"{_CAM}_front", self.area),
+            _DAY,
+            step_frames=None,
+            ellipse=None,
+            metric_kwargs={},
+            every_point=False,
+            out_dim=_averaged_width("entropy", False),
+        )
+        self.assertEqual(empty_day.shape, (0, len(ENTROPY_COLUMNS)))
+        full_day = pd.DataFrame([[0.5, 9, 6]], columns=range(3), index=[0])
+        results = {f"{_CAM}_front": {"20211113_000000": empty_day, _DAY: full_day}}
+        metric_result_to_csv(results, "entropy", all_points=True)
+        table = self._read("entropy.csv")
+        self.assertEqual(table.day.astype(str).tolist(), [_DAY])
+        self.assertEqual(table.iloc[0][ENTROPY_COLUMNS].tolist(), [0.5, 9, 6])
 
 
 if __name__ == "__main__":

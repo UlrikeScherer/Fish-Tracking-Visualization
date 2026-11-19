@@ -13,6 +13,7 @@ csv_columns_results = ["mean", "std", "median"]
 num_datapoints = "num_valid_points"
 num_out_of_range = "num_out_of_range"
 ENTROPY = "entropy"
+ENTROPY_COLUMNS = [ENTROPY, num_datapoints, num_out_of_range]
 TURNING_ANGLE_STREAK_LENGTH = "turning_angle_streak_length"
 RAW_ANGLE_METRICS = ("turning_angle", "absolute_angles")
 RAW_STREAK_METRICS = (TURNING_ANGLE_STREAK_LENGTH,)
@@ -37,9 +38,9 @@ def require_raw_mode(metric_names: Sequence[str]) -> None:
 def get_csv_columns_from_results_dim(dimension: int, metric_name: str) -> list[str]:
     """Names of the averaged result columns of metric_name, whose results have dimension columns."""
     if metric_name == ENTROPY:
-        if dimension != 3:
-            raise ValueError(f"entropy results must have 3 columns [entropy, n, n_out_of_range], but had {dimension}")
-        return [metric_name, num_datapoints, num_out_of_range]
+        if dimension != len(ENTROPY_COLUMNS):
+            raise ValueError(f"entropy results must have {len(ENTROPY_COLUMNS)} columns {ENTROPY_COLUMNS}, but had {dimension}")
+        return list(ENTROPY_COLUMNS)
     if dimension == 3:
         return [*csv_columns_results[:2], num_datapoints]
     if dimension == 4:

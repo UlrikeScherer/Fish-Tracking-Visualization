@@ -16,7 +16,7 @@ from fishproviz.methods import (
     mean_std,
     distance_to_object_chunk,
 )
-from .results_to_csv import metric_result_to_csv, require_raw_mode, AGGREGATED_RAW_METRICS, RAW_ROW_METRICS, RAW_STREAK_METRICS, RAW_WINDOW_METRICS
+from .results_to_csv import metric_result_to_csv, ENTROPY, ENTROPY_COLUMNS, require_raw_mode, AGGREGATED_RAW_METRICS, RAW_ROW_METRICS, RAW_STREAK_METRICS, RAW_WINDOW_METRICS
 from .compute_primitives import (
     compute_step_lengths,
     entropy_for_chunk,
@@ -105,7 +105,7 @@ def calculate_result_for_interval(
     return mu_sd
 
 
-def entropy(data: NDArray[np.float64], frame_interval: Sequence[int], error_index: NDArray[np.bool_], area: tuple) -> NDArray[np.float64]:
+def entropy(data: NDArray[np.float64], frame_interval: Sequence[int], error_index: NDArray[np.bool_], area: tuple[str, NDArray[np.float64]]) -> NDArray[np.float64]:
     """(n_intervals, 3) rows of [entropy, n_histogrammed, n_out_of_range] over the points not flagged in error_index."""
     rows = [entropy_for_chunk(chunk, area[1]) for chunk in valid_chunks(data, frame_interval, error_index)]
     return np.array(rows, dtype=np.float64).reshape((-1, 3))
@@ -349,6 +349,11 @@ def _metric_for_day(
     return _result_table(metric.__name__, result, df.index, data, time_points, every_point)
 
 
+def _averaged_width(metric_name: str, include_median: bool) -> int:
+    """Columns of an averaged result: the entropy columns, else [mean, std, (median,) n]."""
+    return len(ENTROPY_COLUMNS) if metric_name == ENTROPY else 3 + int(include_median)
+
+
 def metric_per_interval(
     fish_ids: Optional[list[int]] = None,
     time_interval: int | Literal["day"] = 100,
@@ -396,8 +401,7 @@ def metric_per_interval(
         metric_kwargs.update(unaveraged=every_point)
     if include_median and "include_median" not in inspect.signature(metric).parameters:
         raise ValueError(f"include_median is not available for metric '{metric.__name__}'")
-    # columns of an empty day: [entropy, n, n_out_of_range] for entropy, [mean, std, (median,) n] otherwise
-    out_dim = 3 + int(include_median)
+    out_dim = _averaged_width(metric.__name__, include_median)
     if include_median:
         metric_kwargs.update(include_median=include_median)
     step_frames = None if all_points or time_interval == DAY else time_interval * config.FRAMES_PER_SECOND
