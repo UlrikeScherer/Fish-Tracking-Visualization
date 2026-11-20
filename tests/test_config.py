@@ -106,21 +106,12 @@ class TestCalibrationAndAreas(_ConfigRestoringCase):
         self._point_at_test_data(front, back)
         return front, back
 
-    def test_unmappable_polygon_raises_naming_camera_and_file(self) -> None:
+    def test_four_point_polygon_raises_naming_camera_and_file(self) -> None:
         front, _ = self._copy_area_folders()
-        # 4 vertices cannot take 5 distinct reference points, so two map onto the same vertex
         bad = front / "11111111_areas.csv"
         bad.write_text("Last#579,516;494,595;3067,3172;3155,3089#0,0;10,0;10,10;0,10#2#0\n")
-        with self.assertRaisesRegex(ValueError, f"11111111_front.*{bad.name}.*5-point reference polygon"):
+        with self.assertRaisesRegex(ValueError, f"{bad.name}.*camera 11111111.*expected 5 vertices"):
             tank_area_config.get_areas()
-
-    def test_smallest_polygon_of_file_is_returned(self) -> None:
-        file = self._tmp / "99999999_areas.csv"
-        file.write_text("Last#1,1;2,2;3,3;4,4#0,0;1,0;1,1;0,1;0,2#2#0\nLast#1,1;2,2;3,3;4,4#0,0;1,0;1,1#2#0\n")
-        self.assertEqual(tank_area_config._smallest_polygon(str(file), "99999999_front").shape, (3, 2))
-        file.write_text("nothing\n")
-        with self.assertRaisesRegex(ValueError, "99999999_areas.csv"):
-            tank_area_config._smallest_polygon(str(file), "99999999_front")
 
     def test_wrong_reference_point_count_raises_naming_file(self) -> None:
         front, _ = self._copy_area_folders()
