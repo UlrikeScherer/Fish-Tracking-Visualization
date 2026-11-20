@@ -40,6 +40,7 @@ class FeedingWindowTestCase(StepMetricTestCase):
         self.assertEqual(warned, [])
         config.SERVER_FEEDING_TIMES_FILE = str(self.results / "absent.csv")
         unwindowed, _ = self._valid_points(is_feeding=True)
+        self.assertGreater(windowed, 0)
         self.assertLessEqual(windowed, _WINDOW_FRAMES)
         self.assertLess(windowed, unwindowed)
 
@@ -49,6 +50,7 @@ class FeedingWindowTestCase(StepMetricTestCase):
             with self.subTest(flag):
                 windowed, warned = self._valid_points(**{flag: True})
                 self.assertEqual(warned, [])
+                self.assertGreater(windowed, 0)
                 self.assertLessEqual(windowed, _WINDOW_FRAMES)
 
     def test_day_frame_receives_the_tank_id_only_for_trials(self) -> None:
