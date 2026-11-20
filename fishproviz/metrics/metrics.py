@@ -317,11 +317,11 @@ def _result_table(
     return pd.DataFrame(result, index=time_points)
 
 
-def _day_frame(keys: list[str], batches: list[pd.DataFrame], start_end_times: Optional[dict], day: str, fish_key: str) -> pd.DataFrame:
+def _day_frame(keys: list[str], batches: list[pd.DataFrame], start_end_times: Optional[dict], day: str, tank_id: Optional[str]) -> pd.DataFrame:
     """Concatenates the day's batches, keeping only the frames inside each batch's feeding/trial window."""
     windowed = []
     for key, batch in zip(keys, batches):
-        start_idx, end_idx = get_start_end_index(start_end_times, day, key, fish_key)
+        start_idx, end_idx = get_start_end_index(start_end_times, day, key, tank_id)
         windowed.append(batch[batch.FRAME.between(start_idx, end_idx)])
     return pd.concat(windowed) if windowed else pd.DataFrame(columns=["FRAME", "xpx", "ypx"])
 
@@ -428,7 +428,7 @@ def metric_per_interval(
             )
             day_dict[day] = _metric_for_day(
                 metric,
-                _day_frame(keys, data_in_batches, start_end_times, day, fish_key),
+                _day_frame(keys, data_in_batches, start_end_times, day, fish_key if is_novel_object or is_sociability else None),
                 (fish_key, area_func(fish_key)),
                 day,
                 step_frames=step_frames,
