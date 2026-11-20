@@ -104,6 +104,8 @@ def parse_area_file(path: str) -> AreaFile:
     reference_points = _parse_points(path, fields[1], "reference points")
     if reference_points.shape != (_REFERENCE_POINTS, 2) or not np.all(np.isfinite(reference_points)):
         raise ValueError(f"Area file {path} (camera {camera}): expected {_REFERENCE_POINTS} finite reference points, got shape {reference_points.shape}")
+    if np.any(np.all(reference_points[:2] == reference_points[2:], axis=1)):
+        raise ValueError(f"Area file {path} (camera {camera}): a calibration reference pair (points i and i+2) coincides, so the px-to-cm scale is undefined")
     polygon = _parse_points(path, fields[2], "polygon")
     violation = _polygon_violation(polygon)
     if violation is not None:

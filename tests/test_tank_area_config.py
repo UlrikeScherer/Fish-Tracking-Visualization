@@ -77,6 +77,9 @@ class TestParseAreaFile(_AreaFileCase):
     def test_reference_point_count_must_be_four(self) -> None:
         self._assert_rejected(self._write("23442333_areas.csv", _last_line(reference="579,516;494,595;3067,3172")), "expected 4 finite reference points")
 
+    def test_coinciding_reference_pair_raises(self) -> None:
+        self._assert_rejected(self._write("23442333_areas.csv", _last_line(reference="579,516;494,595;579,516;3155,3089")), "calibration reference pair")
+
 
 class TestAreaFolders(_AreaFileCase):
     def _point_at(self, front: str, back: str) -> None:
