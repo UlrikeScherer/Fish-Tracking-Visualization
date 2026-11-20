@@ -8,6 +8,7 @@ import pandas as pd
 
 import fishproviz.config as config
 import fishproviz.metrics as metrics
+from fishproviz.metrics.results_to_csv import DISTANCE_TO_WALL_COLUMNS, num_datapoints
 from tests.test_step_metrics import StepMetricTestCase
 
 _DAY = "20210911_060000"
@@ -27,11 +28,11 @@ class FeedingWindowTestCase(StepMetricTestCase):
         config.SERVER_FEEDING_TIMES_FILE = str(self.times_file)
 
     def _valid_points(self, **flags: bool) -> tuple[int, list[str]]:
-        """Valid points n (last column) of the first fish's test day and the missing-window warnings raised on the way."""
+        """Valid points n of the first fish's test day and the missing-window warnings raised on the way."""
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
             table = metrics.distance_to_wall_per_interval(fish_ids=self.fish_ids[:1], all_points=True, **flags)["results"][self.fish_keys[0]][_DAY]
-        return int(table.iloc[0, -1]), [str(w.message) for w in caught if _MISSING_WINDOW_WARNING in str(w.message)]
+        return int(table.iloc[0, DISTANCE_TO_WALL_COLUMNS.index(num_datapoints)]), [str(w.message) for w in caught if _MISSING_WINDOW_WARNING in str(w.message)]
 
     def test_feeding_window_is_applied(self) -> None:
         pd.DataFrame({"day": ["2021-09-11"], "time_in_start": [_WINDOW_START], "time_out_stop": [_WINDOW_END]}).to_csv(self.times_file, sep=";", index=False)
