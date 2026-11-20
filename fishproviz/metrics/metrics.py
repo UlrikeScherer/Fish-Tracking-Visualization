@@ -13,10 +13,11 @@ from fishproviz.utils.transformation import _area_functions, pixel_to_cm, px2cm
 from fishproviz.methods import (
     tortuosity_windows,
     distance_to_wall_chunk,
+    points_inside_polygon,
     mean_std,
     distance_to_object_chunk,
 )
-from .results_to_csv import metric_result_to_csv, ENTROPY, ENTROPY_COLUMNS, require_raw_mode, AGGREGATED_RAW_METRICS, RAW_ROW_METRICS, RAW_STREAK_METRICS, RAW_WINDOW_METRICS
+from .results_to_csv import metric_result_to_csv, NAMED_RESULT_COLUMNS, require_raw_mode, RAW_POINT_METRICS, RAW_ROW_METRICS, RAW_STREAK_METRICS, RAW_WINDOW_METRICS
 from .compute_primitives import (
     compute_step_lengths,
     entropy_for_chunk,
@@ -111,23 +112,28 @@ def entropy(data: NDArray[np.float64], frame_interval: Sequence[int], error_inde
     return np.array(rows, dtype=np.float64).reshape((-1, 3))
 
 
-def distance_to_wall(data, frame_interval, error_index, area, *, unaveraged: bool = False):
-    """Mean distance to the tank wall in cm per interval, or every point's distance when unaveraged."""
-    fish_key = area[0]
+def distance_to_wall(
+    data: NDArray[np.float64],
+    frame_interval: Sequence[int],
+    error_index: NDArray[np.bool_],
+    area: tuple[str, NDArray[np.float64]],
+    *,
+    unaveraged: bool = False,
+) -> NDArray[np.float64]:
+    """Unsigned distance in cm from each point to the nearest polygon edge, points outside the polygon included.
 
-    def dtw(chunk):
-        return px2cm(distance_to_wall_chunk(chunk, area[1]), fish_key=fish_key)
-
-    def avg_func(chunk):
-        return mean_std(dtw(chunk))
-
-    return calculate_result_for_interval(
-        data.astype("double"),
-        frame_interval,
-        dtw if unaveraged else avg_func,
-        error_index,
-        averaging=not unaveraged,
-    )
+    Returns (n_intervals, 4) rows of [mean, std, n_valid, n_outside] over the points not flagged in error_index,
+    or when unaveraged (n_rows, 4) rows of [row, distance, excluded, outside] for every row (distance NaN and
+    outside False where a coordinate is not finite).
+    """
+    fish_key, polygon = area
+    points = np.ascontiguousarray(data, dtype=np.float64)
+    if unaveraged:
+        outside = ~points_inside_polygon(points, polygon) & np.isfinite(points).all(axis=1)
+        distances = px2cm(distance_to_wall_chunk(points, polygon), fish_key=fish_key)
+        return np.column_stack([np.arange(len(points)), distances, error_index, outside]).astype(np.float64)
+    rows = [[*mean_std(px2cm(distance_to_wall_chunk(chunk, polygon), fish_key=fish_key)), len(chunk), np.count_nonzero(~points_inside_polygon(chunk, polygon))] for chunk in valid_chunks(points, frame_interval, error_index)]
+    return np.array(rows, dtype=np.float64).reshape((-1, 4))
 
 
 def distance_to_object(data, frame_interval, error_index, area):
@@ -279,10 +285,10 @@ def _result_table(
     every_point: bool,
 ) -> pd.DataFrame:
     """Turns a metric result into the day's table, attaching frame numbers and tracker coordinates to raw rows."""
-    if every_point and metric_name in RAW_ROW_METRICS:
-        # result columns: [row, value, excluded]
+    if every_point and metric_name in (*RAW_ROW_METRICS, *RAW_POINT_METRICS):
+        # result columns: [row, value, excluded] and, for point metrics, outside
         rows = result[:, 0].astype(int)
-        return pd.DataFrame(
+        table = pd.DataFrame(
             {
                 "frame": frames[rows],
                 "xpx": data[rows, 0],
@@ -291,6 +297,7 @@ def _result_table(
                 "excluded": result[:, 2].astype(bool),
             }
         )
+        return table.assign(outside=result[:, 3].astype(bool)) if metric_name in RAW_POINT_METRICS else table
     if every_point and metric_name in RAW_STREAK_METRICS:
         # result columns: [row_start, row_end, side, length]; rows become day-level frame numbers
         return pd.DataFrame(
@@ -312,8 +319,6 @@ def _result_table(
                 metric_name: result[:, 4],
             }
         )
-    if every_point and metric_name in AGGREGATED_RAW_METRICS:
-        return pd.DataFrame({metric_name: np.add.reduceat(result, np.arange(0, len(result), config.AGGREGATE_EVERY_N)).reshape((-1,))})
     return pd.DataFrame(result, index=time_points)
 
 
@@ -350,8 +355,8 @@ def _metric_for_day(
 
 
 def _averaged_width(metric_name: str, include_median: bool) -> int:
-    """Columns of an averaged result: the entropy columns, else [mean, std, (median,) n]."""
-    return len(ENTROPY_COLUMNS) if metric_name == ENTROPY else 3 + int(include_median)
+    """Columns of an averaged result: the metric's named columns, else [mean, std, (median,) n]."""
+    return len(NAMED_RESULT_COLUMNS[metric_name]) if metric_name in NAMED_RESULT_COLUMNS else 3 + int(include_median)
 
 
 def metric_per_interval(

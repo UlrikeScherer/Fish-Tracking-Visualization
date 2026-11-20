@@ -12,8 +12,13 @@ csv_columns_time = ["day", "time"]
 csv_columns_results = ["mean", "std", "median"]
 num_datapoints = "num_valid_points"
 num_out_of_range = "num_out_of_range"
+num_outside = "num_outside"
 ENTROPY = "entropy"
 ENTROPY_COLUMNS = [ENTROPY, num_datapoints, num_out_of_range]
+DISTANCE_TO_WALL = "distance_to_wall"
+DISTANCE_TO_WALL_COLUMNS = ["mean", "std", num_datapoints, num_outside]
+# metrics whose averaged result columns are named by metric rather than by result width
+NAMED_RESULT_COLUMNS: dict[str, list[str]] = {ENTROPY: ENTROPY_COLUMNS, DISTANCE_TO_WALL: DISTANCE_TO_WALL_COLUMNS}
 TURNING_ANGLE_STREAK_LENGTH = "turning_angle_streak_length"
 RAW_ANGLE_METRICS = ("turning_angle", "absolute_angles")
 RAW_STREAK_METRICS = (TURNING_ANGLE_STREAK_LENGTH,)
@@ -23,9 +28,9 @@ TANGLE_METRICS = (*RAW_ANGLE_METRICS, *RAW_STREAK_METRICS)
 STEP_METRICS = ("activity", "step_length")
 # metrics whose raw output is one row per angle or step: frame, xpx, ypx, <metric>, excluded
 RAW_ROW_METRICS = (*RAW_ANGLE_METRICS, *STEP_METRICS)
-# metrics whose raw output is per-point values summed over AGGREGATE_EVERY_N windows
-AGGREGATED_RAW_METRICS = ("distance_to_wall",)
-RAW_METRICS = (*RAW_ROW_METRICS, *RAW_STREAK_METRICS, *RAW_WINDOW_METRICS, *AGGREGATED_RAW_METRICS)
+# metrics whose raw output is one row per loaded frame: frame, xpx, ypx, <metric>, excluded, outside
+RAW_POINT_METRICS = (DISTANCE_TO_WALL,)
+RAW_METRICS = (*RAW_ROW_METRICS, *RAW_STREAK_METRICS, *RAW_WINDOW_METRICS, *RAW_POINT_METRICS)
 
 
 def require_raw_mode(metric_names: Sequence[str]) -> None:
@@ -37,10 +42,11 @@ def require_raw_mode(metric_names: Sequence[str]) -> None:
 
 def get_csv_columns_from_results_dim(dimension: int, metric_name: str) -> list[str]:
     """Names of the averaged result columns of metric_name, whose results have dimension columns."""
-    if metric_name == ENTROPY:
-        if dimension != len(ENTROPY_COLUMNS):
-            raise ValueError(f"entropy results must have {len(ENTROPY_COLUMNS)} columns {ENTROPY_COLUMNS}, but had {dimension}")
-        return list(ENTROPY_COLUMNS)
+    if metric_name in NAMED_RESULT_COLUMNS:
+        named = NAMED_RESULT_COLUMNS[metric_name]
+        if dimension != len(named):
+            raise ValueError(f"{metric_name} results must have {len(named)} columns {named}, but had {dimension}")
+        return list(named)
     if dimension == 3:
         return [*csv_columns_results[:2], num_datapoints]
     if dimension == 4:
@@ -78,7 +84,7 @@ def metric_result_to_csv(
         df_sum = df_sum.reset_index()
         df_sum.columns = [*columns, *measures]
         # update the type of the columns
-        count_columns = [column for column in (num_datapoints, num_out_of_range) if column in measures]
+        count_columns = [column for column in (num_datapoints, num_out_of_range, num_outside) if column in measures]
         df_sum[count_columns] = df_sum[count_columns].astype(int)
 
         if interval_name == HOUR:
@@ -93,7 +99,6 @@ def metric_result_to_csv(
     else:
         directory = get_results_directory(metric_name)
         suffix = f"_skip{config.TANGLE_N_SKIP}" if metric_name in TANGLE_METRICS else ""
-        no_index = metric_name not in AGGREGATED_RAW_METRICS
         for key in results.keys():
             for subkey in results[key].keys():
                 subdir = f"{directory}/raw"
@@ -102,8 +107,7 @@ def metric_result_to_csv(
                 if len(results[key][subkey]) > 0:
                     results[key][subkey].to_csv(
                         f"{subdir}/{key}_{subkey}{suffix}.csv",
-                        index=not no_index,
-                        index_label="i",
+                        index=False,
                     )
 
 

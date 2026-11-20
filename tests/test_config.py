@@ -13,7 +13,7 @@ from fishproviz.utils.transformation import clear_transformation_cache, px2cm
 
 _TEST_DATA = pathlib.Path(__file__).resolve().parent.parent / "test_data"
 _PATH_NAMES = [f.name for f in dataclasses.fields(config.RootPaths)]
-_VALID = dict(spike_threshold=10.0, frames_per_second=5, batch_size=10000, min_batch_idx=0, max_batch_idx=12, aggregate_every_n=1, tortuosity_window_cm=10.0, tortuosity_min_l_cm=0.1, entropy_bins=18, entropy_margin_px=50)
+_VALID = dict(spike_threshold=10.0, frames_per_second=5, batch_size=10000, min_batch_idx=0, max_batch_idx=12, tortuosity_window_cm=10.0, tortuosity_min_l_cm=0.1, entropy_bins=18, entropy_margin_px=50)
 
 
 class _ConfigRestoringCase(unittest.TestCase):
@@ -66,8 +66,6 @@ class TestValidateConfig(unittest.TestCase):
             config.validate_config(**{**_VALID, "batch_size": 0})
         with self.assertRaisesRegex(ValueError, "MIN_BATCH_IDX"):
             config.validate_config(**{**_VALID, "min_batch_idx": 5, "max_batch_idx": 4})
-        with self.assertRaisesRegex(ValueError, "AGGREGATE_EVERY_N"):
-            config.validate_config(**{**_VALID, "aggregate_every_n": 0})
         with self.assertRaisesRegex(ValueError, "FRAMES_PER_SECOND"):
             config.validate_config(**{**_VALID, "frames_per_second": 0})
 

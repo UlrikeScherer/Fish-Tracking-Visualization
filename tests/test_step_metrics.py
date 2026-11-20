@@ -17,7 +17,7 @@ import fishproviz.config as config
 import fishproviz.metrics as metrics
 from fishproviz.metrics.exploration_trials import exploration_trials
 from fishproviz.metrics.metrics import _day_frame, _metric_for_day, interval_split
-from fishproviz.metrics.results_to_csv import STEP_METRICS, metric_result_to_csv
+from fishproviz.metrics.results_to_csv import DISTANCE_TO_WALL, DISTANCE_TO_WALL_COLUMNS, STEP_METRICS, metric_result_to_csv
 from fishproviz.utils import csv_of_the_day, get_camera_pos_keys
 from fishproviz.utils.transformation import clear_transformation_cache
 
@@ -93,10 +93,15 @@ class TestStepMetrics(StepMetricTestCase):
             for unaveraged_config in (False, True):
                 with self.subTest(metric=per_interval.__name__, unaveraged_config=unaveraged_config), patch.object(config, "UNAVERAGED", unaveraged_config):
                     averaged = per_interval(fish_ids=[0], all_points=True)["results"]
-                    raw = per_interval(fish_ids=[0], all_points=True, every_point=True)["results"]
+                    raw = per_interval(fish_ids=[0], all_points=True, every_point=True)
+                    name = raw["metric_name"]
+                    # wall distance: one raw row per loaded frame with an outside flag; steps: one row per step
+                    is_wall = name == DISTANCE_TO_WALL
                     for day, table in averaged[self.fish_keys[0]].items():
-                        self.assertEqual(table.shape, (1, 3))
-                        self.assertGreater(len(raw[self.fish_keys[0]][day]), 1000)
+                        self.assertEqual(table.shape, (1, len(DISTANCE_TO_WALL_COLUMNS) if is_wall else 3))
+                        raw_table = raw["results"][self.fish_keys[0]][day]
+                        self.assertEqual(list(raw_table.columns), ["frame", "xpx", "ypx", name, "excluded", *(["outside"] if is_wall else [])])
+                        self.assertEqual(len(raw_table), len(_day_frames(self.fish_keys[0], day)) - (0 if is_wall else 1))
 
     def test_interval_split(self) -> None:
         time_points, split = interval_split(pd.Index([0]), None)

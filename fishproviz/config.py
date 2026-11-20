@@ -30,7 +30,6 @@ def validate_config(
     batch_size: int,
     min_batch_idx: int,
     max_batch_idx: int,
-    aggregate_every_n: int,
     tortuosity_window_cm: float,
     tortuosity_min_l_cm: float,
     entropy_bins: int,
@@ -45,8 +44,6 @@ def validate_config(
         raise ValueError(f"BATCH_SIZE must be > 0, got {batch_size}")
     if not 0 <= min_batch_idx <= max_batch_idx:
         raise ValueError(f"Batch indices must satisfy 0 <= MIN_BATCH_IDX <= MAX_BATCH_IDX, got MIN_BATCH_IDX={min_batch_idx}, MAX_BATCH_IDX={max_batch_idx}")
-    if not aggregate_every_n >= 1:
-        raise ValueError(f"AGGREGATE_EVERY_N must be >= 1, got {aggregate_every_n}")
     if not tortuosity_window_cm > 0:
         raise ValueError(f"TORTUOSITY_WINDOW_CM must be > 0 (cm), got {tortuosity_window_cm}")
     if not tortuosity_min_l_cm > 0:
@@ -73,7 +70,6 @@ FRAMES_PER_SECOND = int(_env("FRAMES_PER_SECOND"))
 # --- Metrics ---
 TANGLE_N_SKIP = int(_env("TANGLE_N_SKIP"))
 UNAVERAGED = bool(int(_env("UNAVERAGED")))
-AGGREGATE_EVERY_N = int(_env("AGGREGATE_EVERY_N"))
 REMOVE_0_VECS = bool(int(_env("REMOVE_0_VECS")))
 DIST_FROM_WALL_TANGLE_IGNORED = float(_env("DIST_FROM_WALL_TANGLE_IGNORED"))
 TANGLE_MIN_STEP_PX = float(_env("TANGLE_MIN_STEP_PX"))
@@ -89,7 +85,6 @@ validate_config(
     batch_size=BATCH_SIZE,
     min_batch_idx=MIN_BATCH_IDX,
     max_batch_idx=MAX_BATCH_IDX,
-    aggregate_every_n=AGGREGATE_EVERY_N,
     tortuosity_window_cm=TORTUOSITY_WINDOW_CM,
     tortuosity_min_l_cm=TORTUOSITY_MIN_L_CM,
     entropy_bins=ENTROPY_BINS,
