@@ -68,17 +68,42 @@ cpdef (double, double) mean_std(np.ndarray[double, ndim=1] data):
     std = sqrt(((data-mean)**2).sum()/data.size)
     return (mean, std)
 
-#### DINSTANCE TO THE WALL --------------
+#### DISTANCE TO THE WALL --------------
+
+cdef int _validate_wall_inputs(np.ndarray[double, ndim=2] data, np.ndarray[double, ndim=2] area) except -1:
+    """Raise ValueError unless data is (n, 2) and area is a closed polygon of >= 3 finite vertices without zero-length edges."""
+    if data.shape[1] != 2:
+        raise ValueError(f"data must have shape (n, 2), got (n, {data.shape[1]})")
+    if area.shape[1] != 2:
+        raise ValueError(f"area must have shape (n_vertices, 2), got (n_vertices, {area.shape[1]})")
+    cdef Py_ssize_t e = area.shape[0]
+    if e < 3:
+        raise ValueError(f"area needs at least 3 vertices, got {e}")
+    cdef Py_ssize_t i, k
+    for i in range(e):
+        if not (isfinite(area[i, 0]) and isfinite(area[i, 1])):
+            raise ValueError(f"area vertex {i} is not finite ({area[i, 0]}, {area[i, 1]})")
+    for i in range(e):
+        k = (i + 1) % e
+        if area[i, 0] == area[k, 0] and area[i, 1] == area[k, 1]:
+            raise ValueError(f"area has a zero-length edge: vertex {i} equals vertex {k} ({area[i, 0]}, {area[i, 1]})")
+    return 0
 
 cpdef np.ndarray[double, ndim=1] distance_to_wall_chunk(np.ndarray[double, ndim=2] data, np.ndarray[double, ndim=2] area):
+    """Unsigned minimum distance from each point to the edges of the closed polygon area."""
+    _validate_wall_inputs(data, area)
+    if data.shape[0] == 0:
+        return np.empty(0, dtype=np.float64)
     return min_distance_to_segment(data, area)
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cdef np.ndarray[double, ndim=1] min_distance_to_segment(np.ndarray[double, ndim=2] data, np.ndarray[double, ndim=2] area):
-    cdef int n = data.shape[0]
-    cdef int e = area.shape[0]
+    cdef Py_ssize_t n = data.shape[0]
+    cdef Py_ssize_t e = area.shape[0]
     cdef np.ndarray[double, ndim=2] dists = np.zeros((e, n), dtype=np.float64)
     cdef double ax, ay, abx, aby, ab_sq, px, py, t, fx, fy
-    cdef int i, j
+    cdef Py_ssize_t i, j
     for i in range(e):
         ax = area[i, 0]
         ay = area[i, 1]
@@ -97,6 +122,38 @@ cdef np.ndarray[double, ndim=1] min_distance_to_segment(np.ndarray[double, ndim=
             fy = ay + t * aby
             dists[i, j] = norm(px - fx, py - fy)
     return np.min(dists, axis=0)
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef np.ndarray points_inside_polygon(np.ndarray[double, ndim=2] data, np.ndarray[double, ndim=2] area):
+    """Bool per point: inside the closed polygon area (even-odd rule) or exactly on its boundary; non-finite points are False."""
+    _validate_wall_inputs(data, area)
+    cdef Py_ssize_t n = data.shape[0]
+    cdef Py_ssize_t e = area.shape[0]
+    cdef np.ndarray[np.uint8_t, ndim=1, cast=True] inside = np.zeros(n, dtype=bool)
+    cdef double px, py, ax, ay, bx, by
+    cdef bint crossed_odd
+    cdef Py_ssize_t i, j
+    for j in range(n):
+        px = data[j, 0]
+        py = data[j, 1]
+        if not (isfinite(px) and isfinite(py)):
+            continue
+        crossed_odd = False
+        for i in range(e):
+            ax = area[i, 0]
+            ay = area[i, 1]
+            bx = area[(i + 1) % e, 0]
+            by = area[(i + 1) % e, 1]
+            # exact on-segment test: collinear and within the edge's bounding box
+            if (bx - ax) * (py - ay) == (by - ay) * (px - ax) and min(ax, bx) <= px <= max(ax, bx) and min(ay, by) <= py <= max(ay, by):
+                inside[j] = True
+                break
+            if (ay > py) != (by > py) and px < ax + (py - ay) * (bx - ax) / (by - ay):
+                crossed_odd = not crossed_odd
+        else:
+            inside[j] = crossed_odd
+    return inside
 
 cpdef np.ndarray[double, ndim=1] distance_to_object_chunk(np.ndarray[double, ndim=2] data,
                                                           np.ndarray[double, ndim=1] ellipse_center,
