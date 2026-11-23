@@ -357,6 +357,13 @@ class TestReversalScoring(unittest.TestCase):
 class TestReversalEdgeCases(unittest.TestCase):
     KW = dict(skip=0, wall_threshold_cm=0.0)
 
+    def test_default_fill_counts_stationary_zero_but_not_reversal(self):
+        # Steps (10,0), (0,10), (0,-1), (0,10), (0,-10): +90 degrees, two stationary 0.0 fills, then an exact reversal.
+        px = np.array([[0, 0], [10, 0], [10, 10], [10, 9], [10, 19], [10, 9]], dtype=float)
+        result = turning_angle(px * 0.05, [], _no_errors(len(px)), data_px=px, min_step_px=3.0, remove_zero_vecs=False, **self.KW)
+        self.assertEqual(result[0, 2], 3)
+        self.assertAlmostEqual(result[0, 0], (np.pi / 2) / 3)
+
     def test_reversal_next_to_short_step_is_stationary_not_pi(self):
         # Steps (10,0), (0,10), (0,-1), (0,10): both reversal angles touch the 1 px step (< min_step_px).
         px = np.array([[0, 0], [10, 0], [10, 10], [10, 9], [10, 19]], dtype=float)

@@ -22,7 +22,7 @@ def compute_turning_angles(
     NaN. An angle with finite displacements where either has zero length (the fish did not move)
     receives fill_value, as does one adjacent to a step marked in stationary.
     An exact reversal (outgoing step anti-parallel to the incoming one) returns +pi, since its
-    turn side is undefined; callers needing a signed value map +pi to their own convention.
+    turn side is undefined; callers map +pi to their own reversal policy (see drop_reversals).
     The tolerance relies on integer pixel positions: any non-reversal has |cross| >= 1 px^2, so
     |sin| >= 1/(n1*n2), far above REVERSAL_SIN_TOL for any realistic step length.
 
@@ -58,7 +58,7 @@ def compute_turning_angles(
 
 
 def drop_reversals(angles: NDArray[np.float64]) -> NDArray[np.float64]:
-    """Replace the canonical +pi of an exact reversal with NaN, so both angle means exclude it."""
+    """Replace the canonical +pi of an exact reversal with NaN."""
     return np.where(angles == np.pi, np.nan, angles)
 
 
