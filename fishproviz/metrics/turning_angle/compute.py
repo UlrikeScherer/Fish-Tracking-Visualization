@@ -57,9 +57,9 @@ def compute_turning_angles(
     return result
 
 
-def score_reversals_as_zero(angles: NDArray[np.float64]) -> NDArray[np.float64]:
-    """Signed callers score the canonical +pi of an exact reversal as 0.0."""
-    return np.where(angles == np.pi, 0.0, angles)
+def drop_reversals(angles: NDArray[np.float64]) -> NDArray[np.float64]:
+    """Replace the canonical +pi of an exact reversal with NaN, so both angle means exclude it."""
+    return np.where(angles == np.pi, np.nan, angles)
 
 
 def straight_turns(points: NDArray[np.float64], max_lateral: float) -> NDArray[np.bool_]:

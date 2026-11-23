@@ -8,7 +8,7 @@ from fishproviz.methods import distance_to_wall_chunk, mean_std
 from fishproviz.utils.transformation import px2cm
 from ..compute_primitives import compute_step_lengths
 from ..metrics import update_filter_three_points, calculate_result_for_interval, metric_per_interval
-from .compute import compute_turning_angles, compute_turning_angle_streaks, score_reversals_as_zero, straight_turns
+from .compute import compute_turning_angles, compute_turning_angle_streaks, drop_reversals, straight_turns
 
 
 def _prepare_angle_inputs(
@@ -73,8 +73,8 @@ def _angle_metric(
     """Shared implementation for turning_angle and absolute_angles.
 
     Args:
-        absolute: if True, takes np.abs() of the angle array before averaging; otherwise
-            exact reversals (+pi) are scored 0.0.
+        absolute: if True, takes np.abs() of the angle array before averaging. Exact
+            reversals are excluded either way (NaN), so both metrics average the same turns.
         unaveraged: if True, skips interval averaging and returns every angle.
 
     Returns:
@@ -82,8 +82,8 @@ def _angle_metric(
         an (M-2, 3) array of [row, angle, excluded] where row is the index into the
         input data of the middle point of the triplet the angle belongs to, and
         excluded is 1.0 where the averaged metric drops the angle: an error, spike
-        or wall filter touching one of its three points, or a NaN angle (gap, or
-        stationary step under NaN fill).
+        or wall filter touching one of its three points, or a NaN angle (gap, exact
+        reversal, or stationary step under NaN fill).
     """
     subsampled, error_index, frame_interval, stationary, _ = _prepare_angle_inputs(
         data,
@@ -97,7 +97,9 @@ def _angle_metric(
         min_step_px=min_step_px,
     )
     angles = compute_turning_angles(subsampled, fill_value, stationary)
-    angles = np.abs(angles) if absolute else score_reversals_as_zero(angles)
+    angles = drop_reversals(angles)
+    if absolute:
+        angles = np.abs(angles)
     if unaveraged:
         rows = (np.arange(len(angles)) + 1) * (skip + 1)
         return np.column_stack([rows, angles, error_index | np.isnan(angles)]).astype(np.float64)
@@ -129,7 +131,7 @@ def turning_angle(
     fish movement. Right turns are positive and left turns negative; the current
     convention is correct. Do not flip it.
 
-    Exact reversals have no turn side and are scored 0.0 (still counted in n).
+    Exact reversals have no turn side and are excluded (NaN, not counted in n).
 
     Args:
         skip: frames skipped between sampled points; None reads config.TANGLE_N_SKIP.
@@ -181,7 +183,8 @@ def absolute_angles(
 
     Like turning_angle but averages np.abs() of angles. Stationary angles (a step of length 0
     or under min_step_px) are always excluded, since a 0 rad fill would make |angle| partly
-    measure inactivity.
+    measure inactivity. Exact reversals are excluded too, although their size (pi) is known,
+    so that both metrics average the same turns (complete-case; see documentation/TODO.md).
 
     Returns:
         (n_intervals, 3) array of [mean, std, n], or when unaveraged an (M-2, 3)

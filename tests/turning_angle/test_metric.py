@@ -308,8 +308,9 @@ class TestMinStepPx(unittest.TestCase):
         self.assertAlmostEqual(result[0, 0], 3 * (np.pi / 2) / 6)
 
     def test_zero_threshold_keeps_jitter_angles(self):
+        # all 6 angles survive the cut-off; the one at middle point 3 (steps (-1,0), (5,0)) is an exact reversal and excluded
         result = self._run(absolute_angles, min_step_px=0.0, remove_zero_vecs=True)
-        self.assertEqual(result[0, 2], 6)
+        self.assertEqual(result[0, 2], 5)
 
     def test_threshold_is_inclusive_at_cut_off(self):
         # 5 px steps survive a 5 px cut-off, 1 px steps do not
@@ -328,7 +329,7 @@ class TestMinStepPx(unittest.TestCase):
 
 
 class TestReversalScoring(unittest.TestCase):
-    """Signed turning_angle scores an exact reversal 0.0; absolute_angles keeps pi; both count it."""
+    """Both turning_angle and absolute_angles exclude an exact reversal, so they average the same turns."""
 
     # 90 degree right turn, then an exact reversal at middle point 2, then straight
     POINTS = np.array([[0, 0], [2, 0], [2, 2], [2, 0], [2, -2]], dtype=float)
@@ -338,18 +339,19 @@ class TestReversalScoring(unittest.TestCase):
         n = len(self.POINTS)
         ta = turning_angle(self.POINTS, [], _no_errors(n), remove_zero_vecs=True, **self.KW)
         aa = absolute_angles(self.POINTS, [], _no_errors(n), **self.KW)
-        self.assertEqual(ta[0, 2], 3)
+        self.assertEqual(ta[0, 2], 2)
         self.assertEqual(aa[0, 2], ta[0, 2])
-        self.assertAlmostEqual(ta[0, 0], (np.pi / 2 + 0.0 + 0.0) / 3)
-        self.assertAlmostEqual(aa[0, 0], (np.pi / 2 + np.pi + 0.0) / 3)
+        self.assertAlmostEqual(ta[0, 0], (np.pi / 2 + 0.0) / 2)
+        self.assertAlmostEqual(aa[0, 0], (np.pi / 2 + 0.0) / 2)
 
     def test_unaveraged_reversal_row(self):
         n = len(self.POINTS)
         ta = turning_angle(self.POINTS, [], _no_errors(n), remove_zero_vecs=True, unaveraged=True, **self.KW)
         aa = absolute_angles(self.POINTS, [], _no_errors(n), unaveraged=True, **self.KW)
-        self.assertEqual(ta[1, 0], 2)
-        self.assertEqual(ta[1, 1], 0.0)
-        self.assertEqual(aa[1, 1], np.pi)
+        for raw in (ta, aa):
+            self.assertEqual(raw[1, 0], 2)
+            self.assertTrue(np.isnan(raw[1, 1]))
+            self.assertEqual(raw[1, 2], 1.0)
 
 
 class TestReversalEdgeCases(unittest.TestCase):

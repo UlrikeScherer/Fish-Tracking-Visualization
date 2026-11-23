@@ -4,7 +4,7 @@ from typing import Optional
 import numpy as np
 from numpy.typing import NDArray
 
-from fishproviz.metrics.turning_angle.compute import compute_turning_angles, compute_turning_angle_streaks, score_reversals_as_zero, straight_turns
+from fishproviz.metrics.turning_angle.compute import compute_turning_angles, compute_turning_angle_streaks, drop_reversals, straight_turns
 
 
 class TestComputeTurningAngles(unittest.TestCase):
@@ -125,12 +125,12 @@ class TestReversals(unittest.TestCase):
         self.assertTrue(np.isnan(result[2]))
 
 
-class TestScoreReversalsAsZero(unittest.TestCase):
+class TestDropReversals(unittest.TestCase):
     def test_maps_pi_only_and_does_not_mutate(self):
         angles = np.array([np.pi, -np.pi, 0.5, np.nan, 0.0])
         original = angles.copy()
-        result = score_reversals_as_zero(angles)
-        np.testing.assert_array_equal(result, [0.0, -np.pi, 0.5, np.nan, 0.0])
+        result = drop_reversals(angles)
+        np.testing.assert_array_equal(result, [np.nan, -np.pi, 0.5, np.nan, 0.0])
         np.testing.assert_array_equal(angles, original)
 
 
